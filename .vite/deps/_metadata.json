@@ -1,0 +1,130 @@
+{
+  "hash": "398b3eaa",
+  "configHash": "e10aa928",
+  "lockfileHash": "a75301a5",
+  "browserHash": "1b6f1aa4",
+  "optimized": {
+    "vue": {
+      "src": "../../node_modules/.pnpm/vue@3.5.13_typescript@5.7.3/node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "b85524c5",
+      "needsInterop": false
+    },
+    "vue-router": {
+      "src": "../../node_modules/.pnpm/vue-router@4.5.0_vue@3.5.13_typescript@5.7.3_/node_modules/vue-router/dist/vue-router.mjs",
+      "file": "vue-router.js",
+      "fileHash": "d1b5010b",
+      "needsInterop": false
+    },
+    "vue-types": {
+      "src": "../../node_modules/.pnpm/vue-types@5.1.3_vue@3.5.13_typescript@5.7.3_/node_modules/vue-types/dist/vue-types.modern.js",
+      "file": "vue-types.js",
+      "fileHash": "b36926c7",
+      "needsInterop": false
+    },
+    "element-plus/es/locale/lang/zh-cn": {
+      "src": "../../node_modules/.pnpm/element-plus@2.11.3_vue@3.5.13_typescript@5.7.3_/node_modules/element-plus/es/locale/lang/zh-cn.mjs",
+      "file": "element-plus_es_locale_lang_zh-cn.js",
+      "fileHash": "23b9ceff",
+      "needsInterop": false
+    },
+    "element-plus/es/locale/lang/en": {
+      "src": "../../node_modules/.pnpm/element-plus@2.11.3_vue@3.5.13_typescript@5.7.3_/node_modules/element-plus/es/locale/lang/en.mjs",
+      "file": "element-plus_es_locale_lang_en.js",
+      "fileHash": "836b02d9",
+      "needsInterop": false
+    },
+    "@iconify/iconify": {
+      "src": "../../node_modules/.pnpm/@iconify+iconify@3.1.1/node_modules/@iconify/iconify/dist/iconify.mjs",
+      "file": "@iconify_iconify.js",
+      "fileHash": "72e7f771",
+      "needsInterop": false
+    },
+    "@vueuse/core": {
+      "src": "../../node_modules/.pnpm/@vueuse+core@12.3.0_typescript@5.7.3/node_modules/@vueuse/core/index.mjs",
+      "file": "@vueuse_core.js",
+      "fileHash": "92aaeb5f",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/.pnpm/axios@1.7.9/node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "ea48297d",
+      "needsInterop": false
+    },
+    "qs": {
+      "src": "../../node_modules/.pnpm/qs@6.13.1/node_modules/qs/lib/index.js",
+      "file": "qs.js",
+      "fileHash": "0d51b92d",
+      "needsInterop": true
+    },
+    "echarts": {
+      "src": "../../node_modules/.pnpm/echarts@5.6.0/node_modules/echarts/index.js",
+      "file": "echarts.js",
+      "fileHash": "8f9e5a97",
+      "needsInterop": false
+    },
+    "echarts-wordcloud": {
+      "src": "../../node_modules/.pnpm/echarts-wordcloud@2.1.0_echarts@5.6.0/node_modules/echarts-wordcloud/index.js",
+      "file": "echarts-wordcloud.js",
+      "fileHash": "c552aff1",
+      "needsInterop": false
+    },
+    "qrcode": {
+      "src": "../../node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/browser.js",
+      "file": "qrcode.js",
+      "fileHash": "2a223981",
+      "needsInterop": true
+    },
+    "@wangeditor/editor": {
+      "src": "../../node_modules/.pnpm/@wangeditor+editor@5.1.23/node_modules/@wangeditor/editor/dist/index.esm.js",
+      "file": "@wangeditor_editor.js",
+      "fileHash": "d4df6881",
+      "needsInterop": false
+    },
+    "@wangeditor/editor-for-vue": {
+      "src": "../../node_modules/.pnpm/@wangeditor+editor-for-vue@5.1.12_@wangeditor+editor@5.1.23_vue@3.5.13_typescript@5.7.3_/node_modules/@wangeditor/editor-for-vue/dist/index.esm.js",
+      "file": "@wangeditor_editor-for-vue.js",
+      "fileHash": "f791a5c8",
+      "needsInterop": false
+    },
+    "vue-json-pretty": {
+      "src": "../../node_modules/.pnpm/vue-json-pretty@2.4.0_vue@3.5.13_typescript@5.7.3_/node_modules/vue-json-pretty/esm/vue-json-pretty.js",
+      "file": "vue-json-pretty.js",
+      "fileHash": "090e0cb1",
+      "needsInterop": false
+    },
+    "@zxcvbn-ts/core": {
+      "src": "../../node_modules/.pnpm/@zxcvbn-ts+core@3.0.4/node_modules/@zxcvbn-ts/core/dist/index.esm.js",
+      "file": "@zxcvbn-ts_core.js",
+      "fileHash": "ad365000",
+      "needsInterop": false
+    },
+    "dayjs": {
+      "src": "../../node_modules/.pnpm/dayjs@1.11.13/node_modules/dayjs/dayjs.min.js",
+      "file": "dayjs.js",
+      "fileHash": "70ddcc1c",
+      "needsInterop": true
+    },
+    "cropperjs": {
+      "src": "../../node_modules/.pnpm/cropperjs@1.6.2/node_modules/cropperjs/dist/cropper.esm.js",
+      "file": "cropperjs.js",
+      "fileHash": "d161d5fe",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-TGLUTFT7": {
+      "file": "chunk-TGLUTFT7.js"
+    },
+    "chunk-OT7WPXV5": {
+      "file": "chunk-OT7WPXV5.js"
+    },
+    "chunk-XQJJI4VF": {
+      "file": "chunk-XQJJI4VF.js"
+    },
+    "chunk-HKJ2B2AA": {
+      "file": "chunk-HKJ2B2AA.js"
+    }
+  }
+}
