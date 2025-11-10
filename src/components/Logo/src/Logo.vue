@@ -73,7 +73,7 @@ watch(
           }
         ]"
       >
-        访问控制
+        运维自动化
       </div>
     </router-link>
   </div>

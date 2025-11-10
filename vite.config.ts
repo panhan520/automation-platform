@@ -136,7 +136,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       cssTarget: ['chrome31']
     },
     server: {
-      port: 4002,
+      port: 4003,
       proxy: {
         // 选项写法
         '/api/v1/iam': {
@@ -148,7 +148,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         overlay: false
       },
       host: '0.0.0.0',
-      origin: 'http://localhost:4002'
+      origin: 'http://localhost:4003'
     },
     optimizeDeps: {
       include: [

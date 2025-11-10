@@ -1,17 +1,14 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import type { App } from 'vue'
-import { Layout, getParentLayout } from '@/utils/routerHelper'
-import { useI18n } from '@/hooks/web/useI18n'
+import { Layout } from '@/utils/routerHelper'
 import { NO_RESET_WHITE_LIST } from '@/constants'
-
-const { t } = useI18n()
 
 export const constantRouterMap: AppRouteRecordRaw[] = [
   {
     path: '/',
     component: Layout,
-    redirect: '/userManagement',
+    redirect: '/applicationManagement',
     name: 'Root',
     meta: {
       hidden: true
@@ -48,70 +45,95 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
 
 export const asyncRouterMap: AppRouteRecordRaw[] = [
   {
-    path: '/userManagement',
+    path: '/applicationManagement',
     component: Layout,
-    redirect: '/userManagement/user',
-    name: 'UserManagement',
+    name: 'ApplicationManagement',
     meta: {
-      title: '用户管理',
-      icon: 'vi-ep:user',
+      title: '应用管理',
+      icon: 'vi-ep:document'
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/applicationManagement/index.vue'),
+        name: 'ApplicationManagementList',
+        meta: {
+          title: '应用管理',
+          icon: 'vi-ep:document'
+        }
+      }
+    ]
+  },
+  {
+    path: '/nodeManagement',
+    component: Layout,
+    redirect: '/nodeManagement/index',
+    name: 'NodeManagement',
+    meta: {
+      title: '节点管理',
+      icon: 'vi-ep:lightning',
       alwaysShow: true
     },
     children: [
       {
-        path: 'user',
-        component: () => import('@/views/userManagement/user/index.vue'),
-        name: 'User',
+        path: 'index',
+        component: () => import('@/views/nodeManagement/index.vue'),
+        name: 'NodeManagementList',
         meta: {
-          title: '用户'
+          title: '节点管理'
         }
       },
       {
-        path: 'userGroup',
-        component: () => import('@/views/userManagement/userGroup/index.vue'),
-        name: 'UserGroup',
+        path: 'executionHistory',
+        component: () => import('@/views/nodeManagement/executionHistory/index.vue'),
+        name: 'NodeExecutionHistory',
         meta: {
-          title: '用户组'
+          title: '执行历史'
         }
       }
     ]
   },
   {
-    path: '/roleManagement',
+    path: '/automationManagement',
     component: Layout,
-    name: 'RoleManagement',
+    redirect: '/automationManagement/template',
+    name: 'AutomationManagement',
     meta: {
-      title: '角色管理',
-      icon: 'vi-ep:key'
+      title: '自动化管理',
+      icon: 'vi-ep:setting',
+      alwaysShow: true
     },
     children: [
       {
-        path: 'index',
-        component: () => import('@/views/roleManagement/index.vue'),
-        name: 'RoleManagementList',
+        path: 'template',
+        component: () => import('@/views/automationManagement/template/index.vue'),
+        name: 'TemplateManagement',
         meta: {
-          title: '角色管理',
-          icon: 'vi-ep:key'
+          title: '模板管理'
         }
-      }
-    ]
-  },
-  {
-    path: '/permissionManagement',
-    component: Layout,
-    name: 'PermissionManagement',
-    meta: {
-      title: '权限管理',
-      icon: 'vi-ep:lock'
-    },
-    children: [
+      },
       {
-        path: 'index',
-        component: () => import('@/views/permissionManagement/index.vue'),
-        name: 'PermissionManagementList',
+        path: 'quickExecution',
+        component: () => import('@/views/automationManagement/quickExecution/index.vue'),
+        name: 'QuickExecution',
         meta: {
-          title: '权限管理',
-          icon: 'vi-ep:lock'
+          title: '快速执行'
+        }
+      },
+      {
+        path: 'task',
+        component: () => import('@/views/automationManagement/task/index.vue'),
+        name: 'TaskManagement',
+        meta: {
+          title: '任务管理'
+        }
+      },
+      {
+        path: 'executionHistory',
+        component: () => import('@/views/automationManagement/executionHistory/index.vue'),
+        name: 'AutomationExecutionHistory',
+        meta: {
+          title: '执行历史'
         }
       }
     ]

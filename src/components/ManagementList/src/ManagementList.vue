@@ -1,9 +1,11 @@
 <template>
   <ContentWrap>
     <div class="page-title">{{ title }}</div>
+    <slot name="extra-toolbar"> </slot>
     <TableToolbar
       :buttons="toolbarButtons"
-      :searchOptions="searchOptions"
+      :filters="filters"
+      :filter-values="queryParams"
       @search="handleSearch"
       @refresh="handleRefresh"
     />
@@ -62,6 +64,7 @@
 import { ref, watch } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { TableToolbar } from '@/components/TableToolbar'
+import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Pagination } from '@/components/Pagination'
 
 export interface TableColumn {
@@ -74,14 +77,18 @@ export interface TableColumn {
 
 export interface ToolbarButton {
   key: string
-  label: string
+  label?: string
   type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
-  onClick: () => void
-}
-
-export interface SearchOption {
-  label: string
-  value: string
+  icon?: any
+  circle?: boolean
+  plain?: boolean
+  text?: boolean
+  textOnly?: boolean
+  tooltip?: string
+  disabled?: boolean
+  dropdownOptions?: Array<{ label: string; command: string }>
+  onCommand?: (command: string) => void
+  onClick?: () => void
 }
 
 export interface BulkAction {
@@ -99,7 +106,7 @@ interface Props {
   totalRecords?: number | string
   showSelection?: boolean
   toolbarButtons?: ToolbarButton[]
-  searchOptions?: SearchOption[]
+  filters?: ToolbarFilter[]
   bulkActions?: BulkAction[]
   queryParams?: {
     page: number
@@ -115,7 +122,7 @@ const props = withDefaults(defineProps<Props>(), {
   totalRecords: 0,
   showSelection: false,
   toolbarButtons: () => [],
-  searchOptions: () => [],
+  filters: () => [],
   bulkActions: () => [],
   queryParams: () => ({
     page: 1,
