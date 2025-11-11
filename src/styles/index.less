@@ -53,13 +53,17 @@ body {
 .el-table {
   border-radius: 4px;
   font-size: 13px !important;
-  margin: 20px 0;
+  margin: 10px 0;
 }
 .el-table--border .el-table__cell {
   color: #0c0d0e !important;
 }
 .el-table .cell {
   font-size: 12px !important;
+}
+.el-table--default .cell {
+  display: flex;
+  gap: 3px;
 }
 .el-table td.el-table__cell div {
   vertical-align: middle;
@@ -182,31 +186,4 @@ body {
 .el-sub-menu__title {
   height: 40px !important;
   font-size: 13px !important;
-}
-
-// 密码校验的下拉框样式
-.password-check-list {
-  margin-top: 8px;
-  font-size: 12px;
-  line-height: 20px;
-  color: #6b7280;
-
-  .check-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 4px;
-    .el-icon {
-      font-size: 15px;
-      margin-right: 6px;
-    }
-    span {
-      color: #333;
-    }
-    &.ok {
-      color: #16a34a;
-    }
-    &.fail {
-      color: #dc2626;
-    }
-  }
 }

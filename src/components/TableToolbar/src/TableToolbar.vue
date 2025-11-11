@@ -331,7 +331,7 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 30px 0 15px;
+  margin: 20px 0 15px;
   gap: 16px;
   flex-wrap: wrap;
 }

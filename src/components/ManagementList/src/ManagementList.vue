@@ -9,7 +9,7 @@
       @search="handleSearch"
       @refresh="handleRefresh"
     />
-
+    <div class="total-records">共 {{ totalRecords }} 个{{ title.slice(0, 2) }}</div>
     <el-table
       :data="tableData"
       :row-key="tableData && tableData.length && tableData[0].id ? 'id' : 'userId'"
@@ -209,5 +209,8 @@ const handleBulkAction = (actionKey: string) => {
 }
 .only-pagination {
   justify-content: flex-end;
+}
+.total-records {
+  font-size: 14px;
 }
 </style>

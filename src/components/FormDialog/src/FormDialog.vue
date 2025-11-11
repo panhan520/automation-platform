@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="computedTitle"
+    :title="title"
     :width="width"
     :close-on-click-modal="false"
     @close="handleClose"
@@ -12,12 +12,8 @@
       :rules="rules"
       :label-width="labelWidth"
       @submit.prevent
+      :key="dialogKey"
     >
-      <!-- 用户名称（只读） -->
-      <el-form-item v-if="showUserName" :label="userNameLabel || '用户名称'">
-        <el-input :model-value="userName" readonly disabled />
-      </el-form-item>
-
       <!-- 动态字段 -->
       <el-form-item
         v-for="field in fields"
@@ -57,62 +53,16 @@
               disabled
             />
             <!-- 编辑模式：正常输入 -->
-            <template v-else>
-              <el-popover
-                v-if="field.showPasswordStrength"
-                placement="bottom"
-                :width="380"
-                :visible="!!formData[field.prop] && isPopoverVisible"
-                trigger="hover"
-              >
-                <template #reference>
-                  <el-input
-                    v-model="formData[field.prop]"
-                    type="password"
-                    :placeholder="field.placeholder"
-                    :maxlength="field.maxlength"
-                    show-password
-                    clearable
-                  />
-                </template>
-                <!-- 校验提示 -->
-                <div class="password-check-list">
-                  <div :class="['check-item', validRule.containsTypes ? 'ok' : 'fail']">
-                    <el-icon v-if="validRule.containsTypes"><SuccessFilled /></el-icon>
-                    <el-icon v-else><CircleCloseFilled /></el-icon>
-                    <span>同时包含大、小写字母、数字和特殊符号至少 3 种</span>
-                  </div>
-                  <div :class="['check-item', validRule.validChars ? 'ok' : 'fail']">
-                    <el-icon v-if="validRule.validChars"><SuccessFilled /></el-icon>
-                    <el-icon v-else><CircleCloseFilled /></el-icon>
-                    <span>仅支持字母、数字、特殊字符（除空格）</span>
-                  </div>
-                  <div :class="['check-item', validRule.validLength ? 'ok' : 'fail']">
-                    <el-icon v-if="validRule.validLength"><SuccessFilled /></el-icon>
-                    <el-icon v-else><CircleCloseFilled /></el-icon>
-                    <span>长度为 8–32 个字符</span>
-                  </div>
-                </div>
-              </el-popover>
-              <el-input
-                v-else
-                v-model="formData[field.prop]"
-                type="password"
-                :placeholder="field.placeholder"
-                :maxlength="field.maxlength"
-                show-password
-                clearable
-              />
-              <div
-                v-if="field.showGenerate"
-                class="generate-link"
-                @click="handleGeneratePassword(field.prop)"
-              >
-                一键生成
-              </div>
-            </template>
+            <el-input
+              v-else
+              v-model="formData[field.prop]"
+              type="password"
+              :placeholder="field.placeholder"
+              :maxlength="field.maxlength"
+              show-password
+              clearable
+            />
           </div>
-          <div v-if="field.hint" class="field-hint">{{ field.hint }}</div>
         </template>
         <!-- 选择器（单选） -->
         <el-select
@@ -132,7 +82,7 @@
           />
           <template v-if="!field.options || field.options.length === 0" #empty>
             <div class="empty-select">
-              <el-icon class="empty-icon"><DocumentAdd /></el-icon>
+              <img class="empty-icon" :src="emptyDataImg" />
               <div class="empty-text">暂无数据</div>
             </div>
           </template>
@@ -156,7 +106,7 @@
           />
           <template v-if="!field.options || field.options.length === 0" #empty>
             <div class="empty-select">
-              <el-icon class="empty-icon"><DocumentAdd /></el-icon>
+              <img class="empty-icon" :src="emptyDataImg" />
               <div class="empty-text">暂无数据</div>
             </div>
           </template>
@@ -173,10 +123,7 @@
           :disabled="field.disabled"
           :rows="field.rows || 3"
         />
-        <!-- 提示信息 -->
-        <div v-if="field.hint && field.type !== 'password'" class="field-hint">
-          {{ field.hint }}
-        </div>
+        <div v-if="field.type === 'text'" class="field-name">{{ field.name }}</div>
       </el-form-item>
     </el-form>
 
@@ -192,56 +139,16 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive, nextTick } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { DocumentAdd, SuccessFilled, CircleCloseFilled } from '@element-plus/icons-vue'
-
-export interface FormField {
-  prop: string
-  label: string
-  type: 'input' | 'email' | 'password' | 'select' | 'multiSelect' | 'textarea'
-  placeholder?: string
-  required?: boolean
-  readonly?: boolean
-  disabled?: boolean
-  maxlength?: number
-  showWordLimit?: boolean
-  hint?: string
-  rows?: number
-  showGenerate?: boolean // 仅用于密码类型
-  showPasswordStrength?: boolean // 是否显示密码强度提示
-  readonlyValue?: string // 只读模式下显示的值
-  options?: Array<{ label: string; value: any }> // 仅用于select类型
-  rules?: any[] // 自定义验证规则
-}
-
-interface Props {
-  visible: boolean
-  title?: string
-  createTitle?: string
-  editTitle?: string
-  width?: string | number
-  labelWidth?: string
-  fields: FormField[]
-  defaultFormData?: Record<string, any>
-  isEdit?: boolean
-  showUserName?: boolean
-  userName?: string
-  userNameLabel?: string
-  loading?: boolean
-}
+import emptyDataImg from '@/assets/imgs/empty_data.png'
+import { Props } from './type'
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   title: '',
-  createTitle: '新建',
-  editTitle: '编辑',
   width: 600,
   labelWidth: '120px',
   fields: () => [],
   defaultFormData: () => ({}),
-  isEdit: false,
-  showUserName: false,
-  userName: '',
-  userNameLabel: '用户名称',
   loading: false
 })
 
@@ -253,99 +160,56 @@ const emit = defineEmits<{
 
 const formRef = ref<FormInstance>()
 const formData = reactive<Record<string, any>>({})
-const isPopoverVisible = ref(false)
-
-// 密码校验规则
-const validRule = reactive({
-  containsTypes: false,
-  validChars: false,
-  validLength: false
-})
-
+// 添加 dialogKey
+const dialogKey = ref(0)
 const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
 })
+// 统一的重置方法
+const resetForm = async () => {
+  // 先重置表单数据
+  Object.keys(formData).forEach((key) => {
+    delete formData[key]
+  })
 
-const computedTitle = computed(() => {
-  if (props.title) return props.title
-  return props.isEdit ? props.editTitle : props.createTitle
-})
+  // 等待 DOM 更新
+  await nextTick()
 
-// 生成密码规则（至少包含大小写字母、数字、特殊符号中的3种，长度8-32）
-const generatePassword = () => {
-  const length = Math.floor(Math.random() * 25) + 8 // 8-32 随机长度
-  const lowercase = 'abcdefghijklmnopqrstuvwxyz'
-  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  const numbers = '0123456789'
-  const special = '!@#$%^&*()_+-=[]{}|;:,.<>?'
-  const allChars = lowercase + uppercase + numbers + special
+  // 重新初始化数据
+  initFormData()
 
-  // 确保至少包含3种类型的字符
-  let password = ''
-  password += lowercase[Math.floor(Math.random() * lowercase.length)]
-  password += uppercase[Math.floor(Math.random() * uppercase.length)]
-  password += numbers[Math.floor(Math.random() * numbers.length)]
+  // 再次等待确保数据已设置
+  await nextTick()
 
-  // 随机填充剩余字符
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)]
-  }
-
-  // 打乱顺序
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('')
+  // 清除验证状态
+  formRef.value?.clearValidate()
+  // formRef.value?.resetFields()
 }
-
-const handleGeneratePassword = (prop: string) => {
-  formData[prop] = generatePassword()
-}
-
-// 监听密码变化，更新校验规则
-watch(
-  () => formData,
-  (newData) => {
-    const passwordField = props.fields.find((f) => f.type === 'password' && f.showPasswordStrength)
-    if (passwordField && newData[passwordField.prop]) {
-      const password = newData[passwordField.prop]
-      // 检查是否包含至少3种类型
-      const hasLower = /[a-z]/.test(password)
-      const hasUpper = /[A-Z]/.test(password)
-      const hasNumber = /[0-9]/.test(password)
-      const hasSpecial = /[^a-zA-Z0-9\s]/.test(password)
-      const typeCount = [hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length
-      validRule.containsTypes = typeCount >= 3
-
-      // 检查字符是否有效（不含空格）
-      validRule.validChars = !/\s/.test(password)
-
-      // 检查长度
-      validRule.validLength = password.length >= 8 && password.length <= 32
+// 初始化表单数据
+const initFormData = () => {
+  props.fields.forEach((field) => {
+    if (field.type === 'multiSelect') {
+      formData[field.prop] = props.defaultFormData?.[field.prop] || []
+    } else if (field.type === 'select') {
+      formData[field.prop] = props.defaultFormData?.[field.prop] ?? undefined
+    } else {
+      formData[field.prop] = props.defaultFormData?.[field.prop] ?? ''
     }
-  },
-  { deep: true }
-)
+  })
+}
+
+// 监听 visible 变化 - 只在打开时初始化
 watch(
   () => props.visible,
-  (val) => {
+  async (val) => {
     if (val) {
-      // 打开弹窗：初始化表单数据
-      // 清除上次的校验状态
-      console.log('visible', val)
-      initFormData()
-    } else {
-      console.log('visible-close', val)
-      // 关闭弹窗：重置字段
-      formRef.value?.resetFields()
-      // 再次确保清空校验状态
-      formRef.value?.clearValidate()
+      console.log('弹窗打开，初始化表单')
+      // initFormData()
+      await resetForm()
     }
-  },
-  { immediate: true }
+  }
 )
-
 // 构建表单验证规则
 const rules = computed<FormRules>(() => {
   const formRules: FormRules = {}
@@ -407,63 +271,6 @@ const rules = computed<FormRules>(() => {
   })
   return formRules
 })
-
-// 初始化表单数据
-const initFormData = () => {
-  props.fields.forEach((field) => {
-    if (field.type === 'multiSelect') {
-      formData[field.prop] = props.defaultFormData?.[field.prop] || []
-    } else if (field.type === 'select') {
-      formData[field.prop] = props.defaultFormData?.[field.prop] ?? undefined
-    } else {
-      formData[field.prop] = props.defaultFormData?.[field.prop] ?? ''
-    }
-  })
-  formRef.value?.clearValidate()
-  formRef.value?.resetFields()
-}
-
-// // 监听 visible 变化，初始化表单
-// watch(
-//   () => props.visible,
-//   (val) => {
-//     if (val) {
-//       initFormData()
-//     } else {
-//       formRef.value?.resetFields()
-//     }
-//   },
-//   { immediate: true }
-// )
-
-// 监听 defaultFormData 变化，更新表单数据
-watch(
-  () => props.defaultFormData,
-  (newData) => {
-    if (newData && Object.keys(newData).length > 0) {
-      Object.keys(newData).forEach((key) => {
-        if (Object.prototype.hasOwnProperty.call(formData, key)) {
-          formData[key] = newData[key]
-        }
-      })
-    }
-  },
-  { deep: true }
-)
-
-const handleCancel = () => {
-  visible.value = false
-  emit('cancel')
-}
-
-const handleClose = () => {
-  setTimeout(() => {
-    formRef.value?.resetFields()
-    formRef.value?.clearValidate()
-  }, 100)
-  emit('cancel')
-}
-
 const handleConfirm = async () => {
   if (!formRef.value) return
 
@@ -478,48 +285,53 @@ const handleConfirm = async () => {
     console.log('表单验证失败', error)
   }
 }
+const handleCancel = () => {
+  visible.value = false
+}
+
+const handleClose = async () => {
+  console.log('弹窗关闭，重置表单')
+  // 先隐藏弹窗
+  visible.value = false
+
+  // 等待 DOM 更新后再清理数据
+  await nextTick()
+
+  // 重置表单数据
+  await resetForm()
+
+  // 修改 key 强制 el-form 重新渲染
+  dialogKey.value += 1
+
+  emit('cancel')
+}
+
+// 监听 defaultFormData 变化
+watch(
+  () => props.defaultFormData,
+  (newData) => {
+    if (props.visible && newData) {
+      // 只有在弹窗打开时更新数据
+      Object.keys(newData).forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(formData, key)) {
+          formData[key] = newData[key]
+        }
+      })
+      // 清除验证状态
+      nextTick(() => {
+        formRef.value?.clearValidate()
+      })
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style lang="less" scoped>
-.password-input-wrapper {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .generate-link {
-    font-size: 12px;
-    white-space: nowrap;
-    cursor: pointer;
-    color: #1664ff;
-    &:hover {
-      color: #409eff;
-    }
-  }
-}
-
-.password-check-list {
-  .check-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    font-size: 12px;
-
-    &.ok {
-      color: #67c23a;
-    }
-
-    &.fail {
-      color: #909399;
-    }
-  }
-}
-
-.field-hint {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
+.field-name {
+  font-size: 16px;
+  transform: translateX(-72px);
+  font-weight: bold;
 }
 
 .dialog-footer {
@@ -537,13 +349,12 @@ const handleConfirm = async () => {
   color: #909399;
 
   .empty-icon {
-    font-size: 32px;
+    width: 80px;
     margin-bottom: 8px;
-    opacity: 0.5;
   }
 
   .empty-text {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 </style>
