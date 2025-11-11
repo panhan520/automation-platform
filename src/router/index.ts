@@ -8,7 +8,7 @@ export const constantRouterMap: AppRouteRecordRaw[] = [
   {
     path: '/',
     component: Layout,
-    redirect: '/applicationManagement',
+    redirect: '/applicationManagement/index',
     name: 'Root',
     meta: {
       hidden: true

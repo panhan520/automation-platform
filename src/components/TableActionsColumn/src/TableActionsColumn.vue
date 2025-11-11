@@ -8,7 +8,7 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
-                v-for="action in actions"
+                v-for="action in typeof actions === 'function' ? actions(scope.row) : actions"
                 :key="action.key"
                 :command="{ action: action.key, row: scope.row }"
                 :divided="action.divided"
@@ -34,7 +34,7 @@ export interface TableAction {
 
 interface Props {
   width?: string | number
-  actions?: TableAction[]
+  actions?: TableAction[] | ((row: any) => TableAction[])
 }
 
 const props = withDefaults(defineProps<Props>(), {

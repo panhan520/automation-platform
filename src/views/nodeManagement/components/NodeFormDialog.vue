@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     :title="computedTitle"
-    width="920px"
+    width="1000px"
     class="node-form-dialog"
     :close-on-click-modal="false"
     @close="handleClose"
@@ -41,9 +41,14 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="form.authMethod === '密码' ? '密码' : '密钥'" prop="credential" required>
+          <el-form-item
+            :label="form.authMethod === '密码' ? '密码' : '密钥'"
+            prop="credential"
+            class="label-item-required"
+          >
             <template v-if="form.authMethod === '密码'">
               <el-input
+                type="password"
                 v-model="form.credentialPassword"
                 placeholder="请输入密码"
                 show-password
@@ -130,27 +135,43 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="24">
+        <el-col :span="12">
           <div class="tag-section">
             <div class="tag-section__label">节点标签</div>
             <div class="tag-section__content">
-              <div
-                v-for="(tag, index) in tags"
-                :key="tag.id"
-                class="tag-row"
-              >
-                <el-input
+              <div v-for="(tag, index) in tags" :key="tag.id" class="tag-row">
+                <el-select
                   v-model="tag.key"
+                  filterable
+                  allow-create
+                  default-first-option
+                  :reserve-keyword="false"
                   placeholder="标签键"
                   class="tag-row__input"
-                  clearable
-                />
-                <el-input
+                >
+                  <el-option
+                    v-for="item in keyOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+                <el-select
                   v-model="tag.value"
+                  filterable
+                  allow-create
+                  default-first-option
+                  :reserve-keyword="false"
                   placeholder="标签值"
                   class="tag-row__input"
-                  clearable
-                />
+                >
+                  <el-option
+                    v-for="item in keyOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
                 <el-button type="text" @click="removeTag(index)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
@@ -162,7 +183,7 @@
                   @click="addTag"
                   :disabled="tags.length >= maxTags"
                 >
-                  添加标签
+                  <el-icon><CirclePlus /></el-icon>添加标签
                 </el-link>
                 <span class="tag-limit-text">还可添加 {{ maxTags - tags.length }} 个标签</span>
               </div>
@@ -179,7 +200,9 @@
             连通测试
           </el-button>
           <span v-if="connectivityStatus === 'success'" class="status success">连通测试成功</span>
-          <span v-else-if="connectivityStatus === 'failed'" class="status failed">连通测试失败</span>
+          <span v-else-if="connectivityStatus === 'failed'" class="status failed"
+            >连通测试失败</span
+          >
         </div>
         <div class="footer-actions">
           <el-button @click="handleCancel" :disabled="loading">取消</el-button>
@@ -196,7 +219,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, CirclePlus } from '@element-plus/icons-vue'
 
 type ConnectivityStatus = 'idle' | 'loading' | 'success' | 'failed'
 
@@ -247,7 +270,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
-  (e: 'save', data: { form: NodeForm; tags: Array<{ key: string; value: string }>; authCredential: string }): void
+  (
+    e: 'save',
+    data: { form: NodeForm; tags: Array<{ key: string; value: string }>; authCredential: string }
+  ): void
   (e: 'cancel'): void
 }>()
 
@@ -270,6 +296,21 @@ const form = reactive<NodeForm>({
   carrier: '中国移动',
   remarks: ''
 })
+
+const keyOptions = [
+  {
+    value: '1',
+    label: '1'
+  },
+  {
+    value: '2',
+    label: '2'
+  },
+  {
+    value: '3',
+    label: '3'
+  }
+]
 
 const tags = ref<NodeTagItem[]>([])
 const maxTags = 10
@@ -326,7 +367,9 @@ const visible = computed({
   set: (val: boolean) => emit('update:visible', val)
 })
 
-const computedTitle = computed(() => (props.title ? props.title : props.isEdit ? '编辑节点' : '新建节点'))
+const computedTitle = computed(() =>
+  props.title ? props.title : props.isEdit ? '编辑节点' : '新建节点'
+)
 
 const canSave = computed(() => connectivityStatus.value === 'success' && !props.loading)
 
@@ -420,7 +463,13 @@ const removeTag = (index: number) => {
 
 const handleConnectivityTest = async () => {
   try {
-    await formRef.value?.validateField(['internalIp', 'publicIp', 'loginAccount', 'loginPort', 'loginIp'])
+    await formRef.value?.validateField([
+      'internalIp',
+      'publicIp',
+      'loginAccount',
+      'loginPort',
+      'loginIp'
+    ])
   } catch (error) {
     ElMessage.error('请完善必填信息后再进行连通测试')
     return
@@ -455,7 +504,9 @@ const handleSave = async () => {
   const authCredential = form.authMethod === '密码' ? form.credentialPassword : form.credentialKey
   emit('save', {
     form: { ...form },
-    tags: tags.value.map(({ key, value }) => ({ key, value })).filter((item) => item.key || item.value),
+    tags: tags.value
+      .map(({ key, value }) => ({ key, value }))
+      .filter((item) => item.key || item.value),
     authCredential
   })
 }
@@ -475,6 +526,22 @@ const handleClose = () => {
 .node-form-dialog {
   .node-form {
     padding-right: 8px;
+  }
+  .tag-section__label {
+    color: #606266;
+    font-size: 13px;
+    &::before {
+      content: '';
+    }
+  }
+  .tag-section__footer {
+    margin-top: 7px;
+  }
+  .el-link {
+    font-size: 13px;
+    .el-icon {
+      margin-right: 5px;
+    }
   }
 }
 .tag-section {
@@ -550,6 +617,15 @@ const handleClose = () => {
     display: flex;
     align-items: center;
     gap: 12px;
+  }
+}
+.label-item-required {
+  :deep(.el-form-item__label) {
+    &::before {
+      color: #f56c6c;
+      content: '*';
+      margin-right: 4px;
+    }
   }
 }
 </style>

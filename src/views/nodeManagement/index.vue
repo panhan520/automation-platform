@@ -18,41 +18,41 @@
       <template #extra-toolbar>
         <div class="stats-cards">
           <div class="stat-card">
-            <div class="stat-icon">📊</div>
             <div class="stat-content">
-              <div class="stat-value">{{ stats.total }}</div>
               <div class="stat-label">总节点数</div>
+              <div class="stat-value">{{ stats.total }}</div>
             </div>
+            <div class="stat-icon">📊</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon online">🟢</div>
             <div class="stat-content">
-              <div class="stat-value">{{ stats.online }}</div>
               <div class="stat-label">在线节点</div>
+              <div class="stat-value green">{{ stats.online }}</div>
             </div>
+            <div class="stat-icon online">🟢</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon offline">🟠</div>
             <div class="stat-content">
-              <div class="stat-value">{{ stats.offline }}</div>
               <div class="stat-label">离线节点</div>
+              <div class="stat-value yellow">{{ stats.offline }}</div>
             </div>
+            <div class="stat-icon offline">🟠</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon abnormal">🔴</div>
             <div class="stat-content">
-              <div class="stat-value">{{ stats.abnormal }}</div>
               <div class="stat-label">异常节点</div>
+              <div class="stat-value red">{{ stats.abnormal }}</div>
             </div>
+            <div class="stat-icon abnormal">🔴</div>
           </div>
         </div>
       </template>
       <!-- 表格列 -->
       <template #columns>
-        <el-table-column prop="internalIp" label="内网IP" />
-        <el-table-column prop="hostname" label="主机名" />
+        <el-table-column prop="internalIp" label="内网IP" sortable min-width="100" />
+        <el-table-column prop="hostname" label="主机名" sortable min-width="120" />
         <el-table-column prop="hostId" label="主机ID" />
-        <el-table-column prop="agentId" label="AGENT ID" />
+        <el-table-column prop="agentId" label="AGENT ID" min-width="160" />
         <el-table-column prop="applicationType" label="应用类型">
           <template #default="scope">
             <el-tag>{{ scope.row.applicationType }}</el-tag>
@@ -60,7 +60,7 @@
         </el-table-column>
         <el-table-column prop="region" label="地区" />
         <el-table-column prop="os" label="操作系统" />
-        <el-table-column prop="agentStatus" label="AGENT状态">
+        <el-table-column prop="agentStatus" label="AGENT状态" min-width="100">
           <template #default="scope">
             <el-tag :type="getAgentStatusType(scope.row.agentStatus)">{{
               scope.row.agentStatus
@@ -74,9 +74,13 @@
             }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="agentVersion" label="AGENT版本" />
-        <el-table-column prop="lastHeartbeat" label="最后心跳" />
-        <TableActionsColumn :actions="rowActions" @edit="handleEdit" @action="handleMoreAction" />
+        <el-table-column prop="agentVersion" label="AGENT版本" min-width="100" />
+        <el-table-column prop="lastHeartbeat" label="最后心跳" sortable min-width="150" />
+        <TableActionsColumn
+          :actions="getRowActions"
+          @edit="handleEdit"
+          @action="handleMoreAction"
+        />
       </template>
     </ManagementList>
 
@@ -102,36 +106,20 @@ import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import NodeFormDialog from './components/NodeFormDialog.vue'
-
-interface NodeRecord {
-  id: number
-  internalIp: string
-  publicIp: string
-  hostname: string
-  hostId: string
-  agentId: string
-  applicationType: string
-  region: string
-  os: string
-  agentStatus: string
-  nodeStatus: string
-  agentVersion: string
-  lastHeartbeat: string
-  tags?: Array<{ key: string; value: string }>
-}
+import { NodeRecord } from '@/api/node/type'
 
 const title = '节点管理'
 const loading = ref(false)
-const selectedRows = ref<NodeRecord[]>([])
+// 表格数据
 const allNodes = ref<NodeRecord[]>([])
-
+// 状态统计
 const stats = reactive({
   total: 156,
   online: 142,
   offline: 8,
   abnormal: 6
 })
-
+// 查询条件
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
@@ -140,7 +128,9 @@ const queryParams = reactive({
   applicationType: '',
   nodeTag: ''
 })
-
+// 选中数据
+const selectedRows = ref<NodeRecord[]>([])
+// 批量操作列表
 const bulkDropdownOptions = [
   { label: '安装 Agent', command: 'install' },
   { label: '升级 Agent', command: 'upgrade' },
@@ -151,7 +141,22 @@ const bulkDropdownOptions = [
   { label: '卸载 Agent', command: 'uninstall' },
   { label: '连通测试', command: 'test' }
 ]
-
+// 下拉选
+const agentStatusOptions = [
+  { label: '运行中', value: '运行中' },
+  { label: '异常', value: '异常' },
+  { label: '未安装', value: '未安装' }
+]
+const applicationTypeOptions = [
+  { label: '云拨测', value: '云拨测' },
+  { label: 'CDN', value: 'CDN' },
+  { label: '监控', value: '监控' }
+]
+const nodeTagOptions = [
+  { label: '标签1', value: '标签1' },
+  { label: '标签2', value: '标签2' }
+]
+// 顶部操作栏
 const toolbarButtons = computed<ToolbarButton[]>(() => [
   {
     key: 'settings',
@@ -178,24 +183,7 @@ const toolbarButtons = computed<ToolbarButton[]>(() => [
     onClick: () => handleCreate()
   }
 ])
-
-const agentStatusOptions = [
-  { label: '运行中', value: '运行中' },
-  { label: '异常', value: '异常' },
-  { label: '未安装', value: '未安装' }
-]
-
-const applicationTypeOptions = [
-  { label: '云拨测', value: '云拨测' },
-  { label: 'CDN', value: 'CDN' },
-  { label: '监控', value: '监控' }
-]
-
-const nodeTagOptions = [
-  { label: '标签1', value: '标签1' },
-  { label: '标签2', value: '标签2' }
-]
-
+// 顶部筛选栏
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
     key: 'keyword',
@@ -236,16 +224,38 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     onClick: () => handleReset()
   }
 ])
-
-const rowActions: TableAction[] = [
-  {
-    key: 'delete',
-    label: '删除',
-    divided: true,
-    danger: true
+// 表格每行操作列的动态函数（更多）
+const getRowActions = (row: NodeRecord): TableAction[] => {
+  switch (row.agentStatus) {
+    case '运行中':
+      return [
+        { key: 'offline', label: '下线' },
+        { key: 'restart', label: '重启' },
+        { key: 'reinstall', label: '重装' },
+        { key: 'uninstall', label: '卸载' },
+        { key: 'upgrade', label: '升级' },
+        { key: 'test', label: '连通测试' },
+        { key: 'log', label: '查看日志' }
+      ]
+    case '异常':
+      return [
+        { key: 'restart', label: '重启' },
+        { key: 'reinstall', label: '重装' },
+        { key: 'uninstall', label: '卸载' },
+        { key: 'test', label: '连通测试' },
+        { key: 'log', label: '查看日志' }
+      ]
+    case '未安装':
+      return [
+        { key: 'install', label: '安装' },
+        { key: 'test', label: '连通测试' },
+        ...(row.agentId ? [{ key: 'log', label: '查看日志' }] : [])
+      ]
+    default:
+      return []
   }
-]
-
+}
+// 新建编辑相关字段
 const nodeDialogVisible = ref(false)
 const nodeDialogLoading = ref(false)
 const nodeDialogMode = ref<'create' | 'edit'>('create')
@@ -333,6 +343,22 @@ const getList = async () => {
         agentVersion: 'v2.0.8',
         lastHeartbeat: '2024-03-15 16:42:10',
         tags: [{ key: 'env', value: 'staging' }]
+      },
+      {
+        id: 3,
+        internalIp: '192.168.1.102',
+        publicIp: '10.0.0.102',
+        hostname: 'cdn-node-02',
+        hostId: '2',
+        agentId: 'AGT-002-CDN-2024',
+        applicationType: 'CDN',
+        region: '华北-北京',
+        os: 'Windows',
+        agentStatus: '未安装',
+        nodeStatus: '在线',
+        agentVersion: 'v2.0.8',
+        lastHeartbeat: '2024-03-15 16:42:10',
+        tags: [{ key: 'env', value: 'staging' }]
       }
     ]
     allNodes.value = mockData
@@ -340,7 +366,7 @@ const getList = async () => {
     loading.value = false
   }
 }
-
+// 批量操作列的点击事件
 const handleBulkCommand = (command: string) => {
   if (!selectedRows.value.length) {
     ElMessage.warning('请先选择节点')
@@ -497,23 +523,31 @@ onMounted(() => {
     background: #fff;
     border: 1px solid #e4e7ed;
     border-radius: 4px;
+    justify-content: space-between;
 
     .stat-icon {
-      font-size: 32px;
-      margin-right: 12px;
+      font-size: 22px;
     }
 
     .stat-content {
-      .stat-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #303133;
+      .stat-label {
+        font-size: 13px;
+        color: #909399;
         margin-bottom: 4px;
       }
-
-      .stat-label {
-        font-size: 14px;
-        color: #909399;
+      .stat-value {
+        font-size: 20px;
+        font-weight: bold;
+        color: #303133;
+      }
+      .green {
+        color: #67c23a;
+      }
+      .yellow {
+        color: #e6a23c;
+      }
+      .red {
+        color: #f56c6c;
       }
     }
   }
