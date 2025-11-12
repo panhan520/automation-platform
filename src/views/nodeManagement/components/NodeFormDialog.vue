@@ -86,11 +86,15 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="地区" prop="region" required>
-            <el-select v-model="form.region" placeholder="请选择地区">
-              <el-option label="中国-上海-浦东新区" value="中国-上海-浦东新区" />
-              <el-option label="中国-北京-朝阳区" value="中国-北京-朝阳区" />
-              <el-option label="中国-广东-深圳市" value="中国-广东-深圳市" />
-            </el-select>
+            <el-cascader
+              v-model="form.region"
+              :options="regionOptions"
+              :props="regionProps"
+              @change="handleChangeRegion"
+              placeholder="请选择国家／省／市／区"
+              filterable
+              clearable
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -216,11 +220,78 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import { computed, reactive, ref, watch, onMounted } from 'vue'
+import type { FormInstance, FormRules, CascaderProps } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Delete, CirclePlus } from '@element-plus/icons-vue'
+import {
+  getAllCountries,
+  getStatesByCountry,
+  getCitiesByState,
+  getDistrictsByCity
+} from '@/utils/regionData'
 
+interface CascaderOption {
+  value: string | number
+  label: string
+  children?: CascaderOption[]
+  leaf?: boolean
+  [key: string]: any
+}
+
+const regionOptions = ref<CascaderOption[]>([])
+
+// 懒加载配置
+const regionProps: CascaderProps = {
+  lazy: true,
+  lazyLoad: async (node, resolve) => {
+    const level = node.level
+    const pathValues = node.pathValues as (string | number)[]
+
+    try {
+      // 第一级（国家）
+      if (level === 0) {
+        const countries = getAllCountries()
+        resolve(countries)
+      }
+      // 第二级（省/州）
+      else if (level === 1) {
+        const countryCode = node.value as string
+        const states = getStatesByCountry(countryCode)
+        resolve(states)
+      }
+      // 第三级（城市）
+      else if (level === 2) {
+        const countryCode = pathValues[0] as string
+        const stateCode = node.value as string
+        const cities = getCitiesByState(countryCode, stateCode)
+        resolve(cities)
+      }
+      // 第四级（区/县，仅中国）
+      else if (level === 3) {
+        const countryCode = pathValues[0] as string
+        const stateCode = pathValues[1] as string
+        const cityCode = node.value as string
+        const districts = getDistrictsByCity(countryCode, stateCode, cityCode)
+        resolve(districts)
+      } else {
+        resolve([])
+      }
+    } catch (error) {
+      console.error('加载地区数据失败:', error)
+      resolve([])
+    }
+  }
+}
+
+// 初始化加载国家
+onMounted(() => {
+  regionOptions.value = getAllCountries()
+})
+// 选中变化
+const handleChangeRegion = (val: (string | number)[]) => {
+  console.log('选择的值:', val)
+}
 type ConnectivityStatus = 'idle' | 'loading' | 'success' | 'failed'
 
 type AuthMethod = '密码' | '密钥'
@@ -236,7 +307,7 @@ interface NodeForm {
   loginAccount: string
   hostname: string
   networkType: '公网' | '内网'
-  region: string
+  region: (string | number)[]
   loginIp: string
   applicationType: string
   providerName: string
@@ -289,7 +360,7 @@ const form = reactive<NodeForm>({
   loginAccount: '',
   hostname: '',
   networkType: '公网',
-  region: '中国-上海-浦东新区',
+  region: ['CN', '31', '310115'], // 默认：中国-上海-浦东新区（直辖市跳过市辖区层级）
   loginIp: '',
   applicationType: '',
   providerName: '',
@@ -403,7 +474,7 @@ const nextTickInit = () => {
     loginAccount: '',
     hostname: '',
     networkType: '公网',
-    region: '中国-上海-浦东新区',
+    region: ['CN', '31', '310115'], // 默认：中国-上海-浦东新区（直辖市跳过市辖区层级）
     loginIp: '',
     applicationType: '',
     providerName: '',
@@ -627,5 +698,8 @@ const handleClose = () => {
       margin-right: 4px;
     }
   }
+}
+:deep(.el-cascader) {
+  width: 100%;
 }
 </style>
