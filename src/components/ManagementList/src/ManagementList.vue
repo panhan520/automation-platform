@@ -18,13 +18,14 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column v-if="showSelection" type="selection" width="50" />
-      <slot name="columns">
+      <slot name="columns" :display-columns="displayColumns">
         <el-table-column
-          v-for="column in columns"
+          v-for="column in displayColumns"
           :key="column.prop"
           :prop="column.prop"
           :label="column.label"
           :width="column.width"
+          :min-width="column.minWidth"
           :sortable="column.sortable"
         >
           <template v-if="column.slot" #default="scope">
@@ -61,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { TableToolbar } from '@/components/TableToolbar'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -71,8 +72,11 @@ export interface TableColumn {
   prop: string
   label: string
   width?: string | number
+  minWidth?: string | number
   sortable?: boolean | string
   slot?: string
+  visible?: boolean
+  order?: number
 }
 
 export interface ToolbarButton {
@@ -139,10 +143,51 @@ const emit = defineEmits<{
 }>()
 
 const selectedRows = ref<any[]>([])
+const columnConfig = ref<TableColumn[]>([])
 
 // 本地分页状态
 const localPage = ref(props.queryParams.page)
 const localPageSize = ref(props.queryParams.pageSize)
+
+// 显示的列（根据配置过滤和排序）
+const displayColumns = computed(() => {
+  // 优先使用 columnConfig，如果为空则使用 props.columns
+  const columnsToUse = columnConfig.value.length > 0 ? columnConfig.value : props.columns
+  return columnsToUse
+    .filter((col) => col.visible !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+})
+
+// 初始化列配置
+const initColumnConfig = () => {
+  if (props.columns.length > 0) {
+    columnConfig.value = props.columns.map((col, index) => ({
+      ...col,
+      visible: col.visible !== false,
+      order: col.order !== undefined ? col.order : index
+    }))
+  }
+}
+
+// 监听 columns 变化
+watch(
+  () => props.columns,
+  () => {
+    initColumnConfig()
+  },
+  { immediate: true, deep: true }
+)
+
+// 暴露方法供父组件调用
+defineExpose({
+  updateColumnConfig: (columns: TableColumn[]) => {
+    columnConfig.value = columns.map((col, index) => ({
+      ...col,
+      order: col.order !== undefined ? col.order : index
+    }))
+  },
+  getColumnConfig: () => columnConfig.value
+})
 
 // 监听 props.queryParams 变化
 watch(

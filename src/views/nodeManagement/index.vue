@@ -1,6 +1,7 @@
 <template>
   <div class="node-management-page">
     <ManagementList
+      ref="managementListRef"
       :title="title"
       :table-data="displayTableData"
       :loading="loading"
@@ -9,6 +10,7 @@
       :toolbar-buttons="toolbarButtons"
       :filters="toolbarFilters"
       :query-params="queryParams"
+      :columns="tableColumnsForList"
       @search="handleSearch"
       @refresh="handleRefresh"
       @page-change="handlePageChange"
@@ -48,34 +50,34 @@
         </div>
       </template>
       <!-- 表格列 -->
-      <template #columns>
-        <el-table-column prop="internalIp" label="内网IP" sortable min-width="100" />
-        <el-table-column prop="hostname" label="主机名" sortable min-width="120" />
-        <el-table-column prop="hostId" label="主机ID" />
-        <el-table-column prop="agentId" label="AGENT ID" min-width="160" />
-        <el-table-column prop="applicationType" label="应用类型">
-          <template #default="scope">
-            <el-tag>{{ scope.row.applicationType }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="region" label="地区" />
-        <el-table-column prop="os" label="操作系统" />
-        <el-table-column prop="agentStatus" label="AGENT状态" min-width="100">
-          <template #default="scope">
-            <el-tag :type="getAgentStatusType(scope.row.agentStatus)">{{
-              scope.row.agentStatus
-            }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="nodeStatus" label="节点状态">
-          <template #default="scope">
-            <el-tag :type="getNodeStatusType(scope.row.nodeStatus)">{{
-              scope.row.nodeStatus
-            }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="agentVersion" label="AGENT版本" min-width="100" />
-        <el-table-column prop="lastHeartbeat" label="最后心跳" sortable min-width="150" />
+      <template #columns="{ displayColumns }">
+        <template v-for="col in displayColumns" :key="col.prop">
+          <el-table-column
+            v-if="col.prop !== 'actions'"
+            :prop="col.prop"
+            :label="col.label"
+            :width="col.width"
+            :min-width="col.minWidth"
+            :sortable="col.sortable"
+          >
+            <template v-if="col.slot" #default="scope">
+              <el-tag v-if="col.prop === 'applicationType'">{{ scope.row.applicationType }}</el-tag>
+              <el-tag
+                v-else-if="col.prop === 'agentStatus'"
+                :type="getAgentStatusType(scope.row.agentStatus)"
+              >
+                {{ scope.row.agentStatus }}
+              </el-tag>
+              <el-tag
+                v-else-if="col.prop === 'nodeStatus'"
+                :type="getNodeStatusType(scope.row.nodeStatus)"
+              >
+                {{ scope.row.nodeStatus }}
+              </el-tag>
+              <span v-else>{{ scope.row[col.prop] }}</span>
+            </template>
+          </el-table-column>
+        </template>
         <TableActionsColumn
           :actions="getRowActions"
           @edit="handleEdit"
@@ -94,6 +96,28 @@
       @save="handleNodeSave"
       @cancel="handleNodeCancel"
     />
+
+    <!-- 定制列对话框 -->
+    <ColumnCustomDialog
+      v-model:visible="columnDialogVisible"
+      :columns="tableColumns"
+      @confirm="handleColumnConfirm"
+    />
+
+    <!-- 操作确认对话框 -->
+    <OperationConfirmDialog
+      v-model:visible="operationDialogVisible"
+      :operation="currentOperation"
+      :is-batch="isBatchOperation"
+      :hostnames="operationHostnames"
+      :host-count="operationHostCount"
+      :loading="operationLoading"
+      @confirm="handleOperationConfirm"
+      @cancel="handleOperationCancel"
+    />
+
+    <!-- 导入Excel对话框 -->
+    <ImportExcelDialog v-model:visible="importDialogVisible" @success="handleImportSuccess" />
   </div>
 </template>
 
@@ -101,12 +125,17 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Setting, Refresh } from '@element-plus/icons-vue'
-import { ManagementList } from '@/components/ManagementList'
+import dayjs from 'dayjs'
+import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import NodeFormDialog from './components/NodeFormDialog.vue'
 import { NodeRecord } from '@/api/node/type'
+import { ColumnCustomDialog, type ColumnItem } from '@/components/ColumnCustomDialog'
+import { OperationConfirmDialog } from '@/components/OperationConfirmDialog'
+import { ImportExcelDialog } from '@/components/ImportExcelDialog'
+import { useTaskPanelStore } from '@/store/modules/taskPanel'
 
 const title = '节点管理'
 const loading = ref(false)
@@ -262,6 +291,66 @@ const nodeDialogMode = ref<'create' | 'edit'>('create')
 const nodeDialogData = ref<Record<string, any>>({})
 const nodeDialogTags = ref<Array<{ key: string; value: string }>>([])
 
+// 定制列相关
+const columnDialogVisible = ref(false)
+const managementListRef = ref<InstanceType<typeof ManagementList>>()
+const tableColumns = ref<ColumnItem[]>([
+  { prop: 'internalIp', label: '内网IP', visible: true, order: 0, sortable: true, minWidth: 100 },
+  { prop: 'hostname', label: '主机名', visible: true, order: 1, sortable: true, minWidth: 120 },
+  { prop: 'hostId', label: '主机ID', visible: true, order: 2 },
+  { prop: 'agentId', label: 'AGENT ID', visible: true, order: 3, minWidth: 160 },
+  { prop: 'applicationType', label: '应用类型', visible: true, order: 4, slot: true },
+  { prop: 'region', label: '地区', visible: true, order: 5 },
+  { prop: 'os', label: '操作系统', visible: true, order: 6 },
+  { prop: 'agentStatus', label: 'AGENT状态', visible: true, order: 7, slot: true, minWidth: 100 },
+  { prop: 'nodeStatus', label: '节点状态', visible: true, order: 8, slot: true },
+  { prop: 'agentVersion', label: 'AGENT版本', visible: true, order: 9, minWidth: 100 },
+  {
+    prop: 'lastHeartbeat',
+    label: '最后心跳',
+    visible: true,
+    order: 10,
+    sortable: true,
+    minWidth: 150
+  }
+])
+
+// 转换为 TableColumn 类型供 ManagementList 使用
+const tableColumnsForList = computed<TableColumn[]>(() => {
+  return tableColumns.value.map((col) => ({
+    prop: col.prop,
+    label: col.label,
+    width: col.width,
+    minWidth: col.minWidth,
+    sortable: col.sortable,
+    visible: col.visible,
+    order: col.order,
+    slot: typeof col.slot === 'string' ? col.slot : col.slot ? col.prop : undefined
+  }))
+})
+
+// 操作确认对话框相关
+const operationDialogVisible = ref(false)
+const currentOperation = ref('')
+const isBatchOperation = ref(false)
+const operationHostnames = ref<string[]>([])
+const operationHostCount = ref(0)
+const operationLoading = ref(false)
+const pendingOperation = ref<{
+  operation: string
+  nodeIds: number[]
+  isBatch: boolean
+} | null>(null)
+
+// 导入Excel对话框
+const importDialogVisible = ref(false)
+
+// 任务面板store
+const taskPanelStore = useTaskPanelStore()
+
+// 缓存 key
+const CACHE_KEY_IS_SHOW_DETAIL = 'nodeManagement_isShowDetail'
+
 const filteredData = computed(() => {
   const { keyword, agentStatus, applicationType, nodeTag } = queryParams
   return allNodes.value.filter((item) => {
@@ -372,9 +461,97 @@ const handleBulkCommand = (command: string) => {
     ElMessage.warning('请先选择节点')
     return
   }
-  ElMessage.info(
-    `批量操作【${command}】已触发，共 ${selectedRows.value.length} 个节点（功能待实现）`
-  )
+  showOperationDialog(command, true, selectedRows.value)
+}
+
+// 显示操作确认对话框
+const showOperationDialog = (operation: string, isBatch: boolean, nodes: NodeRecord[]) => {
+  currentOperation.value = operation
+  isBatchOperation.value = isBatch
+  operationHostnames.value = nodes.map((n) => n.hostname || n.internalIp)
+  operationHostCount.value = nodes.length
+  pendingOperation.value = {
+    operation,
+    nodeIds: nodes.map((n) => n.id),
+    isBatch
+  }
+  operationDialogVisible.value = true
+}
+
+// 操作确认
+const handleOperationConfirm = async () => {
+  if (!pendingOperation.value) return
+
+  try {
+    operationLoading.value = true
+    // const { operation, isBatch } = pendingOperation.value
+
+    // if (isBatch) {
+    //   await batchOperateAgent({
+    //     operation,
+    //     nodeIds
+    //   })
+    // } else {
+    //   await operateAgent({
+    //     operation,
+    //     nodeId: nodeIds[0]
+    //   })
+    // }
+
+    // ElMessage.success(`${isBatch ? '批量' : ''}${operation}操作已提交`)
+    operationDialogVisible.value = false
+
+    // 设置缓存为 true，显示任务面板
+    localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
+    taskPanelStore.setVisible(true)
+
+    // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
+    // 触发 App.vue 中的任务列表刷新
+    const { getTaskList } = await import('@/api/node')
+    const today = dayjs().format('YYYY-MM-DD')
+    try {
+      const response = await getTaskList({ date: today })
+      if (response.data && Array.isArray(response.data)) {
+        const getOperationName = (operation: string): string => {
+          const map: Record<string, string> = {
+            install: '安装详情',
+            upgrade: '升级详情',
+            online: '上线详情',
+            offline: '下线详情',
+            restart: '重启详情',
+            reinstall: '重装详情',
+            uninstall: '卸载详情',
+            test: '测试详情'
+          }
+          return map[operation] || '任务'
+        }
+        const tasks = response.data.map((task: any) => ({
+          id: task.id || task.taskId,
+          type: task.type || getOperationName(task.operation),
+          time: task.time || task.createTime || dayjs().format('HH:mm:ss'),
+          operation: task.operation,
+          successCount: task.successCount || 0,
+          progressCount: task.progressCount || 0,
+          failedCount: task.failedCount || 0,
+          details: task.details || []
+        }))
+        taskPanelStore.setTasks(tasks)
+      }
+    } catch (error) {
+      console.error('刷新任务列表失败:', error)
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || '操作失败')
+  } finally {
+    operationLoading.value = false
+    pendingOperation.value = null
+  }
+}
+
+// 操作取消
+const handleOperationCancel = () => {
+  operationDialogVisible.value = false
+  pendingOperation.value = null
 }
 
 const handleSearch = (params: Record<string, any>) => {
@@ -407,7 +584,13 @@ const handleSelectionChange = (selection: NodeRecord[]) => {
 }
 
 const handleImportExcel = () => {
-  ElMessage.info('导入Excel功能待实现')
+  importDialogVisible.value = true
+}
+
+const handleImportSuccess = (count: number) => {
+  // 导入成功后刷新列表
+  getList()
+  ElMessage.success(`已成功导入${count}个节点`)
 }
 
 const handleReset = () => {
@@ -420,7 +603,40 @@ const handleReset = () => {
 }
 
 const handleSettings = () => {
-  ElMessage.info('设置功能待实现')
+  columnDialogVisible.value = true
+}
+
+const handleColumnConfirm = (columns: ColumnItem[]) => {
+  // 更新列配置，保持原有的其他属性
+  tableColumns.value = columns.map((col) => {
+    const existing = tableColumns.value.find((c) => c.prop === col.prop)
+    return {
+      ...existing,
+      ...col,
+      // 保持原有的 width, minWidth, sortable 等属性
+      width: col.width ?? existing?.width,
+      minWidth: col.minWidth ?? existing?.minWidth,
+      sortable: col.sortable ?? existing?.sortable,
+      slot: col.slot ?? existing?.slot
+    }
+  })
+
+  // 同步更新 ManagementList 的列配置
+  if (managementListRef.value) {
+    const tableCols: TableColumn[] = tableColumns.value.map((col) => ({
+      prop: col.prop,
+      label: col.label,
+      width: col.width,
+      minWidth: col.minWidth,
+      sortable: col.sortable,
+      visible: col.visible,
+      order: col.order,
+      slot: typeof col.slot === 'string' ? col.slot : col.slot ? col.prop : undefined
+    }))
+    managementListRef.value.updateColumnConfig(tableCols)
+  }
+
+  ElMessage.success('列配置已保存')
 }
 
 const handleCreate = () => {
@@ -453,6 +669,16 @@ const handleMoreAction = (action: string, row: NodeRecord) => {
   switch (action) {
     case 'delete':
       handleDelete(row)
+      break
+    case 'install':
+    case 'upgrade':
+    case 'online':
+    case 'offline':
+    case 'restart':
+    case 'reinstall':
+    case 'uninstall':
+    case 'test':
+      showOperationDialog(action, false, [row])
       break
     default:
       ElMessage.info('功能待实现')
