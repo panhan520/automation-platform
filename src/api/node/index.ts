@@ -1,6 +1,4 @@
 import request from '@/axios/index'
-import type { NodeRecord } from './type'
-import { id } from 'element-plus/es/locale'
 
 // 批量操作 Agent
 export const batchOperateAgent = (data: { operation: string; nodeIds: number[] }) => {
@@ -104,6 +102,7 @@ export const getTaskDetail = (taskId: string) => {
       details: [
         {
           id: 1,
+          hostId: '3',
           internalIp: '1.1.1.111',
           publicIp: '1.1.1.111',
           applicationType: '云拨测',
@@ -111,6 +110,7 @@ export const getTaskDetail = (taskId: string) => {
         },
         {
           id: 2,
+          hostId: '6',
           internalIp: '1.1.1.222',
           publicIp: '1.1.1.122',
           applicationType: 'CDN',
@@ -118,6 +118,7 @@ export const getTaskDetail = (taskId: string) => {
         },
         {
           id: 3,
+          hostId: '9',
           internalIp: '1.1.1.222',
           publicIp: '1.1.1.122',
           applicationType: 'CDN',
@@ -125,6 +126,7 @@ export const getTaskDetail = (taskId: string) => {
         },
         {
           id: 4,
+          hostId: '10',
           internalIp: '1.1.1.222',
           publicIp: '1.1.1.122',
           applicationType: 'CDN',

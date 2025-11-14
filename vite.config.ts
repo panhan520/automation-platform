@@ -140,7 +140,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       proxy: {
         // 选项写法
         '/api/v1': {
-          target: 'https://198.19.172.205:8000',
+          target: 'http://172.31.28.121:8000',
           changeOrigin: true
         }
       },

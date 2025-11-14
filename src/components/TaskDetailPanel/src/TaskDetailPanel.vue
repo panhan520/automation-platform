@@ -60,7 +60,7 @@
                       link
                       type="primary"
                       size="small"
-                      @click="handleViewLog(scope.row)"
+                      @click="handleViewLog(scope.row, task)"
                       class="log-button"
                     >
                       查看日志
@@ -79,13 +79,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 import { getTaskList, getTaskDetail } from '@/api/node'
 
 export interface TaskDetailItem {
   internalIp: string
   publicIp: string
   applicationType: string
-  status: '成功' | '进行中' | '失败'
+  status: string
   [key: string]: any
 }
 
@@ -96,7 +97,7 @@ export interface Task {
   successCount: number
   progressCount: number
   failedCount: number
-  details?: []
+  details?: TaskDetailItem[]
 }
 
 interface Props {
@@ -116,6 +117,7 @@ const visible = computed({
   set: (val) => emit('update:visible', val)
 })
 const taskList = ref<Task[]>([])
+const router = useRouter()
 
 const isExpanded = ref(false)
 const activeTaskId = ref<string>('')
@@ -170,7 +172,6 @@ const handleClose = () => {
 }
 // 打开/关闭任务详情
 const handleTaskChange = async (taskId: string) => {
-  console.log('handleTaskChange', taskId)
   // 有选中任务
   if (taskId) {
     await fetchTaskDetail(taskId)
@@ -187,7 +188,7 @@ const fetchTaskDetail = async (taskId: string) => {
     // 更新对应任务的详情
     const task = taskList.value.find((t) => t.id === taskId)
     if (task && response.data) {
-      task.details = response.data.details || []
+      task.details = response.data.details
       task.successCount = response.data.successCount || 0
       task.progressCount = response.data.progressCount || 0
       task.failedCount = response.data.failedCount || 0
@@ -228,9 +229,15 @@ const handleRetry = (row: TaskDetailItem, operation: string) => {
   console.log('重试操作:', row, operation)
 }
 
-const handleViewLog = (row: TaskDetailItem) => {
-  // 查看日志
-  console.log('查看日志:', row)
+const handleViewLog = (row: TaskDetailItem, task: Task) => {
+  router.push({
+    name: 'NodeExecutionHistoryDetail',
+    params: { taskId: task.id },
+    query: {
+      hostId: row.hostId || '',
+      internalIp: row.internalIp
+    }
+  })
 }
 
 onUnmounted(() => {

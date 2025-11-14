@@ -90,6 +90,17 @@ export const asyncRouterMap: AppRouteRecordRaw[] = [
         meta: {
           title: '执行历史'
         }
+      },
+      {
+        path: 'executionHistory/:taskId',
+        component: () => import('@/views/nodeManagement/executionHistory/detail.vue'),
+        name: 'NodeExecutionHistoryDetail',
+        meta: {
+          title: '执行详情',
+          hidden: true,
+          activeMenu: '/nodeManagement/executionHistory',
+          noTagsView: true
+        }
       }
     ]
   },
