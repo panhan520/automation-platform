@@ -587,10 +587,9 @@ const handleImportExcel = () => {
   importDialogVisible.value = true
 }
 
-const handleImportSuccess = (count: number) => {
+const handleImportSuccess = () => {
   // 导入成功后刷新列表
   getList()
-  ElMessage.success(`已成功导入${count}个节点`)
 }
 
 const handleReset = () => {

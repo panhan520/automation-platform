@@ -66,7 +66,7 @@
         </span>
       </div>
       <div class="error-table-wrapper">
-        <el-table :data="errorData" border max-height="400" style="width: 100%">
+        <el-table :data="errorData" border max-height="240" style="width: 100%; overflow-y: auto">
           <el-table-column prop="hostId" label="主机ID" width="100" />
           <el-table-column prop="internalIp" label="内网IP" width="120" />
           <el-table-column prop="publicIp" label="公网IP" width="120" />
@@ -95,8 +95,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { ElMessage, ElLoading } from 'element-plus'
+import { ref, computed, h } from 'vue'
+import { ElMessage, ElLoading, ElNotification } from 'element-plus'
 import {
   UploadFilled,
   Download,
@@ -218,14 +218,11 @@ const handleConfirm = async () => {
     if (response.data.success) {
       // 导入成功
       const count = response.data.count || 0
-      // 显示成功消息（根据图片要求，显示两行内容）
-      ElMessage({
-        message: `导入成功\n已成功导入${count}个节点`,
-        type: 'success',
-        duration: 3000,
-        showClose: true,
-        dangerouslyUseHTMLString: true,
-        customClass: 'import-success-toast'
+      // 显示成功消息
+      ElNotification({
+        title: '导入成功',
+        message: `已成功导入${count}个节点`,
+        type: 'success'
       })
 
       emit('success', count)

@@ -201,19 +201,19 @@ const handleViewLog = (row: TaskDetailItem) => {
 }
 
 // 监听 tasks 变化，如果有进行中的任务，自动展开第一个
-watch(
-  () => props.tasks,
-  (newTasks) => {
-    if (newTasks.length > 0 && !activeTaskId.value) {
-      const progressTask = newTasks.find((t) => t.progressCount > 0 || t.failedCount > 0)
-      if (progressTask) {
-        activeTaskId.value = progressTask.id
-        handleTaskChange(progressTask.id)
-      }
-    }
-  },
-  { immediate: true }
-)
+// watch(
+//   () => props.tasks,
+//   (newTasks) => {
+//     if (newTasks.length > 0 && !activeTaskId.value) {
+//       const progressTask = newTasks.find((t) => t.progressCount > 0 || t.failedCount > 0)
+//       if (progressTask) {
+//         activeTaskId.value = progressTask.id
+//         handleTaskChange(progressTask.id)
+//       }
+//     }
+//   },
+//   { immediate: true }
+// )
 
 onUnmounted(() => {
   // 清理所有轮询
