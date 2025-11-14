@@ -54,6 +54,7 @@ import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { FormDialog, type FormField } from '@/components/FormDialog'
 import { TableActionsColumn } from '@/components/TableActionsColumn'
+import { apiGetApplicationList } from '@/api/application'
 
 interface ApplicationRecord {
   id: number
@@ -228,6 +229,7 @@ const getLifecycleTagType = (lifecycle: string): 'success' | 'warning' | 'danger
 const getList = async () => {
   try {
     loading.value = true
+    await apiGetApplicationList({})
     // TODO: 调用API获取数据
     const mockData: ApplicationRecord[] = [
       {
