@@ -13,27 +13,92 @@ export const operateAgent = (data: { operation: string; nodeId: number }) => {
 }
 
 // 获取任务列表
-export const getTaskList = (params?: { date?: string }) => {
+export const getTaskList = () => {
   console.log('获取执行任务列表接口')
   return {
-    data: [
-      { id: 1, name: '任务1', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 2, name: '任务2', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 3, name: '任务3', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 4, name: '任务4', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 5, name: '任务5', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 6, name: '任务6', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 7, name: '任务6', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 8, name: '任务6', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 },
-      { id: 9, name: '任务6', type: '安装', successCount: 1, progressCount: 1, failedCount: 1 }
-    ]
+    data: {
+      list: [
+        {
+          id: 1,
+          type: 'install',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 2,
+          type: 'upgrade',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 3,
+          type: 'online',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 4,
+          type: 'offline',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 5,
+          type: 'restart',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 6,
+          type: 'reinstall',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 7,
+          type: 'uninstall',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 8,
+          type: 'offline',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        },
+        {
+          id: 9,
+          type: 'restart',
+          successCount: 1,
+          progressCount: 1,
+          failedCount: 1,
+          time: '12:12:12'
+        }
+      ]
+    }
   }
   // return request.get('/api/v1/node/tasks', { params })
 }
 
 // 获取任务详情
 export const getTaskDetail = (taskId: string) => {
-  console.log('获取执行任务详情接口')
+  console.log('获取执行任务详情接口', taskId)
   return {
     data: {
       details: [

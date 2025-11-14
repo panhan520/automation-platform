@@ -508,9 +508,8 @@ const handleOperationConfirm = async () => {
     // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
     // 触发 App.vue 中的任务列表刷新
     const { getTaskList } = await import('@/api/node')
-    const today = dayjs().format('YYYY-MM-DD')
     try {
-      const response = await getTaskList({ date: today })
+      const response = await getTaskList()
       if (response.data && Array.isArray(response.data)) {
         const getOperationName = (operation: string): string => {
           const map: Record<string, string> = {

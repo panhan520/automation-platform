@@ -29,8 +29,7 @@ const taskList = computed(() => taskPanelStore.getTasks)
 // 刷新任务列表
 const refreshTaskList = async () => {
   try {
-    const today = dayjs().format('YYYY-MM-DD')
-    const response = await getTaskList({ date: today })
+    const response = await getTaskList()
     if (response.data && Array.isArray(response.data)) {
       const getOperationName = (operation: string): string => {
         const map: Record<string, string> = {
@@ -70,20 +69,19 @@ const initTaskPanelVisibility = async () => {
   if (cached !== null) {
     // 有缓存，直接使用
     taskPanelVisible.value = cached === 'true'
-    if (taskPanelVisible.value) {
-      await refreshTaskList()
-    }
+    // if (taskPanelVisible.value) {
+    //   await refreshTaskList()
+    // }
   } else {
     // 没有缓存，查询当天任务
     try {
-      const today = dayjs().format('YYYY-MM-DD')
-      const response = await getTaskList({ date: today })
-      const hasTasks = response.data && response.data.length > 0
+      const response = await getTaskList()
+      const hasTasks = response.data && response.data.list.length > 0
       localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, hasTasks ? 'true' : 'false')
       taskPanelVisible.value = hasTasks
-      if (hasTasks) {
-        await refreshTaskList()
-      }
+      // if (hasTasks) {
+      //   await refreshTaskList()
+      // }
     } catch (error) {
       console.error('查询任务列表失败:', error)
       localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'false')

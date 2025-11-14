@@ -20,7 +20,7 @@
     <!-- 展开后的内容 -->
     <div v-if="isExpanded" class="panel-content" :class="{ expanded: isExpanded }">
       <el-collapse v-model="activeTaskId" accordion @change="handleTaskChange">
-        <el-collapse-item v-for="task in tasks" :key="task.id" :name="task.id">
+        <el-collapse-item v-for="task in taskList" :key="task.id" :name="task.id">
           <template #title>
             <div class="task-title">
               <span class="task-type">{{ task.type }}详情</span>
@@ -52,9 +52,9 @@
                       link
                       type="primary"
                       size="small"
-                      @click="handleRetry(scope.row, task.operation)"
+                      @click="handleRetry(scope.row, task.type)"
                     >
-                      安装
+                      {{ task.type }}
                     </el-button>
                     <el-button
                       link
@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
-import { getTaskDetail } from '@/api/node'
+import { getTaskList, getTaskDetail } from '@/api/node'
 
 export interface TaskDetailItem {
   internalIp: string
@@ -93,11 +93,10 @@ export interface Task {
   id: string
   type: string
   time: string
-  operation: string
   successCount: number
   progressCount: number
   failedCount: number
-  details: TaskDetailItem[]
+  details?: []
 }
 
 interface Props {
@@ -116,33 +115,69 @@ const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
 })
+const taskList = ref<Task[]>([])
 
 const isExpanded = ref(false)
 const activeTaskId = ref<string>('')
-const pollingTimers = ref<Map<string, ReturnType<typeof setInterval>>>(new Map())
+const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
+// 获取任务列表
+const getTaskListData = async () => {
+  try {
+    const response = await getTaskList()
+    if (response.data.list && Array.isArray(response.data.list)) {
+      const getOperationName = (type: string): string => {
+        const map: Record<string, string> = {
+          install: '安装',
+          upgrade: '升级',
+          online: '上线',
+          offline: '下线',
+          restart: '重启',
+          reinstall: '重装',
+          uninstall: '卸载'
+        }
+        return map[type] || '任务'
+      }
 
+      const tasks = response.data.list.map((task: any) => ({
+        id: task.id,
+        type: getOperationName(task.type),
+        time: task.time,
+        successCount: task.successCount || 0,
+        progressCount: task.progressCount || 0,
+        failedCount: task.failedCount || 0
+      }))
+      taskList.value = tasks
+    }
+  } catch (error) {
+    console.error('获取任务列表失败:', error)
+  }
+}
+// 展开面板
 const handleExpand = () => {
   isExpanded.value = true
+  getTaskListData()
 }
-
+// 收缩面板
 const handleCollapse = () => {
+  stopPolling()
   isExpanded.value = false
   activeTaskId.value = ''
 }
-
+// 关闭悬浮框
 const handleClose = () => {
+  stopPolling()
   emit('close')
 }
-
+// 打开/关闭任务详情
 const handleTaskChange = async (taskId: string) => {
+  console.log('handleTaskChange', taskId)
+  // 有选中任务
   if (taskId) {
-    // 查询任务详情
     await fetchTaskDetail(taskId)
-    // 开始轮询
     startPolling(taskId)
   } else {
-    // 停止轮询
-    stopPolling(activeTaskId.value)
+    // 收起时停止轮询
+    stopPolling()
   }
 }
 
@@ -150,7 +185,7 @@ const fetchTaskDetail = async (taskId: string) => {
   try {
     const response = await getTaskDetail(taskId)
     // 更新对应任务的详情
-    const task = props.tasks.find((t) => t.id === taskId)
+    const task = taskList.value.find((t) => t.id === taskId)
     if (task && response.data) {
       task.details = response.data.details || []
       task.successCount = response.data.successCount || 0
@@ -162,22 +197,20 @@ const fetchTaskDetail = async (taskId: string) => {
   }
 }
 
+// 开始轮询
 const startPolling = (taskId: string) => {
-  // 停止之前的轮询
-  stopPolling(taskId)
+  stopPolling()
 
-  const timer = setInterval(() => {
+  pollingTimer.value = setInterval(() => {
     fetchTaskDetail(taskId)
   }, 3000)
-
-  pollingTimers.value.set(taskId, timer)
 }
 
-const stopPolling = (taskId: string) => {
-  const timer = pollingTimers.value.get(taskId)
-  if (timer) {
-    clearInterval(timer)
-    pollingTimers.value.delete(taskId)
+// 停止轮询
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
   }
 }
 
@@ -200,25 +233,8 @@ const handleViewLog = (row: TaskDetailItem) => {
   console.log('查看日志:', row)
 }
 
-// 监听 tasks 变化，如果有进行中的任务，自动展开第一个
-// watch(
-//   () => props.tasks,
-//   (newTasks) => {
-//     if (newTasks.length > 0 && !activeTaskId.value) {
-//       const progressTask = newTasks.find((t) => t.progressCount > 0 || t.failedCount > 0)
-//       if (progressTask) {
-//         activeTaskId.value = progressTask.id
-//         handleTaskChange(progressTask.id)
-//       }
-//     }
-//   },
-//   { immediate: true }
-// )
-
 onUnmounted(() => {
-  // 清理所有轮询
-  pollingTimers.value.forEach((timer) => clearInterval(timer))
-  pollingTimers.value.clear()
+  stopPolling()
 })
 </script>
 
