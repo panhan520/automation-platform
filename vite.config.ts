@@ -139,8 +139,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       port: 4003,
       proxy: {
         // 选项写法
-        '/api/v1/iam': {
-          target: 'https://gateway.observe.dev.eks.gainetics.io',
+        '/api/v1': {
+          target: 'https://198.19.172.205:8000',
           changeOrigin: true
         }
       },
