@@ -11,7 +11,7 @@ export interface FormField {
   hint?: string
   rows?: number
   readonlyValue?: string // 只读模式下显示的值
-  options?: Array<{ label: string; value: any }> // 仅用于select类型
+  options?: Array<{ label: string; value: any; dept: string }> // 仅用于select类型
   rules?: any[] // 自定义验证规则
   name?: string
 }

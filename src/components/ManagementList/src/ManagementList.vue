@@ -16,6 +16,7 @@
       border
       v-loading="loading"
       @selection-change="handleSelectionChange"
+      @filter-change="onFilterChange"
     >
       <el-table-column v-if="showSelection" type="selection" width="50" />
       <slot name="columns" :display-columns="displayColumns">
@@ -140,6 +141,7 @@ const emit = defineEmits<{
   (e: 'page-change', page: number, pageSize: number): void
   (e: 'selection-change', selectedRows: any[]): void
   (e: 'bulk-action', actionKey: string, selectedRows: any[]): void
+  (e: 'filter-change', filters: ToolbarFilter[]): void
 }>()
 
 const selectedRows = ref<any[]>([])
@@ -205,6 +207,9 @@ const handleSearch = (params: any) => {
 
 const handleRefresh = (params: any) => {
   emit('refresh', params)
+}
+const onFilterChange = (filters: ToolbarFilter[]) => {
+  emit('filter-change', filters)
 }
 
 const handlePageChange = (page: number, pageSize: number) => {

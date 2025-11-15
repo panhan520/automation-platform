@@ -1,7 +1,7 @@
 <template>
   <ManagementList
     :title="title"
-    :table-data="displayTableData"
+    :table-data="allApplications"
     :loading="loading"
     :total-records="totalRecords"
     :toolbar-buttons="toolbarButtons"
@@ -10,26 +10,28 @@
     @search="handleSearch"
     @refresh="handleRefresh"
     @page-change="handlePageChange"
+    @filter-change="handleTableFilterChange"
   >
     <template #columns>
       <el-table-column prop="appType" label="应用类型" />
       <el-table-column
-        prop="lifecycle"
+        column-key="lifeCycle"
+        prop="lifeCycle"
         label="生命周期"
         :filters="[
           { text: '已上线', value: 'online' },
           { text: '测试中', value: 'testing' },
           { text: '停运', value: 'offline' }
         ]"
-        :filter-method="filterHandler"
+        :filter-multiple="false"
       >
         <template #default="scope">
-          <el-tag :type="getLifecycleTagType(scope.row.lifecycle)">
-            {{ scope.row.lifecycle }}
+          <el-tag :type="getLifecycleTagType(scope.row.lifeCycle)">
+            {{ getLifecycleName(scope.row.lifeCycle) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="timezone" label="时区" />
+      <el-table-column prop="timeZone" label="时区" />
       <el-table-column prop="language" label="语言">
         <template #default="scope">
           {{
@@ -41,7 +43,7 @@
           }}
         </template>
       </el-table-column>
-      <el-table-column prop="operator" label="运维人员" />
+      <el-table-column prop="opsPersonNickname" label="运维人员" />
       <TableActionsColumn @edit="handleEdit" />
     </template>
   </ManagementList>
@@ -67,17 +69,17 @@ import { TableActionsColumn } from '@/components/TableActionsColumn'
 import {
   apiGetApplicationList,
   apiGetPersonList,
-  apiCreateApplication,
-  apiDeleteApplication
+  apiGetAppTypeList,
+  apiCreateApplication
 } from '@/api/application'
 
 interface ApplicationRecord {
   id: number
   appType: string
-  lifecycle: string
-  timezone: string
+  lifeCycle: string
+  timeZone: string
   language: string
-  operator: string
+  opsPerson: string
 }
 
 const title = '应用管理'
@@ -88,20 +90,17 @@ const queryParams = reactive({
   page: 1,
   pageSize: 10,
   appType: '',
-  lifecycle: ''
+  lifeCycle: ''
 })
 const totalRecords = ref(0)
 // 所有的人员
 interface PersonItem {
   id: number
-  name: string
+  nickname: string
   [key: string]: any
 }
 const personList = ref<PersonItem[]>([])
-// 全部的应用类型
-const applicationTypeOptions = computed(() =>
-  Array.from(new Set(allApplications.value.map((item) => item.appType)))
-)
+const appTypeList = ref<string[]>([])
 // 顶部筛选
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
@@ -110,7 +109,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     placeholder: '全部应用类型',
     width: 180,
     clearable: true,
-    options: applicationTypeOptions.value.map((item) => ({ label: item, value: item }))
+    options: appTypeList.value.map((item) => ({ label: item, value: item }))
   }
 ])
 // 顶部操作
@@ -122,29 +121,16 @@ const toolbarButtons: ToolbarButton[] = [
     onClick: () => openCreateEditDialog(false, {})
   }
 ]
-// 过滤后的表格数据
-const filteredApplications = computed(() => {
-  return allApplications.value.filter((item) => {
-    const matchType = queryParams.appType ? item.appType === queryParams.appType : true
-    return matchType
-  })
-})
-// 截取过滤后的表格数据
-const displayTableData = computed(() => {
-  const start = (queryParams.page - 1) * queryParams.pageSize
-  return filteredApplications.value.slice(start, start + queryParams.pageSize)
-})
 
 // 弹框相关
 const formDialogVisible = ref(false)
 const formDialogTitle = ref('')
 const formDialogIsEdit = ref(false)
-const formDialogFields = ref<FormField[]>([])
 const formDialogDefaultData = ref<Record<string, any>>({})
 const formDialogLoading = ref(false)
 
 // 表单字段合集
-const createEditFields: FormField[] = [
+const formDialogFields = computed<FormField[]>(() => [
   {
     prop: 'basicInfo',
     name: '基础信息',
@@ -158,7 +144,7 @@ const createEditFields: FormField[] = [
     required: true
   },
   {
-    prop: 'lifecycle',
+    prop: 'lifeCycle',
     label: '生命周期',
     type: 'select',
     required: true,
@@ -198,35 +184,55 @@ const createEditFields: FormField[] = [
     type: 'select',
     required: true,
     placeholder: '请选择人员',
-    options: personList.value.map((item) => ({ label: item.name, value: item.id }))
+    options: personList.value.map((item) => ({
+      label: item.nickname,
+      value: item.id,
+      dept: item.dept
+    }))
   },
   {
     prop: 'productPerson',
     label: '产品人员',
     type: 'select',
     placeholder: '请选择人员',
-    options: personList.value.map((item) => ({ label: item.name, value: item.id }))
+    options: personList.value.map((item) => ({
+      label: item.nickname,
+      value: item.id,
+      dept: item.dept
+    }))
   },
   {
     prop: 'developer',
     label: '开发人员',
     type: 'select',
     placeholder: '请选择人员',
-    options: personList.value.map((item) => ({ label: item.name, value: item.id }))
+    options: personList.value.map((item) => ({
+      label: item.nickname,
+      value: item.id,
+      dept: item.dept
+    }))
   },
   {
     prop: 'tester',
     label: '测试人员',
     type: 'select',
     placeholder: '请选择人员',
-    options: personList.value.map((item) => ({ label: item.name, value: item.id }))
+    options: personList.value.map((item) => ({
+      label: item.nickname,
+      value: item.id,
+      dept: item.dept
+    }))
   },
   {
     prop: 'operator',
     label: '操作人员',
     type: 'select',
     placeholder: '请选择人员',
-    options: personList.value.map((item) => ({ label: item.name, value: item.id }))
+    options: personList.value.map((item) => ({
+      label: item.nickname,
+      value: item.id,
+      dept: item.dept
+    }))
   },
   {
     prop: 'remark',
@@ -237,7 +243,7 @@ const createEditFields: FormField[] = [
     placeholder: '请输入',
     rows: 3
   }
-]
+])
 // 获取列表数据
 const getList = async () => {
   try {
@@ -250,23 +256,40 @@ const getList = async () => {
   }
 }
 // 获取人员列表
-const getPersonListData = async () => {
+const getPersonList = async () => {
   const res = await apiGetPersonList()
   personList.value = res.data.list
 }
+// 获取应用类型列表
+const getAppTypeList = async () => {
+  const res = await apiGetAppTypeList()
+  appTypeList.value = res.data.list
+}
 // 生命周期标签颜色
-const getLifecycleTagType = (lifecycle: string) => {
+const getLifecycleTagType = (lifeCycle: string) => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
     online: 'success',
     testing: 'warning',
     offline: 'danger'
   }
-  return map[lifecycle] || 'info'
+  return map[lifeCycle] || 'info'
+}
+// 生命周期名称
+const getLifecycleName = (lifeCycle: string) => {
+  const map: Record<string, string> = {
+    online: '已上线',
+    testing: '测试中',
+    offline: '停运'
+  }
+  return map[lifeCycle] || '未知'
 }
 // 过滤生命周期
-const filterHandler = (value: string) => {
-  console.log('filterHandler', value)
-  queryParams.appType = value
+const handleTableFilterChange = (filters: any) => {
+  if (filters.lifeCycle && filters.lifeCycle.length > 0) {
+    queryParams.lifeCycle = filters.lifeCycle[0] // 单选
+  } else {
+    queryParams.lifeCycle = ''
+  }
   queryParams.page = 1
   getList()
 }
@@ -281,7 +304,7 @@ const handleRefresh = (params?: Record<string, any>) => {
   if (params) {
     queryParams.appType = params.appType || ''
     queryParams.page = 1
-    queryParams.lifecycle = params.lifecycle || ''
+    queryParams.lifeCycle = params.lifeCycle || ''
   }
   getList()
 }
@@ -289,16 +312,16 @@ const handleRefresh = (params?: Record<string, any>) => {
 const handlePageChange = (page: number, pageSize: number) => {
   queryParams.page = page
   queryParams.pageSize = pageSize
+  getList()
 }
 // 新建/编辑应用
 const openCreateEditDialog = (isEdit: boolean, data: Record<string, any>) => {
   formDialogIsEdit.value = isEdit
   formDialogTitle.value = isEdit ? '编辑应用' : '新建应用'
-  formDialogFields.value = createEditFields.map((field) => ({ ...field }))
   formDialogDefaultData.value = {
-    lifecycle: 'online',
+    lifeCycle: 'online',
     language: 'zh-hans',
-    timezone: 'Asia/Shanghai',
+    timeZone: 'Asia/Shanghai',
     ...data
   }
   formDialogVisible.value = true
@@ -311,8 +334,10 @@ const handleEdit = (row: ApplicationRecord) => {
 const handleFormDialogConfirm = async (_formData: any, done: (success: boolean) => void) => {
   try {
     formDialogLoading.value = true
+    delete _formData.basicInfo
+    delete _formData.principal
+    _formData.id = formDialogDefaultData.value.id
     await apiCreateApplication(_formData)
-    // TODO: 调用API保存
     if (formDialogIsEdit.value) {
       ElMessage.success('编辑成功')
     } else {
@@ -330,7 +355,8 @@ const handleFormDialogConfirm = async (_formData: any, done: (success: boolean) 
 
 onMounted(() => {
   getList()
-  getPersonListData()
+  getAppTypeList()
+  getPersonList()
 })
 </script>
 

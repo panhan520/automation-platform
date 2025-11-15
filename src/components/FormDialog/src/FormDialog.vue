@@ -77,9 +77,12 @@
           <el-option
             v-for="option in field.options"
             :key="option.value"
-            :label="option.label"
             :value="option.value"
-          />
+            :label="`${getDeptName(option.dept) || ''}   ${option.label}`"
+          >
+            <span v-if="option.dept" class="dept">{{ getDeptName(option.dept) }}</span>
+            {{ option.label }}
+          </el-option>
           <template v-if="!field.options || field.options.length === 0" #empty>
             <div class="empty-select">
               <img class="empty-icon" :src="emptyDataImg" />
@@ -166,6 +169,15 @@ const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
 })
+const getDeptName = (dept: any) => {
+  const map: Record<string, string> = {
+    dev: '开发',
+    test: '测试',
+    ops: '运维',
+    product: '产品'
+  }
+  return map[dept] || ''
+}
 // 统一的重置方法
 const resetForm = async () => {
   // 先重置表单数据
@@ -339,7 +351,9 @@ watch(
   justify-content: flex-end;
   gap: 12px;
 }
-
+.dept {
+  margin-right: 5px;
+}
 .empty-select {
   display: flex;
   flex-direction: column;
