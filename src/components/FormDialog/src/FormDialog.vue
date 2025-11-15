@@ -72,6 +72,7 @@
           :readonly="field.readonly"
           :disabled="field.disabled"
           clearable
+          filterable
           style="width: 100%"
         >
           <el-option
@@ -99,6 +100,7 @@
           :disabled="field.disabled"
           multiple
           clearable
+          filterable
           style="width: 100%"
         >
           <el-option

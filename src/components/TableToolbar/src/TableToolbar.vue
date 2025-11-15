@@ -22,6 +22,7 @@
             :clearable="filter.clearable ?? true"
             :style="getFilterStyle(filter)"
             @change="emitImmediateSearch"
+            filterable
           >
             <el-option
               v-for="option in filter.options || []"
