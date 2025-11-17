@@ -6,47 +6,44 @@
     :total-records="totalRecords"
     :toolbar-buttons="toolbarButtons"
     :filters="toolbarFilters"
+    :columns="tableColumns"
     :query-params="queryParams"
     @search="handleSearch"
     @refresh="handleRefresh"
     @page-change="handlePageChange"
   >
-    <template #columns>
-      <el-table-column prop="taskName" label="任务名称" />
-      <el-table-column prop="templateName" label="关联模版" />
-      <el-table-column prop="status" label="任务状态">
-        <template #default="scope">
-          <el-tag :type="getStatusType(scope.row.status)">{{ scope.row.status }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" />
-      <el-table-column prop="executeTime" label="执行时间" />
-      <TableActionsColumn :actions="tableActions" @edit="handleEdit" @action="handleMoreAction" />
+    <template #status="{ row }">
+      <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+    </template>
+    <template #actions="{ row }">
+      <div class="actions-cell">
+        <el-button type="primary" text size="small" @click="handleEdit(row)">编辑</el-button>
+        <el-button type="success" text size="small" @click="handleExecute(row)">执行</el-button>
+        <el-button type="danger" text size="small" @click="handleDelete(row)">删除</el-button>
+      </div>
     </template>
   </ManagementList>
 
-  <FormDialog
-    v-model:visible="formDialogVisible"
-    :title="formDialogTitle"
-    :create-title="'新建任务'"
-    :edit-title="'编辑任务'"
-    :is-edit="formDialogIsEdit"
-    :fields="formDialogFields"
-    :default-form-data="formDialogDefaultData"
-    :loading="formDialogLoading"
-    @confirm="handleFormDialogConfirm"
+  <TemplateEditorDialog
+    v-model:visible="taskDialogVisible"
+    :title="taskDialogTitle"
+    mode="task"
+    :available-hosts="availableHosts"
+    :initial-data="taskEditorData"
+    :loading="taskDialogLoading"
+    @submit="handleTaskSubmit"
   />
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ManagementList } from '@/components/ManagementList'
-import type { ToolbarButton } from '@/components/ManagementList'
+import { ManagementList, type TableColumn, type ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search } from '@element-plus/icons-vue'
-import { FormDialog, type FormField } from '@/components/FormDialog'
-import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
+import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
+
+type ScriptLanguage = 'Shell' | 'Python'
 
 interface TaskRecord {
   id: number
@@ -55,11 +52,14 @@ interface TaskRecord {
   status: string
   createTime: string
   executeTime: string
+  scriptLanguage: ScriptLanguage
+  templateContent: string
+  remark?: string
 }
 
 const title = '任务管理'
-const allTasks = ref<TaskRecord[]>([])
 const loading = ref(false)
+const allTasks = ref<TaskRecord[]>([])
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
@@ -71,30 +71,9 @@ const toolbarButtons: ToolbarButton[] = [
     key: 'create',
     label: '新建任务',
     type: 'primary',
-    onClick: () => openCreateEditDialog(false, {})
+    onClick: () => openTaskDialog()
   }
 ]
-
-const tableActions: TableAction[] = [
-  {
-    key: 'execute',
-    label: '执行'
-  },
-  {
-    key: 'delete',
-    label: '删除',
-    divided: true,
-    danger: true
-  }
-]
-
-const filteredTasks = computed(() => {
-  return allTasks.value.filter((item) =>
-    queryParams.keyword
-      ? item.taskName.toLowerCase().includes(queryParams.keyword.toLowerCase())
-      : true
-  )
-})
 
 const toolbarFilters: ToolbarFilter[] = [
   {
@@ -106,6 +85,22 @@ const toolbarFilters: ToolbarFilter[] = [
   }
 ]
 
+const tableColumns: TableColumn[] = [
+  { prop: 'taskName', label: '任务名称' },
+  { prop: 'templateName', label: '关联模版' },
+  { prop: 'status', label: '任务状态', slot: 'status' },
+  { prop: 'createTime', label: '创建时间', minWidth: 160 },
+  { prop: 'executeTime', label: '执行时间', minWidth: 160 },
+  { prop: 'actions', label: '操作', width: 200, slot: 'actions' }
+]
+
+const filteredTasks = computed(() => {
+  if (!queryParams.keyword) return allTasks.value
+  return allTasks.value.filter((item) =>
+    item.taskName.toLowerCase().includes(queryParams.keyword.toLowerCase())
+  )
+})
+
 const displayTableData = computed(() => {
   const start = (queryParams.page - 1) * queryParams.pageSize
   return filteredTasks.value.slice(start, start + queryParams.pageSize)
@@ -113,35 +108,77 @@ const displayTableData = computed(() => {
 
 const totalRecords = computed(() => filteredTasks.value.length)
 
-const formDialogVisible = ref(false)
-const formDialogTitle = ref('')
-const formDialogIsEdit = ref(false)
-const formDialogFields = ref<FormField[]>([])
-const formDialogDefaultData = ref<Record<string, any>>({})
-const formDialogLoading = ref(false)
+const availableHosts = ref([
+  { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', internalIp: '172.21.0.12' },
+  { hostId: '2', hostName: '名称2', publicIp: '121.199.4.33', internalIp: '172.21.0.10' }
+])
 
-const createEditFields: FormField[] = [
-  {
-    prop: 'taskName',
-    label: '任务名称',
-    type: 'input',
-    required: true,
-    placeholder: '请输入任务名称'
-  },
-  {
-    prop: 'templateId',
-    label: '关联模版',
-    type: 'select',
-    required: true,
-    placeholder: '请选择模版',
-    options: []
+const taskDialogVisible = ref(false)
+const taskDialogLoading = ref(false)
+const taskEditorData = ref<any>(null)
+const editingTaskId = ref<number | null>(null)
+const taskDialogTitle = computed(() => (editingTaskId.value ? '编辑任务' : '新建任务'))
+
+const openTaskDialog = (row?: TaskRecord) => {
+  if (row) {
+    editingTaskId.value = row.id
+    taskEditorData.value = {
+      taskName: row.taskName,
+      templateContent: row.templateContent,
+      scriptLanguage: row.scriptLanguage,
+      remark: row.remark,
+      parameters: [],
+      hosts: []
+    }
+  } else {
+    editingTaskId.value = null
+    taskEditorData.value = {
+      taskName: '',
+      templateContent: '',
+      scriptLanguage: 'Shell',
+      remark: '',
+      parameters: [],
+      hosts: []
+    }
   }
-]
+  taskDialogVisible.value = true
+}
+
+const handleTaskSubmit = (payload: any) => {
+  taskDialogLoading.value = true
+  setTimeout(() => {
+    if (editingTaskId.value) {
+      const target = allTasks.value.find((task) => task.id === editingTaskId.value)
+      if (target) {
+        target.taskName = payload.taskName
+        target.templateContent = payload.templateContent
+        target.scriptLanguage = payload.scriptLanguage
+        target.remark = payload.remark
+      }
+      ElMessage.success('任务更新成功')
+    } else {
+      allTasks.value.unshift({
+        id: Date.now(),
+        taskName: payload.taskName,
+        templateName: payload.taskName,
+        status: '待执行',
+        createTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        executeTime: '-',
+        scriptLanguage: payload.scriptLanguage,
+        templateContent: payload.templateContent,
+        remark: payload.remark
+      })
+      ElMessage.success('任务创建成功')
+    }
+    taskDialogLoading.value = false
+    taskDialogVisible.value = false
+  }, 500)
+}
 
 const getStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-    运行中: 'success',
-    已停止: 'info',
+    待执行: 'info',
+    运行中: 'warning',
     已完成: 'success',
     失败: 'danger'
   }
@@ -149,22 +186,22 @@ const getStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info
 }
 
 const getList = async () => {
-  try {
-    loading.value = true
-    // TODO: 调用API获取数据
+  loading.value = true
+  setTimeout(() => {
     allTasks.value = [
       {
         id: 1,
-        taskName: '任务1',
-        templateName: 'Nginx部署模版',
-        status: '运行中',
-        createTime: '2024-03-15 10:00:00',
-        executeTime: '2024-03-15 10:05:00'
+        taskName: '巡检-内存检查',
+        templateName: '获取内存使用情况',
+        status: '已完成',
+        createTime: '2025-01-12 10:00:00',
+        executeTime: '2025-01-12 10:01:12',
+        scriptLanguage: 'Shell',
+        templateContent: 'free -m'
       }
     ]
-  } finally {
     loading.value = false
-  }
+  }, 300)
 }
 
 const handleSearch = (params: Record<string, any>) => {
@@ -181,69 +218,32 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
 }
 
-const openCreateEditDialog = (isEdit: boolean, data: Record<string, any>) => {
-  formDialogIsEdit.value = isEdit
-  formDialogTitle.value = ''
-  formDialogFields.value = createEditFields.map((field) => ({ ...field }))
-  formDialogDefaultData.value = { ...data }
-  formDialogVisible.value = true
-}
-
 const handleEdit = (row: TaskRecord) => {
-  openCreateEditDialog(true, row)
-}
-
-const handleMoreAction = (action: string, row: TaskRecord) => {
-  switch (action) {
-    case 'execute':
-      handleExecute(row)
-      break
-    case 'delete':
-      handleDelete(row)
-      break
-    default:
-      ElMessage.info('功能待实现')
-  }
+  openTaskDialog(row)
 }
 
 const handleExecute = async (row: TaskRecord) => {
   try {
     loading.value = true
-    // TODO: 调用API执行
-    ElMessage.success(`任务 ${row.taskName} 执行成功`)
+    setTimeout(() => {
+      row.status = '已完成'
+      row.executeTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+      loading.value = false
+      ElMessage.success(`任务 ${row.taskName} 执行成功`)
+    }, 600)
   } catch (error) {
-    ElMessage.error('执行失败')
-  } finally {
     loading.value = false
+    ElMessage.error('执行失败')
   }
 }
 
 const handleDelete = async (row: TaskRecord) => {
-  try {
-    loading.value = true
-    // TODO: 调用API删除
-    ElMessage.success(`删除任务 ${row.taskName} 成功`)
-    getList()
-  } catch (error) {
-    ElMessage.error('删除失败')
-  } finally {
+  loading.value = true
+  setTimeout(() => {
+    allTasks.value = allTasks.value.filter((task) => task.id !== row.id)
     loading.value = false
-  }
-}
-
-const handleFormDialogConfirm = async (formData: any, done: (success: boolean) => void) => {
-  try {
-    formDialogLoading.value = true
-    // TODO: 调用API保存
-    ElMessage.success(formDialogIsEdit.value ? '编辑成功' : '创建成功')
-    done(true)
-    getList()
-  } catch (error) {
-    ElMessage.error('保存失败')
-    done(false)
-  } finally {
-    formDialogLoading.value = false
-  }
+    ElMessage.success('删除成功')
+  }, 300)
 }
 
 onMounted(() => {
@@ -251,25 +251,9 @@ onMounted(() => {
 })
 </script>
 
-<style lang="less" scoped>
-.page-title {
-  font-size: 18px;
-  line-height: 26px;
-  color: #0c0d0e;
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.table-info {
-  font-size: 14px;
-  color: #606266;
-  margin-top: 16px;
-}
-
-.bulk-action-bar {
+<style scoped lang="less">
+.actions-cell {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 16px;
+  gap: 8px;
 }
 </style>

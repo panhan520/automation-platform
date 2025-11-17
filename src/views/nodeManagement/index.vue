@@ -131,6 +131,7 @@ import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import NodeFormDialog from './components/NodeFormDialog.vue'
+import { apiGetNodeList } from '@/api/node/index'
 import { NodeRecord } from '@/api/node/type'
 import { ColumnCustomDialog, type ColumnItem } from '@/components/ColumnCustomDialog'
 import { OperationConfirmDialog } from '@/components/OperationConfirmDialog'
@@ -396,6 +397,7 @@ const getNodeStatusType = (status: string): 'success' | 'warning' | 'danger' | '
 const getList = async () => {
   try {
     loading.value = true
+    // await apiGetNodeList({ page: queryParams.page, pageSize: queryParams.pageSize })
     // TODO: 调用API获取节点数据
     const mockData: NodeRecord[] = [
       {

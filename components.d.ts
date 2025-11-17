@@ -35,6 +35,7 @@ declare module 'vue' {
     ElLink: typeof import('element-plus/es')['ElLink']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPagination: typeof import('element-plus/es')['ElPagination']
+    ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRow: typeof import('element-plus/es')['ElRow']
     ElScrollbar: typeof import('element-plus/es')['ElScrollbar']
     ElSegmented: typeof import('element-plus/es')['ElSegmented']
@@ -46,6 +47,7 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     FormDialog: typeof import('./src/components/FormDialog/src/FormDialog.vue')['default']
+    HostSelectorDialog: typeof import('./src/components/HostSelectorDialog/src/HostSelectorDialog.vue')['default']
     Icon: typeof import('./src/components/Icon/src/Icon.vue')['default']
     ImportExcelDialog: typeof import('./src/components/ImportExcelDialog/src/ImportExcelDialog.vue')['default']
     InviteDialog: typeof import('./src/components/InviteDialog/src/InviteDialog.vue')['default']
@@ -64,6 +66,8 @@ declare module 'vue' {
     TableFilterPopover: typeof import('./src/components/TableFilterPopover/src/TableFilterPopover.vue')['default']
     TableToolbar: typeof import('./src/components/TableToolbar/src/TableToolbar.vue')['default']
     TaskDetailPanel: typeof import('./src/components/TaskDetailPanel/src/TaskDetailPanel.vue')['default']
+    TemplateEditorDialog: typeof import('./src/components/TemplateEditorDialog/src/TemplateEditorDialog.vue')['default']
+    TemplateSelectDialog: typeof import('./src/components/TemplateSelectDialog/src/TemplateSelectDialog.vue')['default']
     UniversalFormDialog: typeof import('./src/components/UniversalFormDialog/src/UniversalFormDialog.vue')['default']
   }
   export interface GlobalDirectives {

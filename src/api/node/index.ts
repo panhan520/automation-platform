@@ -1,5 +1,9 @@
 import request from '@/axios/index'
 
+// 获取节点列表
+export const apiGetNodeList = (data): Promise<IPaginationResponse> => {
+  return request.get({ url: '/api/v1/node/get/', params: data })
+}
 // 批量操作 Agent
 export const batchOperateAgent = (data: { operation: string; nodeIds: number[] }) => {
   return request.post('/api/v1/node/batch-operate', data)
@@ -11,7 +15,7 @@ export const operateAgent = (data: { operation: string; nodeId: number }) => {
 }
 
 // 获取任务列表
-export const getTaskList = () => {
+export const getTaskList = (): Promise<IPaginationResponse> => {
   console.log('获取执行任务列表接口')
   return {
     data: {
@@ -91,7 +95,7 @@ export const getTaskList = () => {
       ]
     }
   }
-  // return request.get('/api/v1/node/tasks', { params })
+  // return request.get({ url: '/api/v1/node/get/', params: data })
 }
 
 // 获取任务详情
@@ -139,11 +143,6 @@ export const getTaskDetail = (taskId: string) => {
     }
   }
   // return request.get(`/api/v1/node/tasks/${taskId}`)
-}
-
-// 获取节点列表
-export const getNodeList = (params?: any) => {
-  return request.get('/api/v1/node/list', { params })
 }
 
 // 导入Excel
