@@ -298,7 +298,7 @@ const managementListRef = ref<InstanceType<typeof ManagementList>>()
 const tableColumns = ref<ColumnItem[]>([
   { prop: 'internalIp', label: '内网IP', visible: true, order: 0, sortable: true, minWidth: 100 },
   { prop: 'hostname', label: '主机名', visible: true, order: 1, sortable: true, minWidth: 120 },
-  { prop: 'hostId', label: '主机ID', visible: true, order: 2 },
+  { prop: 'hostId', label: '主机ID', visible: true, order: 2, isDisabled: true },
   { prop: 'agentId', label: 'AGENT ID', visible: true, order: 3, minWidth: 160 },
   { prop: 'applicationType', label: '应用类型', visible: true, order: 4, slot: true },
   { prop: 'region', label: '地区', visible: true, order: 5 },

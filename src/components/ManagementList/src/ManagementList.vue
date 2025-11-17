@@ -11,6 +11,7 @@
     />
     <div class="total-records">共 {{ totalRecords }} 个{{ title.slice(0, 2) }}</div>
     <el-table
+      ref="tableRef"
       :data="tableData"
       :row-key="tableData && tableData.length && tableData[0].id ? 'id' : 'userId'"
       border
@@ -63,11 +64,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { TableToolbar } from '@/components/TableToolbar'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Pagination } from '@/components/Pagination'
+import Sortable from 'sortablejs'
 
 export interface TableColumn {
   prop: string
@@ -118,6 +120,7 @@ interface Props {
     pageSize: number
     [key: string]: any
   }
+  storageKey?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -132,7 +135,8 @@ const props = withDefaults(defineProps<Props>(), {
   queryParams: () => ({
     page: 1,
     pageSize: 10
-  })
+  }),
+  storageKey: 'nodeManagement_columnConfig'
 })
 
 const emit = defineEmits<{
@@ -146,11 +150,12 @@ const emit = defineEmits<{
 
 const selectedRows = ref<any[]>([])
 const columnConfig = ref<TableColumn[]>([])
+const tableRef = ref<InstanceType<typeof import('element-plus').ElTable>>()
+let sortableInstance: Sortable | null = null
 
 // 本地分页状态
 const localPage = ref(props.queryParams.page)
 const localPageSize = ref(props.queryParams.pageSize)
-
 // 显示的列（根据配置过滤和排序）
 const displayColumns = computed(() => {
   // 优先使用 columnConfig，如果为空则使用 props.columns
@@ -160,14 +165,60 @@ const displayColumns = computed(() => {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 })
 
+// 从 localStorage 读取配置
+const loadFromStorage = (): TableColumn[] | null => {
+  try {
+    const stored = localStorage.getItem(props.storageKey)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  } catch (error) {
+    console.error('Failed to load column config from localStorage:', error)
+  }
+  return null
+}
+
+// 保存配置到 localStorage
+const saveToStorage = (columns: TableColumn[]) => {
+  try {
+    localStorage.setItem(props.storageKey, JSON.stringify(columns))
+  } catch (error) {
+    console.error('Failed to save column config to localStorage:', error)
+  }
+}
+
 // 初始化列配置
 const initColumnConfig = () => {
   if (props.columns.length > 0) {
-    columnConfig.value = props.columns.map((col, index) => ({
-      ...col,
-      visible: col.visible !== false,
-      order: col.order !== undefined ? col.order : index
-    }))
+    // 尝试从 localStorage 加载配置
+    const storedConfig = loadFromStorage()
+    if (storedConfig) {
+      // 合并存储的配置和当前列配置
+      const storedMap = new Map(storedConfig.map((col) => [col.prop, col]))
+      columnConfig.value = props.columns.map((col) => {
+        const stored = storedMap.get(col.prop)
+        if (stored) {
+          return {
+            ...col,
+            visible: stored.visible !== false,
+            order: stored.order !== undefined ? stored.order : (col.order ?? 0)
+          }
+        }
+        return {
+          ...col,
+          visible: col.visible !== false,
+          order: col.order !== undefined ? col.order : (col.order ?? 0)
+        }
+      })
+      // 按 order 排序
+      columnConfig.value.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    } else {
+      columnConfig.value = props.columns.map((col, index) => ({
+        ...col,
+        visible: col.visible !== false,
+        order: col.order !== undefined ? col.order : index
+      }))
+    }
   }
 }
 
@@ -180,6 +231,73 @@ watch(
   { immediate: true, deep: true }
 )
 
+// 精准锁定表头 row
+const getHeaderRow = () => {
+  if (!tableRef.value) return null
+  const tableEl = tableRef.value.$el
+  if (!tableEl) return null
+
+  return tableEl.querySelector(
+    '.el-table__header-wrapper table thead tr'
+  ) as HTMLTableRowElement | null
+}
+
+const initTableColumnDrag = () => {
+  setTimeout(() => {
+    const headerRow = getHeaderRow()
+    if (!headerRow) return
+
+    // 正确获取所有 TH
+    let headerCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
+
+    // 排除 selection 列
+    if (props.showSelection) {
+      headerCells = headerCells.slice(1)
+    }
+
+    if (!headerCells.length) return
+
+    // 销毁旧实例
+    if (sortableInstance) {
+      sortableInstance.destroy()
+      sortableInstance = null
+    }
+
+    // ⭐ 移除旧的 Sortable 绑定标记，避免重复绑定
+    headerCells.forEach((cell) => {
+      cell.removeAttribute('data-sortable-id')
+    })
+
+    // 创建 Sortable
+    sortableInstance = Sortable.create(headerRow, {
+      animation: 150,
+      handle: '.cell', // 只拖 div.cell 区域
+      draggable: 'th.el-table__cell', // 限制可拖元素
+      filter: (item) => {
+        if (props.showSelection && item instanceof Element && item === headerCells[0]) return true
+
+        return false
+      },
+      onEnd: ({ oldIndex, newIndex }) => {
+        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
+
+        // 排除 selection 列后的真实索引
+        const start = props.showSelection ? oldIndex - 1 : oldIndex
+        const end = props.showSelection ? newIndex - 1 : newIndex
+        if (start < 0 || end < 0) return
+
+        const cols = [...columnConfig.value]
+        const moved = cols.splice(start, 1)[0]
+        cols.splice(end, 0, moved)
+
+        cols.forEach((c, i) => (c.order = i))
+        columnConfig.value = cols
+        saveToStorage(cols)
+      }
+    })
+  })
+}
+
 // 暴露方法供父组件调用
 defineExpose({
   updateColumnConfig: (columns: TableColumn[]) => {
@@ -187,6 +305,10 @@ defineExpose({
       ...col,
       order: col.order !== undefined ? col.order : index
     }))
+    // 保存到 localStorage
+    saveToStorage(columnConfig.value)
+    // 重新初始化拖拽
+    initTableColumnDrag()
   },
   getColumnConfig: () => columnConfig.value
 })
@@ -230,6 +352,26 @@ const handleBulkAction = (actionKey: string) => {
   }
   emit('bulk-action', actionKey, selectedRows.value)
 }
+
+// 监听 displayColumns 变化，重新初始化拖拽
+watch(
+  () => displayColumns.value,
+  () => {
+    initTableColumnDrag()
+  },
+  { flush: 'post' }
+)
+
+onMounted(() => {
+  initTableColumnDrag()
+})
+
+onUnmounted(() => {
+  if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
+})
 </script>
 
 <style lang="less" scoped>

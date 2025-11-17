@@ -4,6 +4,37 @@ import request from '@/axios/index'
 export const apiGetNodeList = (data): Promise<IPaginationResponse> => {
   return request.get({ url: '/api/v1/node/get/', params: data })
 }
+
+// 节点统计
+export const apiGetNodeStatistics = (data): Promise<IPaginationResponse> => {
+  return request.get({ url: '/api/v1/node/statistics/', params: data })
+}
+
+// 创建/更新应用
+export const apiCreateNode = (data): Promise<IPaginationResponse> => {
+  return request.post({ url: '/api/v1/node/post/', data })
+}
+
+// 下载Excel模板
+export const apiGetNodeDownload = (data): Promise<IPaginationResponse> => {
+  return request.get({ url: '/api/v1/node/download/', params: data })
+}
+
+// 通过Excel导入节点数据
+export const apiNodeImport = (data): Promise<IPaginationResponse> => {
+  return request.post({ url: '/api/v1/node/import/', data })
+}
+
+// 单节点SSH连通性探测
+export const apiNodeSingleProbe = (data): Promise<IPaginationResponse> => {
+  return request.post({ url: '/api/v1/node/singleProbe/', data })
+}
+
+// 批量节点SSH连通性探测
+export const apiNodeBatchProbe = (data): Promise<IPaginationResponse> => {
+  return request.post({ url: '/api/v1/node/batchProbe/', data })
+}
+
 // 批量操作 Agent
 export const batchOperateAgent = (data: { operation: string; nodeIds: number[] }) => {
   return request.post('/api/v1/node/batch-operate', data)

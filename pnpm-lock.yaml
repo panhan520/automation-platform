@@ -53,6 +53,9 @@ importers:
       qs:
         specifier: ^6.13.1
         version: 6.13.1
+      sortablejs:
+        specifier: ^1.15.6
+        version: 1.15.6
       vite-plugin-qiankun:
         specifier: ^1.0.15
         version: 1.0.15(typescript@5.7.3)(vite@6.0.7(@types/node@22.10.5)(jiti@2.4.2)(less@4.2.1)(sass-embedded@1.93.0)(sass@1.93.0)(terser@5.37.0)(tsx@4.20.6)(yaml@2.7.0))
@@ -5089,6 +5092,9 @@ packages:
   snapdragon@0.8.2:
     resolution: {integrity: sha1-ZJIufFZbDhQgS6GqfWlkJ40lGC0=}
     engines: {node: '>=0.10.0'}
+
+  sortablejs@1.15.6:
+    resolution: {integrity: sha512-aNfiuwMEpfBM/CN6LY0ibyhxPfPbyFeBTYJKCvzkJ2GkUpazIt3H+QIPAMHwqQ7tMKaHz1Qj+rJJCqljnf4p3A==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -11228,6 +11234,8 @@ snapshots:
       use: 3.1.1
     transitivePeerDependencies:
       - supports-color
+
+  sortablejs@1.15.6: {}
 
   source-map-js@1.2.1: {}
 
