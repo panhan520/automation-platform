@@ -7,43 +7,73 @@
     :toolbar-buttons="toolbarButtons"
     :filters="toolbarFilters"
     :query-params="queryParams"
+    :columns="tableColumnsForList"
     @search="handleSearch"
     @refresh="handleRefresh"
     @page-change="handlePageChange"
     @filter-change="handleTableFilterChange"
+    storageKey="applicationManagement_columnConfig"
   >
-    <template #columns>
-      <el-table-column prop="appType" label="应用类型" />
-      <el-table-column
-        column-key="lifeCycle"
-        prop="lifeCycle"
-        label="生命周期"
-        :filters="[
-          { text: '已上线', value: 'online' },
-          { text: '测试中', value: 'testing' },
-          { text: '停运', value: 'offline' }
-        ]"
-        :filter-multiple="false"
-      >
-        <template #default="scope">
-          <el-tag :type="getLifecycleTagType(scope.row.lifeCycle)">
-            {{ getLifecycleName(scope.row.lifeCycle) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="timeZone" label="时区" />
-      <el-table-column prop="language" label="语言">
-        <template #default="scope">
-          {{
-            scope.row.language === 'zh-hans'
-              ? '简体中文'
-              : scope.row.language === 'en'
-                ? '英语'
-                : '其他'
-          }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="opsPersonNickname" label="运维人员" />
+    <!-- 表格列 -->
+    <template #columns="{ displayColumns }">
+      <template v-for="col in displayColumns" :key="col.prop">
+        <el-table-column
+          v-if="col.prop !== 'actions'"
+          :prop="col.prop"
+          :label="col.label"
+          :width="col.width"
+          :min-width="col.minWidth"
+          :sortable="col.sortable"
+          :filters="col.filters"
+          :filter-multiple="col.filterMultiple"
+          :column-key="col.prop"
+        >
+          <template v-if="col.slot" #default="scope">
+            <el-tag
+              v-if="col.prop === 'lifeCycle'"
+              :type="getLifecycleTagType(scope.row.lifeCycle)"
+            >
+              {{ getLifecycleName(scope.row.lifeCycle) }}
+            </el-tag>
+            <template v-else-if="col.prop === 'language'">{{
+              scope.row.language === 'zh-hans'
+                ? '简体中文'
+                : scope.row.language === 'en'
+                  ? '英语'
+                  : '其他'
+            }}</template>
+            <span v-else>{{ scope.row[col.prop] }}</span>
+          </template>
+        </el-table-column>
+        <!-- <el-table-column
+          column-key="lifeCycle"
+          prop="lifeCycle"
+          label="生命周期"
+          :filters="[
+            { text: '已上线', value: 'online' },
+            { text: '测试中', value: 'testing' },
+            { text: '停运', value: 'offline' }
+          ]"
+          :filter-multiple="false"
+        >
+          <template #default="scope">
+            <el-tag :type="getLifecycleTagType(scope.row.lifeCycle)">
+              {{ getLifecycleName(scope.row.lifeCycle) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="language" label="语言">
+          <template #default="scope">
+            {{
+              scope.row.language === 'zh-hans'
+                ? '简体中文'
+                : scope.row.language === 'en'
+                  ? '英语'
+                  : '其他'
+            }}
+          </template>
+        </el-table-column> -->
+      </template>
       <TableActionsColumn @edit="handleEdit" />
     </template>
   </ManagementList>
@@ -61,7 +91,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ManagementList } from '@/components/ManagementList'
+import { ManagementList, type TableColumn } from '@/components/ManagementList'
+import { type ColumnItem } from '@/components/ColumnCustomDialog'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { FormDialog, type FormField } from '@/components/FormDialog'
@@ -72,6 +103,7 @@ import {
   apiGetAppTypeList,
   apiCreateApplication
 } from '@/api/application'
+import { filter } from 'lodash-es'
 
 interface ApplicationRecord {
   id: number
@@ -244,6 +276,42 @@ const formDialogFields = computed<FormField[]>(() => [
     rows: 3
   }
 ])
+const tableColumns = ref<ColumnItem[]>([
+  { prop: 'appType', label: '应用类型', visible: true, order: 0 },
+  {
+    prop: 'lifeCycle',
+    label: '生命周期',
+    visible: true,
+    order: 1,
+    filters: [
+      { text: '已上线', value: 'online' },
+      { text: '测试中', value: 'testing' },
+      { text: '停运', value: 'offline' }
+    ],
+    filterMultiple: false,
+    slot: true
+  },
+  { prop: 'timeZone', label: '时区', visible: true, order: 2 },
+  { prop: 'language', label: '语言', visible: true, order: 3, slot: true },
+  { prop: 'opsPersonNickname', label: '运维人员', visible: true, order: 4, slot: true }
+])
+
+// 转换为 TableColumn 类型供 ManagementList 使用
+const tableColumnsForList = computed<TableColumn[]>(() => {
+  return tableColumns.value.map((col) => ({
+    prop: col.prop,
+    label: col.label,
+    width: col.width,
+    minWidth: col.minWidth,
+    sortable: col.sortable,
+    visible: col.visible,
+    order: col.order,
+    isDisabled: col.isDisabled,
+    filters: col.filters,
+    filterMultiple: col.filterMultiple,
+    slot: typeof col.slot === 'string' ? col.slot : col.slot ? col.prop : undefined
+  }))
+})
 // 获取列表数据
 const getList = async () => {
   try {

@@ -113,8 +113,8 @@ const operationMap = computed(() => ({
   test: {
     title: props.isBatch ? '批量连通测试' : '连通测试',
     text: props.isBatch
-      ? '将对【主机名称/IP】等【主机数量】台主机执行连通测试。'
-      : '将对【主机名称/IP】主机执行连通测试。',
+      ? '将对【主机名称/IP】等【主机数量】台主机进行连通测试。'
+      : '将对【主机名称/IP】主机进行连通测试。',
     buttonText: '测试'
   }
 }))

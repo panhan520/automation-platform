@@ -16,5 +16,5 @@ export const apiGetPersonList = (): Promise<IPaginationResponse> => {
 
 // 获取应用类型列表
 export const apiGetAppTypeList = (): Promise<IPaginationResponse> => {
-  return request.get({ url: '/api/v1/application/app_type/' })
+  return request.get({ url: '/api/v1/application/appType/' })
 }

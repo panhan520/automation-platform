@@ -136,6 +136,9 @@ body {
 .el-textarea__inner {
   font-size: 13px !important;
 }
+.el-tag {
+  border-radius: 30px !important;
+}
 .el-tag.el-tag--info {
   --el-tag-bg-color: #f1f3f5 !important;
   --el-tag-border-color: transparent !important;
@@ -172,6 +175,13 @@ body {
 .el-checkbox__label {
   font-size: 13px !important;
   font-weight: 400;
+}
+.el-checkbox__input.is-disabled.is-checked .el-checkbox__inner {
+  background-color: rgb(160, 207, 255);
+  border-color: rgb(160, 207, 255);
+}
+.el-checkbox__input.is-disabled.is-checked .el-checkbox__inner:after {
+  border-color: #fff;
 }
 // 表单
 .el-form-item__label {

@@ -6,8 +6,8 @@ export const apiGetNodeList = (data): Promise<IPaginationResponse> => {
 }
 
 // 节点统计
-export const apiGetNodeStatistics = (data): Promise<IPaginationResponse> => {
-  return request.get({ url: '/api/v1/node/statistics/', params: data })
+export const apiGetNodeStatistics = () => {
+  return request.get({ url: '/api/v1/node/statistics/' })
 }
 
 // 创建/更新应用
@@ -33,6 +33,11 @@ export const apiNodeSingleProbe = (data): Promise<IPaginationResponse> => {
 // 批量节点SSH连通性探测
 export const apiNodeBatchProbe = (data): Promise<IPaginationResponse> => {
   return request.post({ url: '/api/v1/node/batchProbe/', data })
+}
+
+// 节点标签列表
+export const apiGetNodeTags = (): Promise<IPaginationResponse> => {
+  return request.get({ url: '/api/v1/node/nodeTags/' })
 }
 
 // 批量操作 Agent

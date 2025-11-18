@@ -1,16 +1,18 @@
 export interface NodeRecord {
   id: number
-  internalIp: string
+  innerIp: string
   publicIp: string
-  hostname: string
-  hostId: string
-  agentId: string
-  applicationType: string
+  hostName: string
+  appTypeName: string
   region: string
   os: string
-  agentStatus: string
-  nodeStatus: string
-  agentVersion: string
-  lastHeartbeat: string
-  tags?: Array<{ key: string; value: string }>
+  status: string
+  lastCheckTime: string
+  nodeTags?: Array<{ key: string; value: string }>
+  loginAccount?: string
+  loginIp?: string
+  loginPort?: number
+  authMethod?: string
+  passwordKey?: string
+  appType?: number
 }

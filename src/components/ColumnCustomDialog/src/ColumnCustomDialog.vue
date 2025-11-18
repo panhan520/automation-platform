@@ -53,6 +53,8 @@ export interface ColumnItem {
   sortable?: boolean | string
   slot?: boolean | string
   isDisabled?: boolean
+  filters?: Array<{ text: string; value: string }>
+  filterMultiple?: boolean
 }
 
 interface Props {
@@ -62,7 +64,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  storageKey: 'nodeManagement_columnConfig'
+  storageKey: ''
 })
 
 const emit = defineEmits<{

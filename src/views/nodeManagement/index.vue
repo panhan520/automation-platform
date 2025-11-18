@@ -3,7 +3,7 @@
     <ManagementList
       ref="managementListRef"
       :title="title"
-      :table-data="displayTableData"
+      :table-data="allNodes"
       :loading="loading"
       :total-records="totalRecords"
       :show-selection="true"
@@ -15,6 +15,7 @@
       @refresh="handleRefresh"
       @page-change="handlePageChange"
       @selection-change="handleSelectionChange"
+      storageKey="nodeManagement_columnConfig"
     >
       <!-- 统计信息 -->
       <template #extra-toolbar>
@@ -61,31 +62,23 @@
             :sortable="col.sortable"
           >
             <template v-if="col.slot" #default="scope">
-              <el-tag v-if="col.prop === 'applicationType'">{{ scope.row.applicationType }}</el-tag>
-              <el-tag
-                v-else-if="col.prop === 'agentStatus'"
-                :type="getAgentStatusType(scope.row.agentStatus)"
-              >
-                {{ scope.row.agentStatus }}
-              </el-tag>
-              <el-tag
-                v-else-if="col.prop === 'nodeStatus'"
-                :type="getNodeStatusType(scope.row.nodeStatus)"
-              >
-                {{ scope.row.nodeStatus }}
+              <el-tag v-if="col.prop === 'appTypeName'">{{ scope.row.appTypeName }}</el-tag>
+              <el-tag v-else-if="col.prop === 'status'" :type="getNodeStatusType(scope.row.status)">
+                <span class="status-color" :class="getNodeStatusColor(scope.row.status)"></span
+                >{{ getNodeStatusText(scope.row.status) }}
               </el-tag>
               <span v-else>{{ scope.row[col.prop] }}</span>
             </template>
           </el-table-column>
         </template>
         <TableActionsColumn
-          :actions="getRowActions"
+          :actions="[{ key: 'test', label: '连通测试' }]"
           @edit="handleEdit"
           @action="handleMoreAction"
         />
       </template>
     </ManagementList>
-
+    <!-- 新建/编辑节点的对话框 -->
     <NodeFormDialog
       v-model:visible="nodeDialogVisible"
       :loading="nodeDialogLoading"
@@ -102,6 +95,7 @@
       v-model:visible="columnDialogVisible"
       :columns="tableColumns"
       @confirm="handleColumnConfirm"
+      storageKey="nodeManagement_columnConfig"
     />
 
     <!-- 操作确认对话框 -->
@@ -131,7 +125,14 @@ import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import NodeFormDialog from './components/NodeFormDialog.vue'
-import { apiGetNodeList } from '@/api/node/index'
+import {
+  apiGetNodeList,
+  apiGetNodeStatistics,
+  apiGetNodeTags,
+  apiNodeSingleProbe,
+  apiNodeBatchProbe
+} from '@/api/node/index'
+import { apiGetAppTypeList } from '@/api/application'
 import { NodeRecord } from '@/api/node/type'
 import { ColumnCustomDialog, type ColumnItem } from '@/components/ColumnCustomDialog'
 import { OperationConfirmDialog } from '@/components/OperationConfirmDialog'
@@ -143,49 +144,60 @@ const loading = ref(false)
 // 表格数据
 const allNodes = ref<NodeRecord[]>([])
 // 状态统计
-const stats = reactive({
-  total: 156,
-  online: 142,
-  offline: 8,
-  abnormal: 6
+const stats = ref({
+  total: 0,
+  online: 0,
+  offline: 0,
+  abnormal: 0
 })
+// 应用类型列表
+const appTypeList = ref<string[]>([])
+const nodeTagOptions = ref<string[]>([])
 // 查询条件
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  keyword: '',
-  agentStatus: '',
-  applicationType: '',
-  nodeTag: ''
+  query: '',
+  appTypeName: '',
+  nodeTags: ''
 })
 // 选中数据
 const selectedRows = ref<NodeRecord[]>([])
 // 批量操作列表
-const bulkDropdownOptions = [
-  { label: '安装 Agent', command: 'install' },
-  { label: '升级 Agent', command: 'upgrade' },
-  { label: '上线 Agent', command: 'online' },
-  { label: '下线 Agent', command: 'offline' },
-  { label: '重启 Agent', command: 'restart' },
-  { label: '重装 Agent', command: 'reinstall' },
-  { label: '卸载 Agent', command: 'uninstall' },
-  { label: '连通测试', command: 'test' }
-]
-// 下拉选
-const agentStatusOptions = [
-  { label: '运行中', value: '运行中' },
-  { label: '异常', value: '异常' },
-  { label: '未安装', value: '未安装' }
-]
-const applicationTypeOptions = [
-  { label: '云拨测', value: '云拨测' },
-  { label: 'CDN', value: 'CDN' },
-  { label: '监控', value: '监控' }
-]
-const nodeTagOptions = [
-  { label: '标签1', value: '标签1' },
-  { label: '标签2', value: '标签2' }
-]
+// const bulkDropdownOptions = [{ label: '连通测试', command: 'test' }]
+// 顶部筛选栏
+const toolbarFilters = computed<ToolbarFilter[]>(() => [
+  {
+    key: 'query',
+    type: 'input',
+    placeholder: '搜索公网IP/内网IP/主机名称',
+    width: 200,
+    prefixIcon: Search
+  },
+  {
+    key: 'appTypeName',
+    type: 'select',
+    placeholder: '应用类型',
+    width: 150,
+    clearable: true,
+    options: appTypeList.value.map((item) => ({ label: item, value: item }))
+  },
+  {
+    key: 'nodeTags',
+    type: 'select',
+    placeholder: '节点标签',
+    width: 150,
+    clearable: true,
+    options: nodeTagOptions.value.map((item) => ({ label: item, value: item }))
+  },
+  {
+    key: 'reset',
+    type: 'text',
+    placeholder: '重置',
+    icon: Refresh,
+    onClick: () => handleReset()
+  }
+])
 // 顶部操作栏
 const toolbarButtons = computed<ToolbarButton[]>(() => [
   {
@@ -195,11 +207,16 @@ const toolbarButtons = computed<ToolbarButton[]>(() => [
     tooltip: '定制列',
     onClick: () => handleSettings()
   },
+  // {
+  //   key: 'bulk',
+  //   label: '批量操作',
+  //   dropdownOptions: bulkDropdownOptions,
+  //   onCommand: handleBulkCommand
+  // },
   {
     key: 'bulk',
-    label: '批量操作',
-    dropdownOptions: bulkDropdownOptions,
-    onCommand: handleBulkCommand
+    label: '连通测试',
+    onClick: () => handleConnectTest()
   },
   {
     key: 'import',
@@ -213,78 +230,6 @@ const toolbarButtons = computed<ToolbarButton[]>(() => [
     onClick: () => handleCreate()
   }
 ])
-// 顶部筛选栏
-const toolbarFilters = computed<ToolbarFilter[]>(() => [
-  {
-    key: 'keyword',
-    type: 'input',
-    placeholder: '搜索IP/主机名称/Agent ID',
-    width: 200,
-    prefixIcon: Search
-  },
-  {
-    key: 'agentStatus',
-    type: 'select',
-    placeholder: 'Agent状态',
-    width: 150,
-    clearable: true,
-    options: agentStatusOptions
-  },
-  {
-    key: 'applicationType',
-    type: 'select',
-    placeholder: '应用类型',
-    width: 150,
-    clearable: true,
-    options: applicationTypeOptions
-  },
-  {
-    key: 'nodeTag',
-    type: 'select',
-    placeholder: '节点标签',
-    width: 150,
-    clearable: true,
-    options: nodeTagOptions
-  },
-  {
-    key: 'reset',
-    type: 'text',
-    placeholder: '重置',
-    icon: Refresh,
-    onClick: () => handleReset()
-  }
-])
-// 表格每行操作列的动态函数（更多）
-const getRowActions = (row: NodeRecord): TableAction[] => {
-  switch (row.agentStatus) {
-    case '运行中':
-      return [
-        { key: 'offline', label: '下线' },
-        { key: 'restart', label: '重启' },
-        { key: 'reinstall', label: '重装' },
-        { key: 'uninstall', label: '卸载' },
-        { key: 'upgrade', label: '升级' },
-        { key: 'test', label: '连通测试' },
-        { key: 'log', label: '查看日志' }
-      ]
-    case '异常':
-      return [
-        { key: 'restart', label: '重启' },
-        { key: 'reinstall', label: '重装' },
-        { key: 'uninstall', label: '卸载' },
-        { key: 'test', label: '连通测试' },
-        { key: 'log', label: '查看日志' }
-      ]
-    case '未安装':
-      return [
-        { key: 'install', label: '安装' },
-        { key: 'test', label: '连通测试' },
-        ...(row.agentId ? [{ key: 'log', label: '查看日志' }] : [])
-      ]
-    default:
-      return []
-  }
-}
 // 新建编辑相关字段
 const nodeDialogVisible = ref(false)
 const nodeDialogLoading = ref(false)
@@ -296,18 +241,18 @@ const nodeDialogTags = ref<Array<{ key: string; value: string }>>([])
 const columnDialogVisible = ref(false)
 const managementListRef = ref<InstanceType<typeof ManagementList>>()
 const tableColumns = ref<ColumnItem[]>([
-  { prop: 'internalIp', label: '内网IP', visible: true, order: 0, sortable: true, minWidth: 100 },
-  { prop: 'hostname', label: '主机名', visible: true, order: 1, sortable: true, minWidth: 120 },
-  { prop: 'hostId', label: '主机ID', visible: true, order: 2, isDisabled: true },
-  { prop: 'agentId', label: 'AGENT ID', visible: true, order: 3, minWidth: 160 },
-  { prop: 'applicationType', label: '应用类型', visible: true, order: 4, slot: true },
+  { prop: 'innerIp', label: '内网IP', visible: true, order: 0, sortable: true, minWidth: 100 },
+  { prop: 'hostName', label: '主机名', visible: true, order: 1, sortable: true, minWidth: 120 },
+  { prop: 'id', label: '主机ID', visible: true, order: 2, isDisabled: true },
+  { prop: 'cpu', label: 'CPU', visible: true, order: 3 }, // todo: 待完善
+  { prop: 'appTypeName', label: '应用类型', visible: true, order: 4, slot: true },
   { prop: 'region', label: '地区', visible: true, order: 5 },
   { prop: 'os', label: '操作系统', visible: true, order: 6 },
-  { prop: 'agentStatus', label: 'AGENT状态', visible: true, order: 7, slot: true, minWidth: 100 },
-  { prop: 'nodeStatus', label: '节点状态', visible: true, order: 8, slot: true },
-  { prop: 'agentVersion', label: 'AGENT版本', visible: true, order: 9, minWidth: 100 },
+  { prop: 'systemInfo', label: '系统信息', visible: true, order: 7, slot: true, minWidth: 100 }, // todo: 待完善
+  { prop: 'status', label: '节点状态', visible: true, order: 8, slot: true },
+  { prop: 'remark', label: '备注', visible: true, order: 9, minWidth: 100 },
   {
-    prop: 'lastHeartbeat',
+    prop: 'lastCheckTime', // todo: 待完善
     label: '最后心跳',
     visible: true,
     order: 10,
@@ -342,7 +287,7 @@ const pendingOperation = ref<{
   nodeIds: number[]
   isBatch: boolean
 } | null>(null)
-
+const totalRecords = ref(0)
 // 导入Excel对话框
 const importDialogVisible = ref(false)
 
@@ -351,126 +296,55 @@ const taskPanelStore = useTaskPanelStore()
 
 // 缓存 key
 const CACHE_KEY_IS_SHOW_DETAIL = 'nodeManagement_isShowDetail'
-
-const filteredData = computed(() => {
-  const { keyword, agentStatus, applicationType, nodeTag } = queryParams
-  return allNodes.value.filter((item) => {
-    const matchKeyword = keyword
-      ? [item.internalIp, item.publicIp, item.hostname, item.agentId].some((field) =>
-          field.toLowerCase().includes(keyword.toLowerCase())
-        )
-      : true
-    const matchAgentStatus = agentStatus ? item.agentStatus === agentStatus : true
-    const matchAppType = applicationType ? item.applicationType === applicationType : true
-    const matchTag = nodeTag
-      ? (item.tags || []).some((tag) => tag.key === nodeTag || tag.value === nodeTag)
-      : true
-    return matchKeyword && matchAgentStatus && matchAppType && matchTag
-  })
-})
-
-const displayTableData = computed(() => {
-  const start = (queryParams.page - 1) * queryParams.pageSize
-  return filteredData.value.slice(start, start + queryParams.pageSize)
-})
-
-const totalRecords = computed(() => filteredData.value.length)
-
-const getAgentStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' => {
+// 节点状态展示相关
+const getNodeStatusType = (status: string) => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-    运行中: 'success',
-    异常: 'danger',
-    未安装: 'warning'
+    online: 'success',
+    offline: 'info',
+    abnormal: 'danger'
   }
-  return map[status] || 'info'
+  return map[status] || 'warning'
 }
-
-const getNodeStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-    在线: 'success',
-    离线: 'info',
-    异常: 'danger'
+const getNodeStatusText = (status: string) => {
+  const map = {
+    online: '在线',
+    offline: '离线',
+    abnormal: '异常'
   }
-  return map[status] || 'info'
+  return map[status] || '未知'
 }
-
+const getNodeStatusColor = (status: string) => {
+  const map = {
+    online: 'green',
+    offline: 'gray',
+    abnormal: 'red'
+  }
+  return map[status] || 'yellow'
+}
+// 获取节点列表
 const getList = async () => {
   try {
     loading.value = true
-    // await apiGetNodeList({ page: queryParams.page, pageSize: queryParams.pageSize })
-    // TODO: 调用API获取节点数据
-    const mockData: NodeRecord[] = [
-      {
-        id: 1,
-        internalIp: '192.168.1.101',
-        publicIp: '10.0.0.101',
-        hostname: 'web-server-01',
-        hostId: '1',
-        agentId: 'AGT-001-WEB-2024',
-        applicationType: '云拨测',
-        region: '华东-上海',
-        os: 'Linux',
-        agentStatus: '运行中',
-        nodeStatus: '在线',
-        agentVersion: 'v2.1.3',
-        lastHeartbeat: '2024-03-15 16:45:23',
-        tags: [
-          { key: 'env', value: 'prod' },
-          { key: 'team', value: 'sre' }
-        ]
-      },
-      {
-        id: 2,
-        internalIp: '192.168.1.102',
-        publicIp: '10.0.0.102',
-        hostname: 'cdn-node-02',
-        hostId: '2',
-        agentId: 'AGT-002-CDN-2024',
-        applicationType: 'CDN',
-        region: '华北-北京',
-        os: 'Windows',
-        agentStatus: '异常',
-        nodeStatus: '在线',
-        agentVersion: 'v2.0.8',
-        lastHeartbeat: '2024-03-15 16:42:10',
-        tags: [{ key: 'env', value: 'staging' }]
-      },
-      {
-        id: 3,
-        internalIp: '192.168.1.102',
-        publicIp: '10.0.0.102',
-        hostname: 'cdn-node-02',
-        hostId: '2',
-        agentId: 'AGT-002-CDN-2024',
-        applicationType: 'CDN',
-        region: '华北-北京',
-        os: 'Windows',
-        agentStatus: '未安装',
-        nodeStatus: '在线',
-        agentVersion: 'v2.0.8',
-        lastHeartbeat: '2024-03-15 16:42:10',
-        tags: [{ key: 'env', value: 'staging' }]
-      }
-    ]
-    allNodes.value = mockData
+    const res = await apiGetNodeList({ ...queryParams })
+    allNodes.value = res.data.list
+    totalRecords.value = res.data.pagination.total
   } finally {
     loading.value = false
   }
 }
-// 批量操作列的点击事件
-const handleBulkCommand = (command: string) => {
+// 批量连通测试
+const handleConnectTest = () => {
   if (!selectedRows.value.length) {
     ElMessage.warning('请先选择节点')
     return
   }
-  showOperationDialog(command, true, selectedRows.value)
+  showOperationDialog('test', true, selectedRows.value)
 }
-
 // 显示操作确认对话框
 const showOperationDialog = (operation: string, isBatch: boolean, nodes: NodeRecord[]) => {
   currentOperation.value = operation
   isBatchOperation.value = isBatch
-  operationHostnames.value = nodes.map((n) => n.hostname || n.internalIp)
+  operationHostnames.value = nodes.map((n) => n.hostName || n.innerIp)
   operationHostCount.value = nodes.length
   pendingOperation.value = {
     operation,
@@ -480,27 +354,12 @@ const showOperationDialog = (operation: string, isBatch: boolean, nodes: NodeRec
   operationDialogVisible.value = true
 }
 
-// 操作确认
+// 操作框确认
 const handleOperationConfirm = async () => {
   if (!pendingOperation.value) return
 
   try {
     operationLoading.value = true
-    // const { operation, isBatch } = pendingOperation.value
-
-    // if (isBatch) {
-    //   await batchOperateAgent({
-    //     operation,
-    //     nodeIds
-    //   })
-    // } else {
-    //   await operateAgent({
-    //     operation,
-    //     nodeId: nodeIds[0]
-    //   })
-    // }
-
-    // ElMessage.success(`${isBatch ? '批量' : ''}${operation}操作已提交`)
     operationDialogVisible.value = false
 
     // 设置缓存为 true，显示任务面板
@@ -548,38 +407,53 @@ const handleOperationConfirm = async () => {
     pendingOperation.value = null
   }
 }
-
-// 操作取消
+// 操作框取消
 const handleOperationCancel = () => {
   operationDialogVisible.value = false
   pendingOperation.value = null
 }
+// 批量操作列的点击事件
+// const handleBulkCommand = (command: string) => {
+//   if (!selectedRows.value.length) {
+//     ElMessage.warning('请先选择节点')
+//     return
+//   }
+//   showOperationDialog(command, true, selectedRows.value)
+// }
+
+// 操作取消
 
 const handleSearch = (params: Record<string, any>) => {
-  queryParams.keyword = params.keyword || ''
-  queryParams.agentStatus = params.agentStatus || ''
-  queryParams.applicationType = params.applicationType || ''
-  queryParams.nodeTag = params.nodeTag || ''
+  queryParams.query = params.query || ''
+  queryParams.appTypeName = params.appTypeName || ''
+  queryParams.nodeTags = params.nodeTags || ''
   queryParams.page = 1
   getList()
 }
 
 const handleRefresh = (params?: Record<string, any>) => {
   if (params) {
-    queryParams.keyword = params.keyword || ''
-    queryParams.agentStatus = params.agentStatus || ''
-    queryParams.applicationType = params.applicationType || ''
-    queryParams.nodeTag = params.nodeTag || ''
+    queryParams.query = params.query || ''
+    queryParams.appTypeName = params.appTypeName || ''
+    queryParams.nodeTags = params.nodeTags || ''
     queryParams.page = 1
   }
   getList()
 }
 
+const handleReset = () => {
+  queryParams.query = ''
+  queryParams.appTypeName = ''
+  queryParams.nodeTags = ''
+  queryParams.page = 1
+  getList()
+}
 const handlePageChange = (page: number, pageSize: number) => {
   queryParams.page = page
   queryParams.pageSize = pageSize
+  getList()
 }
-
+// 选择行
 const handleSelectionChange = (selection: NodeRecord[]) => {
   selectedRows.value = selection
 }
@@ -590,15 +464,6 @@ const handleImportExcel = () => {
 
 const handleImportSuccess = () => {
   // 导入成功后刷新列表
-  getList()
-}
-
-const handleReset = () => {
-  queryParams.keyword = ''
-  queryParams.agentStatus = ''
-  queryParams.applicationType = ''
-  queryParams.nodeTag = ''
-  queryParams.page = 1
   getList()
 }
 
@@ -643,7 +508,7 @@ const handleCreate = () => {
   nodeDialogMode.value = 'create'
   nodeDialogData.value = {
     publicIp: '',
-    internalIp: ''
+    innerIp: ''
   }
   nodeDialogTags.value = []
   nodeDialogVisible.value = true
@@ -652,49 +517,43 @@ const handleCreate = () => {
 const handleEdit = (row: NodeRecord) => {
   nodeDialogMode.value = 'edit'
   nodeDialogData.value = {
-    internalIp: row.internalIp,
+    innerIp: row.innerIp,
     publicIp: row.publicIp,
-    hostname: row.hostname,
-    applicationType: row.applicationType,
+    hostName: row.hostName,
+    appType: row.appType,
     loginAccount: 'administrator',
     loginIp: row.publicIp,
-    os: row.os === 'Windows' ? 'Windows' : 'Linux',
-    agentStatus: row.agentStatus
+    os: row.os
   }
-  nodeDialogTags.value = row.tags || []
+  nodeDialogTags.value = row.nodeTags || []
   nodeDialogVisible.value = true
 }
 
 const handleMoreAction = (action: string, row: NodeRecord) => {
   switch (action) {
-    case 'delete':
-      handleDelete(row)
-      break
-    case 'install':
-    case 'upgrade':
-    case 'online':
-    case 'offline':
-    case 'restart':
-    case 'reinstall':
-    case 'uninstall':
     case 'test':
-      showOperationDialog(action, false, [row])
+      // showOperationDialog(action, false, [row])
+      handleNodeSingleProbe(row)
       break
     default:
       ElMessage.info('功能待实现')
   }
 }
-
-const handleDelete = async (row: NodeRecord) => {
+const handleNodeSingleProbe = async (row: NodeRecord) => {
   try {
-    loading.value = true
-    // TODO: 调用API删除节点
-    ElMessage.success(`删除节点 ${row.hostname} 成功`)
-    getList()
+    nodeDialogLoading.value = true
+    const res = await apiNodeSingleProbe({
+      loginAccount: row.loginAccount,
+      loginIp: row.loginIp,
+      loginPort: row.loginPort,
+      authMethod: row.authMethod,
+      passwordKey: row.passwordKey
+    })
+    if (res.data) {
+      ElMessage.success('测试成功')
+    }
   } catch (error) {
-    ElMessage.error('删除节点失败')
-  } finally {
-    loading.value = false
+    ElMessage.error('测试失败')
   }
 }
 
@@ -719,13 +578,36 @@ const handleNodeSave = async ({
     nodeDialogLoading.value = false
   }
 }
-
+// 节点保存取消
 const handleNodeCancel = () => {
   nodeDialogVisible.value = false
 }
 
+// 获取节点统计信息
+const getNodeStatistics = async () => {
+  const res = await apiGetNodeStatistics()
+  if (res.data) {
+    stats.value = { ...res.data }
+  }
+}
+
+// 获取应用类型列表
+const getAppTypeList = async () => {
+  const res = await apiGetAppTypeList()
+  appTypeList.value = res.data.list
+}
+
+// 获取节点标签
+const getNodeTags = async () => {
+  const res = await apiGetNodeTags()
+  nodeTagOptions.value = res.data.list
+}
+
 onMounted(() => {
   getList()
+  getNodeStatistics()
+  getAppTypeList()
+  getNodeTags()
 })
 </script>
 
@@ -776,6 +658,25 @@ onMounted(() => {
         color: #f56c6c;
       }
     }
+  }
+}
+.status-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  display: inline-block;
+  &.green {
+    background: #67c23a;
+  }
+  &.gray {
+    background: #909399;
+  }
+  &.red {
+    background: #f56c6c;
+  }
+  &.yellow {
+    background: #e6a23c;
   }
 }
 </style>

@@ -10,8 +10,8 @@
     <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" class="node-form">
       <el-row :gutter="24">
         <el-col :span="12">
-          <el-form-item label="内网IP" prop="internalIp" required>
-            <el-input v-model="form.internalIp" placeholder="请输入内网IP" clearable />
+          <el-form-item label="内网IP" prop="innerIp" required>
+            <el-input v-model="form.innerIp" placeholder="请输入内网IP" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -35,18 +35,18 @@
         <el-col :span="12">
           <el-form-item label="认证方式" prop="authMethod" required>
             <el-select v-model="form.authMethod" placeholder="请选择认证方式">
-              <el-option label="密码" value="密码" />
-              <el-option label="密钥" value="密钥" />
+              <el-option label="密码" value="password" />
+              <el-option label="密钥" value="key" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item
-            :label="form.authMethod === '密码' ? '密码' : '密钥'"
+            :label="form.authMethod === 'password' ? '密码' : '密钥'"
             prop="credential"
             class="label-item-required"
           >
-            <template v-if="form.authMethod === '密码'">
+            <template v-if="form.authMethod === 'password'">
               <el-input
                 type="password"
                 v-model="form.credentialPassword"
@@ -72,15 +72,15 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="主机名称" prop="hostname" required>
-            <el-input v-model="form.hostname" placeholder="请输入主机名称" clearable />
+          <el-form-item label="主机名称" prop="hostName" required>
+            <el-input v-model="form.hostName" placeholder="请输入主机名称" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="网络类型" prop="networkType" required>
             <el-select v-model="form.networkType" placeholder="请选择网络类型">
-              <el-option label="公网" value="公网" />
-              <el-option label="内网" value="内网" />
+              <el-option label="公网" value="public" />
+              <el-option label="内网" value="private" />
             </el-select>
           </el-form-item>
         </el-col>
@@ -103,8 +103,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="应用类型" prop="applicationType" required>
-            <el-select v-model="form.applicationType" placeholder="请选择应用类型">
+          <el-form-item label="应用类型" prop="appType" required>
+            <el-select v-model="form.appType" placeholder="请选择应用类型">
               <el-option label="云拨测" value="云拨测" />
               <el-option label="CDN" value="CDN" />
               <el-option label="监控" value="监控" />
@@ -113,24 +113,24 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="供应商名称" prop="providerName" required>
-            <el-input v-model="form.providerName" placeholder="请输入供应商名称" clearable />
+          <el-form-item label="供应商名称" prop="vendorName" required>
+            <el-input v-model="form.vendorName" placeholder="请输入供应商名称" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="运营商" prop="carrier" required>
-            <el-select v-model="form.carrier" placeholder="请选择运营商">
-              <el-option label="中国移动" value="中国移动" />
-              <el-option label="中国电信" value="中国电信" />
-              <el-option label="中国联通" value="中国联通" />
-              <el-option label="中国网通" value="中国网通" />
+          <el-form-item label="运营商" prop="operator" required>
+            <el-select v-model="form.operator" placeholder="请选择运营商">
+              <el-option label="中国移动" value="ChinaMobile" />
+              <el-option label="中国电信" value="ChinaUnicom" />
+              <el-option label="中国联通" value="ChinaTelecom" />
+              <el-option label="中国网通" value="ChinaNetcom" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="备注">
+          <el-form-item label="备注" prop="remark">
             <el-input
-              v-model="form.remarks"
+              v-model="form.remark"
               type="textarea"
               :maxlength="100"
               show-word-limit
@@ -294,10 +294,10 @@ const handleChangeRegion = (val: (string | number)[]) => {
 }
 type ConnectivityStatus = 'idle' | 'loading' | 'success' | 'failed'
 
-type AuthMethod = '密码' | '密钥'
+type AuthMethod = 'password' | 'key'
 
 interface NodeForm {
-  internalIp: string
+  innerIp: string
   publicIp: string
   os: 'Windows' | 'Linux'
   loginPort: string
@@ -305,14 +305,14 @@ interface NodeForm {
   credentialPassword: string
   credentialKey: string
   loginAccount: string
-  hostname: string
-  networkType: '公网' | '内网'
+  hostName: string
+  networkType: 'public' | 'private'
   region: (string | number)[]
   loginIp: string
-  applicationType: string
-  providerName: string
-  carrier: string
-  remarks: string
+  appType: string
+  vendorName: string
+  operator: string
+  remark: string
 }
 
 interface NodeTagItem {
@@ -350,22 +350,22 @@ const emit = defineEmits<{
 
 const formRef = ref<FormInstance>()
 const form = reactive<NodeForm>({
-  internalIp: '',
+  innerIp: '',
   publicIp: '',
   os: 'Windows',
   loginPort: '22',
-  authMethod: '密码',
+  authMethod: 'password',
   credentialPassword: '',
   credentialKey: '',
   loginAccount: '',
-  hostname: '',
-  networkType: '公网',
+  hostName: '',
+  networkType: 'public',
   region: ['CN', '31', '310115'], // 默认：中国-上海-浦东新区（直辖市跳过市辖区层级）
   loginIp: '',
-  applicationType: '',
-  providerName: '',
-  carrier: '中国移动',
-  remarks: ''
+  appType: '',
+  vendorName: '',
+  operator: 'ChinaMobile',
+  remark: ''
 })
 
 const keyOptions = [
@@ -390,7 +390,7 @@ const connectivityStatus = ref<ConnectivityStatus>('idle')
 let tagIdSeed = 0
 
 const rules = reactive<FormRules>({
-  internalIp: [{ required: true, message: '请输入内网IP', trigger: 'blur' }],
+  innerIp: [{ required: true, message: '请输入内网IP', trigger: 'blur' }],
   publicIp: [{ required: true, message: '请输入公网IP', trigger: 'blur' }],
   os: [{ required: true, message: '请选择操作系统', trigger: 'change' }],
   loginPort: [
@@ -410,11 +410,11 @@ const rules = reactive<FormRules>({
   credential: [
     {
       validator: (_rule, _value, callback) => {
-        if (form.authMethod === '密码' && !form.credentialPassword) {
+        if (form.authMethod === 'password' && !form.credentialPassword) {
           callback(new Error('请输入密码'))
           return
         }
-        if (form.authMethod === '密钥' && !form.credentialKey) {
+        if (form.authMethod === 'key' && !form.credentialKey) {
           callback(new Error('请填写密钥内容'))
           return
         }
@@ -424,13 +424,13 @@ const rules = reactive<FormRules>({
     }
   ],
   loginAccount: [{ required: true, message: '请输入登录账号', trigger: 'blur' }],
-  hostname: [{ required: true, message: '请输入主机名称', trigger: 'blur' }],
+  hostName: [{ required: true, message: '请输入主机名称', trigger: 'blur' }],
   networkType: [{ required: true, message: '请选择网络类型', trigger: 'change' }],
   region: [{ required: true, message: '请选择地区', trigger: 'change' }],
   loginIp: [{ required: true, message: '请输入登录IP', trigger: 'blur' }],
-  applicationType: [{ required: true, message: '请选择应用类型', trigger: 'change' }],
-  providerName: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }],
-  carrier: [{ required: true, message: '请选择运营商', trigger: 'change' }]
+  appType: [{ required: true, message: '请选择应用类型', trigger: 'change' }],
+  vendorName: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }],
+  operator: [{ required: true, message: '请选择运营商', trigger: 'change' }]
 })
 
 const visible = computed({
@@ -464,7 +464,7 @@ const nextTickInit = () => {
   form.credentialPassword = ''
   form.credentialKey = ''
   Object.assign(form, {
-    internalIp: '',
+    innerIp: '',
     publicIp: '',
     os: 'Windows',
     loginPort: '22',
@@ -472,14 +472,14 @@ const nextTickInit = () => {
     credentialPassword: '',
     credentialKey: '',
     loginAccount: '',
-    hostname: '',
-    networkType: '公网',
+    hostName: '',
+    networkType: 'public',
     region: ['CN', '31', '310115'], // 默认：中国-上海-浦东新区（直辖市跳过市辖区层级）
     loginIp: '',
-    applicationType: '',
-    providerName: '',
-    carrier: '中国移动',
-    remarks: ''
+    appType: '',
+    vendorName: '',
+    operator: 'ChinaMobile',
+    remark: ''
   })
   tags.value = []
   tagIdSeed = 0
@@ -497,26 +497,26 @@ const nextTickInit = () => {
   }
 
   if (!form.loginIp) {
-    form.loginIp = form.networkType === '公网' ? form.publicIp : form.internalIp
+    form.loginIp = form.networkType === 'public' ? form.publicIp : form.innerIp
   }
 
   formRef.value?.resetFields()
 }
 
 watch(
-  () => [form.networkType, form.publicIp, form.internalIp],
+  () => [form.networkType, form.publicIp, form.innerIp],
   () => {
-    if (form.networkType === '公网') {
+    if (form.networkType === 'public') {
       form.loginIp = form.publicIp
     } else {
-      form.loginIp = form.internalIp
+      form.loginIp = form.innerIp
     }
     resetConnectivityStatus()
   }
 )
 
 watch(
-  () => [form.internalIp, form.publicIp, form.loginAccount, form.loginPort],
+  () => [form.innerIp, form.publicIp, form.loginAccount, form.loginPort],
   () => {
     resetConnectivityStatus()
   }
@@ -535,7 +535,7 @@ const removeTag = (index: number) => {
 const handleConnectivityTest = async () => {
   try {
     await formRef.value?.validateField([
-      'internalIp',
+      'innerIp',
       'publicIp',
       'loginAccount',
       'loginPort',
@@ -572,7 +572,8 @@ const handleSave = async () => {
     return
   }
 
-  const authCredential = form.authMethod === '密码' ? form.credentialPassword : form.credentialKey
+  const authCredential =
+    form.authMethod === 'password' ? form.credentialPassword : form.credentialKey
   emit('save', {
     form: { ...form },
     tags: tags.value

@@ -29,6 +29,9 @@
           :width="column.width"
           :min-width="column.minWidth"
           :sortable="column.sortable"
+          :filters="column.filters"
+          :filter-multiple="column.filterMultiple"
+          :column-key="column.prop"
         >
           <template v-if="column.slot" #default="scope">
             <slot :name="column.slot" :row="scope.row" :column="scope.column" :index="scope.$index">
@@ -80,6 +83,8 @@ export interface TableColumn {
   slot?: string
   visible?: boolean
   order?: number
+  filters?: Array<{ text: string; value: string }>
+  filterMultiple?: boolean
 }
 
 export interface ToolbarButton {
@@ -136,7 +141,7 @@ const props = withDefaults(defineProps<Props>(), {
     page: 1,
     pageSize: 10
   }),
-  storageKey: 'nodeManagement_columnConfig'
+  storageKey: ''
 })
 
 const emit = defineEmits<{
