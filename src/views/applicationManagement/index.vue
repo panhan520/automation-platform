@@ -45,34 +45,6 @@
             <span v-else>{{ scope.row[col.prop] }}</span>
           </template>
         </el-table-column>
-        <!-- <el-table-column
-          column-key="lifeCycle"
-          prop="lifeCycle"
-          label="生命周期"
-          :filters="[
-            { text: '已上线', value: 'online' },
-            { text: '测试中', value: 'testing' },
-            { text: '停运', value: 'offline' }
-          ]"
-          :filter-multiple="false"
-        >
-          <template #default="scope">
-            <el-tag :type="getLifecycleTagType(scope.row.lifeCycle)">
-              {{ getLifecycleName(scope.row.lifeCycle) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="language" label="语言">
-          <template #default="scope">
-            {{
-              scope.row.language === 'zh-hans'
-                ? '简体中文'
-                : scope.row.language === 'en'
-                  ? '英语'
-                  : '其他'
-            }}
-          </template>
-        </el-table-column> -->
       </template>
       <TableActionsColumn @edit="handleEdit" />
     </template>
@@ -103,7 +75,6 @@ import {
   apiGetAppTypeList,
   apiCreateApplication
 } from '@/api/application'
-import { filter } from 'lodash-es'
 
 interface ApplicationRecord {
   id: number

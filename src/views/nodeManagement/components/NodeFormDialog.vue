@@ -94,6 +94,9 @@
               placeholder="请选择国家／省／市／区"
               filterable
               clearable
+              :show-all-levels="true"
+              separator="-"
+              :display-render="displayRegionRender"
             />
           </el-form-item>
         </el-col>
@@ -105,10 +108,12 @@
         <el-col :span="12">
           <el-form-item label="应用类型" prop="appType" required>
             <el-select v-model="form.appType" placeholder="请选择应用类型">
-              <el-option label="云拨测" value="云拨测" />
-              <el-option label="CDN" value="CDN" />
-              <el-option label="监控" value="监控" />
-              <el-option label="其他" value="其他" />
+              <el-option
+                v-for="option in appTypeOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -143,7 +148,7 @@
           <div class="tag-section">
             <div class="tag-section__label">节点标签</div>
             <div class="tag-section__content">
-              <div v-for="(tag, index) in tags" :key="tag.id" class="tag-row">
+              <div v-for="(tag, index) in nodeTagItems" :key="tag.id" class="tag-row">
                 <el-select
                   v-model="tag.key"
                   filterable
@@ -154,7 +159,7 @@
                   class="tag-row__input"
                 >
                   <el-option
-                    v-for="item in keyOptions"
+                    v-for="item in nodeTagOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value"
@@ -170,13 +175,13 @@
                   class="tag-row__input"
                 >
                   <el-option
-                    v-for="item in keyOptions"
+                    v-for="item in nodeTagOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value"
                   />
                 </el-select>
-                <el-button type="text" @click="removeTag(index)">
+                <el-button type="text" @click="removeNodeTag(index)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </div>
@@ -184,12 +189,14 @@
                 <el-link
                   type="primary"
                   :underline="false"
-                  @click="addTag"
-                  :disabled="tags.length >= maxTags"
+                  @click="addNodeTag"
+                  :disabled="nodeTagItems.length >= maxTags"
                 >
                   <el-icon><CirclePlus /></el-icon>添加标签
                 </el-link>
-                <span class="tag-limit-text">还可添加 {{ maxTags - tags.length }} 个标签</span>
+                <span class="tag-limit-text">
+                  还可添加 {{ maxTags - nodeTagItems.length }} 个标签
+                </span>
               </div>
             </div>
           </div>
@@ -203,10 +210,6 @@
           <el-button type="primary" text :loading="testLoading" @click="handleConnectivityTest">
             连通测试
           </el-button>
-          <span v-if="connectivityStatus === 'success'" class="status success">连通测试成功</span>
-          <span v-else-if="connectivityStatus === 'failed'" class="status failed"
-            >连通测试失败</span
-          >
         </div>
         <div class="footer-actions">
           <el-button @click="handleCancel" :disabled="loading">取消</el-button>
@@ -230,6 +233,8 @@ import {
   getCitiesByState,
   getDistrictsByCity
 } from '@/utils/regionData'
+import { apiGetApplicationList } from '@/api/application'
+import { apiNodeSingleProbe } from '@/api/node/index'
 
 interface CascaderOption {
   value: string | number
@@ -239,7 +244,13 @@ interface CascaderOption {
   [key: string]: any
 }
 
+interface AppTypeOption {
+  label: string
+  value: string | number
+}
+
 const regionOptions = ref<CascaderOption[]>([])
+const regionDisplayLabel = ref('')
 
 // 懒加载配置
 const regionProps: CascaderProps = {
@@ -283,14 +294,76 @@ const regionProps: CascaderProps = {
     }
   }
 }
-
+// 应用类型列表
+const appTypeOptions = ref<AppTypeOption[]>([])
 // 初始化加载国家
 onMounted(() => {
   regionOptions.value = getAllCountries()
+  getAppTypeList()
 })
+// 获取应用类型列表数据
+const getAppTypeList = async () => {
+  const res = await apiGetApplicationList({})
+  appTypeOptions.value =
+    res.data?.list.map((item) => ({
+      label: item.appType,
+      value: item.id
+    })) || []
+}
+
+const getRegionLabelsByPath = (path: (string | number)[] = []): string[] => {
+  if (!path || !path.length) return []
+  const normalized = path.map((item) => String(item))
+  const [countryCode, stateCode, cityCode, districtCode] = normalized
+  const labels: string[] = []
+
+  const countries = getAllCountries()
+  const country = countries.find((item) => String(item.value) === countryCode)
+  if (!country) return labels
+  labels.push(country.label)
+
+  if (stateCode) {
+    const states = getStatesByCountry(countryCode)
+    const state = states.find((item) => String(item.value) === stateCode)
+    if (state) {
+      labels.push(state.label)
+    }
+  }
+
+  if (cityCode && stateCode) {
+    const cities = getCitiesByState(countryCode, stateCode)
+    const city = cities.find((item) => String(item.value) === cityCode)
+    if (city) {
+      labels.push(city.label)
+    }
+  }
+
+  if (districtCode && stateCode && cityCode) {
+    const districts = getDistrictsByCity(countryCode, stateCode, cityCode)
+    const district = districts.find((item) => String(item.value) === districtCode)
+    if (district) {
+      labels.push(district.label)
+    }
+  }
+
+  return labels
+}
+
+const updateRegionDisplay = (path?: (string | number)[]) => {
+  const labels = getRegionLabelsByPath(path ?? form.region)
+  regionDisplayLabel.value = labels.join('-')
+}
+
+const displayRegionRender = ({ labels }: { labels: string[] }) => {
+  if (labels?.length) {
+    return labels.join('-')
+  }
+  return regionDisplayLabel.value
+}
+
 // 选中变化
 const handleChangeRegion = (val: (string | number)[]) => {
-  console.log('选择的值:', val)
+  updateRegionDisplay(val)
 }
 type ConnectivityStatus = 'idle' | 'loading' | 'success' | 'failed'
 
@@ -313,6 +386,7 @@ interface NodeForm {
   vendorName: string
   operator: string
   remark: string
+  nodeTags: Record<string, string>
 }
 
 interface NodeTagItem {
@@ -321,13 +395,22 @@ interface NodeTagItem {
   value: string
 }
 
+type NodeFormSubmit = Omit<NodeForm, 'region'> & { region: string }
+
+type NodeFormDefaultData = Partial<NodeForm> & {
+  regionCodes?: (string | number)[]
+  regionLabel?: string
+  tags?: Array<{ key: string; value: string }>
+  passwordKey?: string
+}
+
 interface Props {
   visible: boolean
   loading?: boolean
   title?: string
   isEdit?: boolean
-  defaultData?: Partial<NodeForm>
-  defaultTags?: Array<{ key: string; value: string }>
+  defaultData?: NodeFormDefaultData
+  nodeTagOptions?: Array<{ label: string; value: string }>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -336,20 +419,17 @@ const props = withDefaults(defineProps<Props>(), {
   title: '新建节点',
   isEdit: false,
   defaultData: () => ({}),
-  defaultTags: () => []
+  nodeTagOptions: () => []
 })
 
 const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
-  (
-    e: 'save',
-    data: { form: NodeForm; tags: Array<{ key: string; value: string }>; authCredential: string }
-  ): void
+  (e: 'save', data: { form: NodeFormSubmit; passwordKey: string }): void
   (e: 'cancel'): void
 }>()
 
 const formRef = ref<FormInstance>()
-const form = reactive<NodeForm>({
+const createDefaultForm = (): NodeForm => ({
   innerIp: '',
   publicIp: '',
   os: 'Windows',
@@ -360,38 +440,61 @@ const form = reactive<NodeForm>({
   loginAccount: '',
   hostName: '',
   networkType: 'public',
-  region: ['CN', '31', '310115'], // 默认：中国-上海-浦东新区（直辖市跳过市辖区层级）
+  region: ['CN', '31', '310115'],
   loginIp: '',
   appType: '',
   vendorName: '',
   operator: 'ChinaMobile',
-  remark: ''
+  remark: '',
+  nodeTags: {}
 })
+const form = reactive<NodeForm>(createDefaultForm())
 
-const keyOptions = [
-  {
-    value: '1',
-    label: '1'
-  },
-  {
-    value: '2',
-    label: '2'
-  },
-  {
-    value: '3',
-    label: '3'
-  }
-]
-
-const tags = ref<NodeTagItem[]>([])
+const nodeTagItems = ref<NodeTagItem[]>([])
 const maxTags = 10
 const testLoading = ref(false)
 const connectivityStatus = ref<ConnectivityStatus>('idle')
 let tagIdSeed = 0
 
+const buildNodeTagsPayload = () => {
+  return nodeTagItems.value.reduce<Record<string, string>>((acc, { key, value }) => {
+    if (key) {
+      acc[key] = value ?? ''
+    }
+    return acc
+  }, {})
+}
+const ipv4Pattern = /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/
+const createIpValidator =
+  (label: string) => (_rule: any, value: string, callback: (error?: Error) => void) => {
+    if (!value) {
+      callback(new Error(`请输入${label}`))
+      return
+    }
+    if (!ipv4Pattern.test(value)) {
+      callback(new Error(`${label}格式不正确`))
+      return
+    }
+    callback()
+  }
+
+watch(
+  nodeTagItems,
+  () => {
+    form.nodeTags = buildNodeTagsPayload()
+  },
+  { deep: true }
+)
+
 const rules = reactive<FormRules>({
-  innerIp: [{ required: true, message: '请输入内网IP', trigger: 'blur' }],
-  publicIp: [{ required: true, message: '请输入公网IP', trigger: 'blur' }],
+  innerIp: [
+    { required: true, message: '请输入内网IP', trigger: 'blur' },
+    { validator: createIpValidator('内网IP'), trigger: 'blur' }
+  ],
+  publicIp: [
+    { required: true, message: '请输入公网IP', trigger: 'blur' },
+    { validator: createIpValidator('公网IP'), trigger: 'blur' }
+  ],
   os: [{ required: true, message: '请选择操作系统', trigger: 'change' }],
   loginPort: [
     { required: true, message: '请输入登录端口', trigger: 'blur' },
@@ -427,7 +530,10 @@ const rules = reactive<FormRules>({
   hostName: [{ required: true, message: '请输入主机名称', trigger: 'blur' }],
   networkType: [{ required: true, message: '请选择网络类型', trigger: 'change' }],
   region: [{ required: true, message: '请选择地区', trigger: 'change' }],
-  loginIp: [{ required: true, message: '请输入登录IP', trigger: 'blur' }],
+  loginIp: [
+    { required: true, message: '请输入登录IP', trigger: 'blur' },
+    { validator: createIpValidator('登录IP'), trigger: 'blur' }
+  ],
   appType: [{ required: true, message: '请选择应用类型', trigger: 'change' }],
   vendorName: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }],
   operator: [{ required: true, message: '请选择运营商', trigger: 'change' }]
@@ -449,6 +555,59 @@ const resetConnectivityStatus = () => {
   connectivityStatus.value = 'idle'
 }
 
+const convertTagsToList = (source?: any): NodeTagItem[] => {
+  const list: NodeTagItem[] = []
+  if (!source) return list
+
+  if (Array.isArray(source)) {
+    source.forEach((item) => {
+      if (item?.key) {
+        list.push({
+          id: ++tagIdSeed,
+          key: item.key,
+          value: item.value ?? ''
+        })
+      }
+    })
+  } else if (typeof source === 'object') {
+    Object.entries(source).forEach(([key, value]) => {
+      if (key) {
+        list.push({
+          id: ++tagIdSeed,
+          key,
+          value: value as string
+        })
+      }
+    })
+  }
+
+  return list
+}
+
+const preloadRegionPath = (path: (string | number)[]) => {
+  if (!path?.length) return
+  if (!regionOptions.value.length) {
+    regionOptions.value = getAllCountries()
+  }
+  const normalized = path.map((item) => String(item))
+  let currentLevel = regionOptions.value
+  normalized.forEach((value, index) => {
+    const node = currentLevel.find((item) => String(item.value) === value)
+    if (!node) {
+      currentLevel = []
+      return
+    }
+    if (index === 0) {
+      node.children = node.children || getStatesByCountry(value)
+    } else if (index === 1) {
+      node.children = node.children || getCitiesByState(normalized[0], value)
+    } else if (index === 2) {
+      node.children = node.children || getDistrictsByCity(normalized[0], normalized[1], value)
+    }
+    currentLevel = node.children || []
+  })
+}
+
 watch(
   () => props.visible,
   (val) => {
@@ -458,49 +617,79 @@ watch(
   }
 )
 
+watch(
+  () => form.region,
+  (val) => {
+    updateRegionDisplay(val)
+  },
+  { deep: true, immediate: true }
+)
+
 const nextTickInit = () => {
   connectivityStatus.value = 'idle'
   testLoading.value = false
-  form.credentialPassword = ''
-  form.credentialKey = ''
-  Object.assign(form, {
-    innerIp: '',
-    publicIp: '',
-    os: 'Windows',
-    loginPort: '22',
-    authMethod: '密码',
-    credentialPassword: '',
-    credentialKey: '',
-    loginAccount: '',
-    hostName: '',
-    networkType: 'public',
-    region: ['CN', '31', '310115'], // 默认：中国-上海-浦东新区（直辖市跳过市辖区层级）
-    loginIp: '',
-    appType: '',
-    vendorName: '',
-    operator: 'ChinaMobile',
-    remark: ''
-  })
-  tags.value = []
+  Object.assign(form, createDefaultForm())
+  nodeTagItems.value = []
   tagIdSeed = 0
+  regionDisplayLabel.value = ''
 
-  if (props.defaultData) {
-    Object.assign(form, props.defaultData)
-  }
-
-  if (props.defaultTags?.length) {
-    tags.value = props.defaultTags.map((tag) => ({
-      id: ++tagIdSeed,
-      key: tag.key,
-      value: tag.value
-    }))
+  const hasDefaultData = props.defaultData && Object.keys(props.defaultData).length > 0
+  if (hasDefaultData) {
+    applyDefaultData(props.defaultData as NodeFormDefaultData)
+  } else {
+    updateRegionDisplay(form.region)
   }
 
   if (!form.loginIp) {
     form.loginIp = form.networkType === 'public' ? form.publicIp : form.innerIp
   }
 
-  formRef.value?.resetFields()
+  formRef.value?.clearValidate()
+  preloadRegionPath(form.region)
+  updateRegionDisplay(form.region)
+}
+
+const applyDefaultData = (data: NodeFormDefaultData) => {
+  if (!data) return
+  const {
+    region,
+    regionCodes,
+    regionLabel,
+    nodeTags: nodeTagsRecord,
+    tags,
+    passwordKey,
+    ...rest
+  } = data
+
+  Object.assign(form, rest)
+
+  if (Array.isArray(regionCodes) && regionCodes.length) {
+    form.region = [...regionCodes]
+  } else if (Array.isArray(region)) {
+    form.region = [...region]
+  }
+
+  if (typeof regionLabel === 'string' && regionLabel) {
+    regionDisplayLabel.value = regionLabel
+  } else if (typeof region === 'string' && region) {
+    regionDisplayLabel.value = region
+  }
+
+  const tagSource = nodeTagsRecord ?? tags
+  const tagList = convertTagsToList(tagSource)
+  if (tagList.length) {
+    nodeTagItems.value = tagList
+  }
+
+  if (passwordKey) {
+    if (form.authMethod === 'password') {
+      form.credentialPassword = passwordKey
+      form.credentialKey = ''
+    } else {
+      form.credentialKey = passwordKey
+      form.credentialPassword = ''
+    }
+  }
 }
 
 watch(
@@ -522,25 +711,19 @@ watch(
   }
 )
 
-const addTag = () => {
-  if (tags.value.length >= maxTags) return
-  tags.value.push({ id: ++tagIdSeed, key: '', value: '' })
+const addNodeTag = () => {
+  if (nodeTagItems.value.length >= maxTags) return
+  nodeTagItems.value.push({ id: ++tagIdSeed, key: '', value: '' })
 }
 
-const removeTag = (index: number) => {
-  tags.value.splice(index, 1)
+const removeNodeTag = (index: number) => {
+  nodeTagItems.value.splice(index, 1)
   resetConnectivityStatus()
 }
 
 const handleConnectivityTest = async () => {
   try {
-    await formRef.value?.validateField([
-      'innerIp',
-      'publicIp',
-      'loginAccount',
-      'loginPort',
-      'loginIp'
-    ])
+    await formRef.value?.validateField()
   } catch (error) {
     ElMessage.error('请完善必填信息后再进行连通测试')
     return
@@ -549,11 +732,21 @@ const handleConnectivityTest = async () => {
   testLoading.value = true
   try {
     await new Promise((resolve) => setTimeout(resolve, 800))
+    await apiNodeSingleProbe({
+      loginAccount: form.loginAccount,
+      loginIp: form.loginIp,
+      loginPort: form.loginPort,
+      authMethod: form.authMethod,
+      passwordKey: form.authMethod === 'password' ? form.credentialPassword : form.credentialKey
+    })
     connectivityStatus.value = 'success'
     ElMessage.success('连通测试成功')
   } catch (error) {
     connectivityStatus.value = 'failed'
-    ElMessage.error('连通测试失败')
+    ElMessage.closeAll()
+    setTimeout(() => {
+      ElMessage.error('连通测试失败')
+    }, 10)
   } finally {
     testLoading.value = false
   }
@@ -572,14 +765,17 @@ const handleSave = async () => {
     return
   }
 
-  const authCredential =
-    form.authMethod === 'password' ? form.credentialPassword : form.credentialKey
+  const passwordKey = form.authMethod === 'password' ? form.credentialPassword : form.credentialKey
+  const tagPayload = buildNodeTagsPayload()
+  const submitForm: NodeFormSubmit = {
+    ...form,
+    nodeTags: tagPayload,
+    region: regionDisplayLabel.value || getRegionLabelsByPath(form.region).join('-')
+  }
+
   emit('save', {
-    form: { ...form },
-    tags: tags.value
-      .map(({ key, value }) => ({ key, value }))
-      .filter((item) => item.key || item.value),
-    authCredential
+    form: submitForm,
+    passwordKey
   })
 }
 
@@ -666,24 +862,6 @@ const handleClose = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
-  .footer-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    .status {
-      font-size: 13px;
-
-      &.success {
-        color: #67c23a;
-      }
-
-      &.failed {
-        color: #f56c6c;
-      }
-    }
-  }
 
   .footer-actions {
     display: flex;

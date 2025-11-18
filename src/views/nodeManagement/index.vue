@@ -85,7 +85,7 @@
       :is-edit="nodeDialogMode === 'edit'"
       :title="nodeDialogMode === 'edit' ? '编辑节点' : '新建节点'"
       :default-data="nodeDialogData"
-      :default-tags="nodeDialogTags"
+      :nodeTagOptions="nodeTagOptions.map((item) => ({ label: item, value: item }))"
       @save="handleNodeSave"
       @cancel="handleNodeCancel"
     />
@@ -123,14 +123,14 @@ import dayjs from 'dayjs'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
-import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
+import { TableActionsColumn } from '@/components/TableActionsColumn'
 import NodeFormDialog from './components/NodeFormDialog.vue'
 import {
   apiGetNodeList,
   apiGetNodeStatistics,
   apiGetNodeTags,
   apiNodeSingleProbe,
-  apiNodeBatchProbe
+  apiCreateNode
 } from '@/api/node/index'
 import { apiGetAppTypeList } from '@/api/application'
 import { NodeRecord } from '@/api/node/type'
@@ -235,8 +235,21 @@ const nodeDialogVisible = ref(false)
 const nodeDialogLoading = ref(false)
 const nodeDialogMode = ref<'create' | 'edit'>('create')
 const nodeDialogData = ref<Record<string, any>>({})
-const nodeDialogTags = ref<Array<{ key: string; value: string }>>([])
-
+const normalizeNodeTags = (tags?: any): Record<string, string> => {
+  if (!tags) return {}
+  if (Array.isArray(tags)) {
+    return tags.reduce<Record<string, string>>((acc, item) => {
+      if (item?.key) {
+        acc[item.key] = item.value ?? ''
+      }
+      return acc
+    }, {})
+  }
+  if (typeof tags === 'object') {
+    return { ...tags }
+  }
+  return {}
+}
 // 定制列相关
 const columnDialogVisible = ref(false)
 const managementListRef = ref<InstanceType<typeof ManagementList>>()
@@ -506,26 +519,23 @@ const handleColumnConfirm = (columns: ColumnItem[]) => {
 
 const handleCreate = () => {
   nodeDialogMode.value = 'create'
-  nodeDialogData.value = {
-    publicIp: '',
-    innerIp: ''
-  }
-  nodeDialogTags.value = []
+  nodeDialogData.value = {}
   nodeDialogVisible.value = true
 }
 
 const handleEdit = (row: NodeRecord) => {
   nodeDialogMode.value = 'edit'
+  const normalizedTags = normalizeNodeTags((row as any).nodeTags || (row as any).tags)
   nodeDialogData.value = {
-    innerIp: row.innerIp,
-    publicIp: row.publicIp,
-    hostName: row.hostName,
-    appType: row.appType,
-    loginAccount: 'administrator',
-    loginIp: row.publicIp,
-    os: row.os
+    ...row,
+    nodeTags: normalizedTags,
+    regionCodes: Array.isArray((row as any).regionCodes)
+      ? [...((row as any).regionCodes as (string | number)[])]
+      : Array.isArray(row.region)
+        ? [...(row.region as any[])]
+        : undefined,
+    regionLabel: typeof row.region === 'string' ? row.region : ''
   }
-  nodeDialogTags.value = row.nodeTags || []
   nodeDialogVisible.value = true
 }
 
@@ -541,39 +551,38 @@ const handleMoreAction = (action: string, row: NodeRecord) => {
 }
 const handleNodeSingleProbe = async (row: NodeRecord) => {
   try {
-    nodeDialogLoading.value = true
-    const res = await apiNodeSingleProbe({
+    await apiNodeSingleProbe({
       loginAccount: row.loginAccount,
       loginIp: row.loginIp,
       loginPort: row.loginPort,
       authMethod: row.authMethod,
       passwordKey: row.passwordKey
     })
-    if (res.data) {
-      ElMessage.success('测试成功')
-    }
+    ElMessage.success('连通测试成功')
   } catch (error) {
-    ElMessage.error('测试失败')
+    ElMessage.closeAll()
+    setTimeout(() => {
+      ElMessage.error('连通测试失败')
+    }, 10)
   }
 }
 
 const handleNodeSave = async ({
   form: _form,
-  tags: _tags,
-  authCredential: _authCredential
+  passwordKey: _passwordKey
 }: {
   form: Record<string, any>
-  tags: Array<{ key: string; value: string }>
-  authCredential: string
+  passwordKey: string
 }) => {
   try {
     nodeDialogLoading.value = true
-    // TODO: 调用API保存节点
-    ElMessage.success('保存节点成功')
+    const payload = { ..._form, passwordKey: _passwordKey }
+    await apiCreateNode(payload)
+    ElMessage.success('保存成功')
     nodeDialogVisible.value = false
     getList()
   } catch (error) {
-    ElMessage.error('保存节点失败')
+    ElMessage.error('保存失败')
   } finally {
     nodeDialogLoading.value = false
   }

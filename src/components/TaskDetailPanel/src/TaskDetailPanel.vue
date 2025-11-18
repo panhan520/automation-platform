@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="task-detail-panel">
+  <div v-if="visible" ref="panelRef" class="task-detail-panel">
     <!-- 顶部操作栏 -->
     <div class="panel-header">
       <div class="header-left">
@@ -7,11 +7,11 @@
         <span class="header-title">执行详情</span>
       </div>
       <div class="header-right">
-        <el-button type="primary" size="small" @click="handleClose" link> 关闭 </el-button>
-        <el-button v-if="!isExpanded" text type="primary" size="small" @click="handleExpand" link>
+        <el-button type="primary" size="small" @click.stop="handleClose" link> 关闭 </el-button>
+        <el-button v-if="!isExpanded" link type="primary" size="small" @click.stop="handleExpand">
           展开
         </el-button>
-        <el-button v-else type="primary" size="small" @click="handleCollapse" link>
+        <el-button v-else link type="primary" size="small" @click.stop="handleCollapse">
           收起
         </el-button>
       </div>
@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getTaskList, getTaskDetail } from '@/api/node'
@@ -122,6 +122,7 @@ const router = useRouter()
 const isExpanded = ref(false)
 const activeTaskId = ref<string>('')
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
 // 获取任务列表
 const getTaskListData = async () => {
   try {
@@ -215,6 +216,14 @@ const stopPolling = () => {
   }
 }
 
+const handleGlobalClick = (event: MouseEvent) => {
+  if (!visible.value || !panelRef.value) return
+  if (panelRef.value.contains(event.target as Node)) return
+  if (isExpanded.value) {
+    handleCollapse()
+  }
+}
+
 const getStatusType = (status: string) => {
   const map = {
     success: '成功',
@@ -240,8 +249,13 @@ const handleViewLog = (row: TaskDetailItem, task: Task) => {
   })
 }
 
+onMounted(() => {
+  document.addEventListener('click', handleGlobalClick)
+})
+
 onUnmounted(() => {
   stopPolling()
+  document.removeEventListener('click', handleGlobalClick)
 })
 </script>
 
