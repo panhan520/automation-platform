@@ -130,6 +130,7 @@ import {
   apiGetNodeStatistics,
   apiGetNodeTags,
   apiNodeSingleProbe,
+  apiNodeBatchProbe,
   apiCreateNode
 } from '@/api/node/index'
 import { apiGetAppTypeList } from '@/api/application'
@@ -346,12 +347,51 @@ const getList = async () => {
   }
 }
 // 批量连通测试
-const handleConnectTest = () => {
+const handleConnectTest = async () => {
+  console.log(selectedRows)
   if (!selectedRows.value.length) {
     ElMessage.warning('请先选择节点')
     return
   }
-  showOperationDialog('test', true, selectedRows.value)
+  await apiNodeBatchProbe(selectedRows.value)
+  // 设置缓存为 true，显示任务面板
+  localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
+  taskPanelStore.setVisible(true)
+  // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
+  // 触发 App.vue 中的任务列表刷新
+  const { getTaskList } = await import('@/api/node')
+  try {
+    const response = await getTaskList()
+    if (response.data && Array.isArray(response.data)) {
+      const getOperationName = (operation: string): string => {
+        const map: Record<string, string> = {
+          install: '安装详情',
+          upgrade: '升级详情',
+          online: '上线详情',
+          offline: '下线详情',
+          restart: '重启详情',
+          reinstall: '重装详情',
+          uninstall: '卸载详情',
+          test: '测试详情'
+        }
+        return map[operation] || '任务'
+      }
+      const tasks = response.data.map((task: any) => ({
+        id: task.id || task.taskId,
+        type: task.type || getOperationName(task.operation),
+        time: task.time || task.createTime || dayjs().format('HH:mm:ss'),
+        operation: task.operation,
+        successCount: task.successCount || 0,
+        progressCount: task.progressCount || 0,
+        failedCount: task.failedCount || 0,
+        details: task.details || []
+      }))
+      taskPanelStore.setTasks(tasks)
+    }
+  } catch (error) {
+    console.error('刷新任务列表失败:', error)
+  }
+  // showOperationDialog('test', true, selectedRows.value)
 }
 // 显示操作确认对话框
 const showOperationDialog = (operation: string, isBatch: boolean, nodes: NodeRecord[]) => {
@@ -552,11 +592,15 @@ const handleMoreAction = (action: string, row: NodeRecord) => {
 const handleNodeSingleProbe = async (row: NodeRecord) => {
   try {
     await apiNodeSingleProbe({
+      id: row.id,
       loginAccount: row.loginAccount,
       loginIp: row.loginIp,
       loginPort: row.loginPort,
       authMethod: row.authMethod,
-      passwordKey: row.passwordKey
+      passwordKey: row.passwordKey,
+      publicIp: row.publicIp,
+      innerIp: row.innerIp,
+      appType: row.appType
     })
     ElMessage.success('连通测试成功')
   } catch (error) {

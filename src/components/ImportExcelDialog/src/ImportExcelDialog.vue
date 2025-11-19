@@ -110,7 +110,7 @@ import type {
   UploadProps,
   UploadRawFile
 } from 'element-plus'
-import { importNodesFromExcel, downloadExcelTemplate } from '@/api/node'
+import { apiNodeImport, apiGetNodeDownload } from '@/api/node'
 import { genFileId } from 'element-plus'
 interface Props {
   visible: boolean
@@ -167,7 +167,7 @@ const handleFileRemove = () => {
 
 const handleDownloadTemplate = async () => {
   try {
-    const response = await downloadExcelTemplate()
+    const response = await apiGetNodeDownload()
     // 创建下载链接
     const blob = new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -211,7 +211,7 @@ const handleConfirm = async () => {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
     console.log(formData)
-    const response = await importNodesFromExcel(formData)
+    const response = await apiNodeImport(formData)
 
     loadingInstance.close()
 

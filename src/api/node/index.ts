@@ -16,13 +16,22 @@ export const apiCreateNode = (data): Promise<IPaginationResponse> => {
 }
 
 // 下载Excel模板
-export const apiGetNodeDownload = (data): Promise<IPaginationResponse> => {
-  return request.get({ url: '/api/v1/node/download/', params: data })
+export const apiGetNodeDownload = () => {
+  return request.get({
+    url: '/api/v1/node/download/',
+    responseType: 'blob'
+  })
 }
 
 // 通过Excel导入节点数据
-export const apiNodeImport = (data): Promise<IPaginationResponse> => {
-  return request.post({ url: '/api/v1/node/import/', data })
+export const apiNodeImport = (formData: FormData) => {
+  return request.post({
+    url: '/api/v1/node/import/',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }
 
 // 单节点SSH连通性探测
@@ -295,11 +304,4 @@ export const importNodesFromExcel = (formData: FormData) => {
   //     'Content-Type': 'multipart/form-data'
   //   }
   // })
-}
-
-// 下载Excel模板
-export const downloadExcelTemplate = () => {
-  return request.get('/api/v1/node/import/template', {
-    responseType: 'blob'
-  })
 }

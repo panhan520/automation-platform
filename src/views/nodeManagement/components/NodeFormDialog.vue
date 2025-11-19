@@ -398,6 +398,7 @@ interface NodeTagItem {
 type NodeFormSubmit = Omit<NodeForm, 'region'> & { region: string }
 
 type NodeFormDefaultData = Partial<NodeForm> & {
+  id?: number
   regionCodes?: (string | number)[]
   regionLabel?: string
   tags?: Array<{ key: string; value: string }>
@@ -733,11 +734,15 @@ const handleConnectivityTest = async () => {
   try {
     await new Promise((resolve) => setTimeout(resolve, 800))
     await apiNodeSingleProbe({
+      id: props.isEdit ? props.defaultData.id : undefined,
       loginAccount: form.loginAccount,
       loginIp: form.loginIp,
       loginPort: form.loginPort,
       authMethod: form.authMethod,
-      passwordKey: form.authMethod === 'password' ? form.credentialPassword : form.credentialKey
+      passwordKey: form.authMethod === 'password' ? form.credentialPassword : form.credentialKey,
+      publicIp: form.publicIp,
+      innerIp: form.innerIp,
+      appType: form.appType
     })
     connectivityStatus.value = 'success'
     ElMessage.success('连通测试成功')
