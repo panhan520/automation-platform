@@ -4,81 +4,95 @@
     :table-data="displayTableData"
     :loading="loading"
     :total-records="totalRecords"
-    :toolbar-buttons="toolbarButtons"
     :filters="toolbarFilters"
+    :columns="tableColumns"
     :query-params="queryParams"
     @search="handleSearch"
-    @refresh="handleRefresh"
+    @refresh="getList"
     @page-change="handlePageChange"
   >
-    <template #columns>
-      <el-table-column prop="taskId" label="任务ID" />
-      <el-table-column prop="taskName" label="任务名称" />
-      <el-table-column prop="templateName" label="关联模版" />
-      <el-table-column prop="executionTime" label="执行时间" />
-      <el-table-column prop="executionResult" label="执行结果">
-        <template #default="scope">
-          <el-tag :type="getResultType(scope.row.executionResult)">{{
-            scope.row.executionResult
-          }}</el-tag>
-        </template>
-      </el-table-column>
-      <TableActionsColumn :actions="rowActions" @edit="handleEdit" @action="handleMoreAction" />
+    <template #executionResult="{ row }">
+      <div class="status-cell">
+        <el-icon :class="['status-icon', statusIconClass(row.executionResult)]">
+          <component :is="statusIcon(row.executionResult)" />
+        </el-icon>
+        <span>{{ row.executionResult }}</span>
+      </div>
+    </template>
+    <template #actions="{ row }">
+      <el-button type="primary" text size="small" @click="handleViewDetails(row)"
+        >查看详情</el-button
+      >
     </template>
   </ManagementList>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ManagementList } from '@/components/ManagementList'
-import type { ToolbarButton } from '@/components/ManagementList'
+import { useRouter } from 'vue-router'
+import { Check, CloseBold, RefreshRight, Search } from '@element-plus/icons-vue'
+import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
-import { Search } from '@element-plus/icons-vue'
-import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 
 interface ExecutionRecord {
   id: number
   taskId: string
-  taskName: string
-  templateName: string
+  internalIp: string
+  publicIp: string
   executionTime: string
-  executionResult: string
+  executionResult: '进行中' | '成功' | '失败'
 }
 
 const title = '执行历史'
+const router = useRouter()
+
 const allRecords = ref<ExecutionRecord[]>([])
 const loading = ref(false)
 const queryParams = reactive({
   page: 1,
-  pageSize: 10,
-  keyword: ''
+  pageSize: 10
 })
 
-const toolbarButtons: ToolbarButton[] = []
+const filtersState = reactive({
+  internalIp: '',
+  publicIp: ''
+})
+
 const toolbarFilters: ToolbarFilter[] = [
   {
-    key: 'keyword',
+    key: 'internalIp',
     type: 'input',
-    placeholder: '搜索任务ID/名称',
-    width: 260,
+    placeholder: '搜索内网IP',
+    width: 200,
+    prefixIcon: Search
+  },
+  {
+    key: 'publicIp',
+    type: 'input',
+    placeholder: '搜索公网IP',
+    width: 200,
     prefixIcon: Search
   }
 ]
 
-const rowActions: TableAction[] = [
-  {
-    key: 'viewDetails',
-    label: '查看详情'
-  }
+const tableColumns: TableColumn[] = [
+  { prop: 'taskId', label: '任务ID', width: 120 },
+  { prop: 'internalIp', label: '内网IP' },
+  { prop: 'publicIp', label: '公网IP' },
+  { prop: 'executionTime', label: '执行时间', minWidth: 180 },
+  { prop: 'executionResult', label: '执行结果', width: 140, slot: 'executionResult' },
+  { prop: 'actions', label: '操作', width: 120, slot: 'actions' }
 ]
 
-const filteredRecords = computed(() => {
-  return allRecords.value.filter((item) =>
-    queryParams.keyword
-      ? item.taskId.includes(queryParams.keyword) || item.taskName.includes(queryParams.keyword)
+const filteredRecords = computed(() =>
+  allRecords.value.filter((item) => {
+    const matchInternal = filtersState.internalIp
+      ? item.internalIp.includes(filtersState.internalIp)
       : true
-  )
-})
+    const matchPublic = filtersState.publicIp ? item.publicIp.includes(filtersState.publicIp) : true
+    return matchInternal && matchPublic
+  })
+)
 
 const displayTableData = computed(() => {
   const start = (queryParams.page - 1) * queryParams.pageSize
@@ -87,41 +101,65 @@ const displayTableData = computed(() => {
 
 const totalRecords = computed(() => filteredRecords.value.length)
 
-const getResultType = (result: string): 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-    成功: 'success',
-    失败: 'danger',
-    进行中: 'warning'
+const statusIcon = (status: string) => {
+  switch (status) {
+    case '成功':
+      return Check
+    case '失败':
+      return CloseBold
+    default:
+      return RefreshRight
   }
-  return map[result] || 'info'
+}
+
+const statusIconClass = (status: string) => {
+  switch (status) {
+    case '成功':
+      return 'success'
+    case '失败':
+      return 'danger'
+    default:
+      return 'warning'
+  }
 }
 
 const getList = async () => {
-  try {
-    loading.value = true
-    // TODO: 调用API获取数据
+  loading.value = true
+  setTimeout(() => {
     allRecords.value = [
       {
         id: 1,
         taskId: '1',
-        taskName: '任务1',
-        templateName: 'Nginx部署模版',
-        executionTime: '2025-10-28 10:29:09',
+        internalIp: '192.168.21.20',
+        publicIp: '192.23.21.12',
+        executionTime: '2025-10-28 13:29:09',
+        executionResult: '进行中'
+      },
+      {
+        id: 2,
+        taskId: '2',
+        internalIp: '192.12.21.23',
+        publicIp: '192.168.09.99',
+        executionTime: '2025-10-28 13:29:09',
         executionResult: '成功'
+      },
+      {
+        id: 3,
+        taskId: '3',
+        internalIp: '192.210.212.22',
+        publicIp: '192.123.121.12',
+        executionTime: '2025-10-20 11:29:09',
+        executionResult: '失败'
       }
     ]
-  } finally {
     loading.value = false
-  }
+  }, 300)
 }
 
 const handleSearch = (params: Record<string, any>) => {
-  queryParams.keyword = params.keyword || ''
+  filtersState.internalIp = params.internalIp || ''
+  filtersState.publicIp = params.publicIp || ''
   queryParams.page = 1
-}
-
-const handleRefresh = () => {
-  getList()
 }
 
 const handlePageChange = (page: number, pageSize: number) => {
@@ -129,14 +167,11 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
 }
 
-const handleEdit = (row: ExecutionRecord) => {
-  console.log('编辑', row)
-}
-
-const handleMoreAction = (action: string, row: ExecutionRecord) => {
-  if (action === 'viewDetails') {
-    console.log('查看详情', row)
-  }
+const handleViewDetails = (record: ExecutionRecord) => {
+  router.push({
+    name: 'AutomationExecutionHistoryDetail',
+    params: { taskId: record.taskId }
+  })
 }
 
 onMounted(() => {
@@ -144,25 +179,26 @@ onMounted(() => {
 })
 </script>
 
-<style lang="less" scoped>
-.page-title {
-  font-size: 18px;
-  line-height: 26px;
-  color: #0c0d0e;
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.table-info {
-  font-size: 14px;
-  color: #606266;
-  margin-top: 16px;
-}
-
-.bulk-action-bar {
+<style scoped lang="less">
+.status-cell {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  margin-top: 16px;
+  gap: 6px;
+
+  .status-icon {
+    font-size: 14px;
+
+    &.success {
+      color: #67c23a;
+    }
+
+    &.danger {
+      color: #f56c6c;
+    }
+
+    &.warning {
+      color: #e6a23c;
+    }
+  }
 }
 </style>

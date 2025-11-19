@@ -123,7 +123,7 @@ const tableColumns: TableColumn[] = [
   { prop: 'templateName', label: '模版名称' },
   { prop: 'templateType', label: '模版类型', slot: 'templateType' },
   { prop: 'templateContent', label: '模版内容', minWidth: 220 },
-  { prop: 'description', label: '备注信息' },
+  { prop: 'description', label: '描述信息' },
   { prop: 'actions', label: '操作', width: 160, slot: 'actions' }
 ]
 

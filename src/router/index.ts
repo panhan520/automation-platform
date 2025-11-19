@@ -67,12 +67,10 @@ export const asyncRouterMap: AppRouteRecordRaw[] = [
   {
     path: '/nodeManagement',
     component: Layout,
-    redirect: '/nodeManagement/index',
     name: 'NodeManagement',
     meta: {
       title: '节点管理',
-      icon: 'vi-ep:lightning',
-      alwaysShow: true
+      icon: 'vi-ep:lightning'
     },
     children: [
       {
@@ -80,28 +78,29 @@ export const asyncRouterMap: AppRouteRecordRaw[] = [
         component: () => import('@/views/nodeManagement/index.vue'),
         name: 'NodeManagementList',
         meta: {
-          title: '节点管理'
-        }
-      },
-      {
-        path: 'executionHistory',
-        component: () => import('@/views/nodeManagement/executionHistory/index.vue'),
-        name: 'NodeExecutionHistory',
-        meta: {
-          title: '执行历史'
-        }
-      },
-      {
-        path: 'executionHistory/:taskId',
-        component: () => import('@/views/nodeManagement/executionHistory/detail.vue'),
-        name: 'NodeExecutionHistoryDetail',
-        meta: {
-          title: '执行详情',
-          hidden: true,
-          activeMenu: '/nodeManagement/executionHistory',
-          noTagsView: true
+          title: '节点管理',
+          icon: 'vi-ep:lightning'
         }
       }
+      // {
+      //   path: 'executionHistory',
+      //   component: () => import('@/views/nodeManagement/executionHistory/index.vue'),
+      //   name: 'NodeExecutionHistory',
+      //   meta: {
+      //     title: '执行历史'
+      //   }
+      // },
+      // {
+      //   path: 'executionHistory/:taskId',
+      //   component: () => import('@/views/nodeManagement/executionHistory/detail.vue'),
+      //   name: 'NodeExecutionHistoryDetail',
+      //   meta: {
+      //     title: '执行详情',
+      //     hidden: true,
+      //     activeMenu: '/nodeManagement/executionHistory',
+      //     noTagsView: true
+      //   }
+      // }
     ]
   },
   {
@@ -145,6 +144,17 @@ export const asyncRouterMap: AppRouteRecordRaw[] = [
         name: 'AutomationExecutionHistory',
         meta: {
           title: '执行历史'
+        }
+      },
+      {
+        path: 'executionHistory/:taskId',
+        component: () => import('@/views/automationManagement/executionHistory/detail.vue'),
+        name: 'AutomationExecutionHistoryDetail',
+        meta: {
+          title: '执行详情',
+          hidden: true,
+          activeMenu: '/automationManagement/executionHistory',
+          noTagsView: true
         }
       }
     ]
