@@ -99,7 +99,7 @@
     />
 
     <!-- 操作确认对话框 -->
-    <OperationConfirmDialog
+    <!-- <OperationConfirmDialog
       v-model:visible="operationDialogVisible"
       :operation="currentOperation"
       :is-batch="isBatchOperation"
@@ -108,7 +108,7 @@
       :loading="operationLoading"
       @confirm="handleOperationConfirm"
       @cancel="handleOperationCancel"
-    />
+    /> -->
 
     <!-- 导入Excel对话框 -->
     <ImportExcelDialog v-model:visible="importDialogVisible" @success="handleImportSuccess" />
@@ -119,7 +119,6 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Setting, Refresh } from '@element-plus/icons-vue'
-import dayjs from 'dayjs'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -136,7 +135,7 @@ import {
 import { apiGetAppTypeList } from '@/api/application'
 import { NodeRecord } from '@/api/node/type'
 import { ColumnCustomDialog, type ColumnItem } from '@/components/ColumnCustomDialog'
-import { OperationConfirmDialog } from '@/components/OperationConfirmDialog'
+// import { OperationConfirmDialog } from '@/components/OperationConfirmDialog'
 import { ImportExcelDialog } from '@/components/ImportExcelDialog'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
 
@@ -290,17 +289,17 @@ const tableColumnsForList = computed<TableColumn[]>(() => {
 })
 
 // 操作确认对话框相关
-const operationDialogVisible = ref(false)
-const currentOperation = ref('')
-const isBatchOperation = ref(false)
-const operationHostnames = ref<string[]>([])
-const operationHostCount = ref(0)
-const operationLoading = ref(false)
-const pendingOperation = ref<{
-  operation: string
-  nodeIds: number[]
-  isBatch: boolean
-} | null>(null)
+// const operationDialogVisible = ref(false)
+// const currentOperation = ref('')
+// const isBatchOperation = ref(false)
+// const operationHostnames = ref<string[]>([])
+// const operationHostCount = ref(0)
+// const operationLoading = ref(false)
+// const pendingOperation = ref<{
+//   operation: string
+//   nodeIds: number[]
+//   isBatch: boolean
+// } | null>(null)
 const totalRecords = ref(0)
 // 导入Excel对话框
 const importDialogVisible = ref(false)
@@ -359,112 +358,80 @@ const handleConnectTest = async () => {
   taskPanelStore.setVisible(true)
   // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
   // 触发 App.vue 中的任务列表刷新
-  const { getTaskList } = await import('@/api/node')
-  try {
-    const response = await getTaskList()
-    if (response.data && Array.isArray(response.data)) {
-      const getOperationName = (operation: string): string => {
-        const map: Record<string, string> = {
-          install: '安装详情',
-          upgrade: '升级详情',
-          online: '上线详情',
-          offline: '下线详情',
-          restart: '重启详情',
-          reinstall: '重装详情',
-          uninstall: '卸载详情',
-          test: '测试详情'
-        }
-        return map[operation] || '任务'
-      }
-      const tasks = response.data.map((task: any) => ({
-        id: task.id || task.taskId,
-        type: task.type || getOperationName(task.operation),
-        time: task.time || task.createTime || dayjs().format('HH:mm:ss'),
-        operation: task.operation,
-        successCount: task.successCount || 0,
-        progressCount: task.progressCount || 0,
-        failedCount: task.failedCount || 0,
-        details: task.details || []
-      }))
-      taskPanelStore.setTasks(tasks)
-    }
-  } catch (error) {
-    console.error('刷新任务列表失败:', error)
-  }
   // showOperationDialog('test', true, selectedRows.value)
 }
 // 显示操作确认对话框
-const showOperationDialog = (operation: string, isBatch: boolean, nodes: NodeRecord[]) => {
-  currentOperation.value = operation
-  isBatchOperation.value = isBatch
-  operationHostnames.value = nodes.map((n) => n.hostName || n.innerIp)
-  operationHostCount.value = nodes.length
-  pendingOperation.value = {
-    operation,
-    nodeIds: nodes.map((n) => n.id),
-    isBatch
-  }
-  operationDialogVisible.value = true
-}
+// const showOperationDialog = (operation: string, isBatch: boolean, nodes: NodeRecord[]) => {
+//   currentOperation.value = operation
+//   isBatchOperation.value = isBatch
+//   operationHostnames.value = nodes.map((n) => n.hostName || n.innerIp)
+//   operationHostCount.value = nodes.length
+//   pendingOperation.value = {
+//     operation,
+//     nodeIds: nodes.map((n) => n.id),
+//     isBatch
+//   }
+//   operationDialogVisible.value = true
+// }
 
 // 操作框确认
-const handleOperationConfirm = async () => {
-  if (!pendingOperation.value) return
+// const handleOperationConfirm = async () => {
+//   if (!pendingOperation.value) return
 
-  try {
-    operationLoading.value = true
-    operationDialogVisible.value = false
+//   try {
+//     operationLoading.value = true
+//     operationDialogVisible.value = false
 
-    // 设置缓存为 true，显示任务面板
-    localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
-    taskPanelStore.setVisible(true)
+//     // 设置缓存为 true，显示任务面板
+//     localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
+//     taskPanelStore.setVisible(true)
 
-    // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
-    // 触发 App.vue 中的任务列表刷新
-    const { getTaskList } = await import('@/api/node')
-    try {
-      const response = await getTaskList()
-      if (response.data && Array.isArray(response.data)) {
-        const getOperationName = (operation: string): string => {
-          const map: Record<string, string> = {
-            install: '安装详情',
-            upgrade: '升级详情',
-            online: '上线详情',
-            offline: '下线详情',
-            restart: '重启详情',
-            reinstall: '重装详情',
-            uninstall: '卸载详情',
-            test: '测试详情'
-          }
-          return map[operation] || '任务'
-        }
-        const tasks = response.data.map((task: any) => ({
-          id: task.id || task.taskId,
-          type: task.type || getOperationName(task.operation),
-          time: task.time || task.createTime || dayjs().format('HH:mm:ss'),
-          operation: task.operation,
-          successCount: task.successCount || 0,
-          progressCount: task.progressCount || 0,
-          failedCount: task.failedCount || 0,
-          details: task.details || []
-        }))
-        taskPanelStore.setTasks(tasks)
-      }
-    } catch (error) {
-      console.error('刷新任务列表失败:', error)
-    }
-  } catch (error: any) {
-    ElMessage.error(error?.message || '操作失败')
-  } finally {
-    operationLoading.value = false
-    pendingOperation.value = null
-  }
-}
+//     // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
+//     // 触发 App.vue 中的任务列表刷新
+//     const { getExecTaskList } = await import('@/api/node')
+//     try {
+//       const response = await getExecTaskList()
+//       if (response.data && Array.isArray(response.data)) {
+//         const getOperationName = (operation: string): string => {
+//           const map: Record<string, string> = {
+//             install: '安装详情',
+//             upgrade: '升级详情',
+//             online: '上线详情',
+//             offline: '下线详情',
+//             restart: '重启详情',
+//             reinstall: '重装详情',
+//             uninstall: '卸载详情',
+//             test: '测试详情'
+//           }
+//           return map[operation] || '任务'
+//         }
+//         const tasks = response.data.map((task: any) => ({
+//           id: task.id || task.taskId,
+//           type: task.type || getOperationName(task.operation),
+//           time: task.time,
+//           operation: task.operation,
+//           successCount: task.successCount || 0,
+//           progressCount: task.progressCount || 0,
+//           failedCount: task.failedCount || 0,
+//           details: task.details || []
+//         }))
+//         taskPanelStore.setTasks(tasks)
+//       }
+//     } catch (error) {
+//       console.error('刷新任务列表失败:', error)
+//     }
+//   } catch (error: any) {
+//     ElMessage.error(error?.message || '操作失败')
+//   } finally {
+//     operationLoading.value = false
+//     pendingOperation.value = null
+//   }
+// }
 // 操作框取消
-const handleOperationCancel = () => {
-  operationDialogVisible.value = false
-  pendingOperation.value = null
-}
+// const handleOperationCancel = () => {
+//   operationDialogVisible.value = false
+//   pendingOperation.value = null
+// }
 // 批量操作列的点击事件
 // const handleBulkCommand = (command: string) => {
 //   if (!selectedRows.value.length) {

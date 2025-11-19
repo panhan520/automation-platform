@@ -23,21 +23,21 @@
         <el-collapse-item v-for="task in taskList" :key="task.id" :name="task.id">
           <template #title>
             <div class="task-title">
-              <span class="task-type">{{ task.type }}详情</span>
-              <span class="task-time">{{ task.time }}</span>
+              <span class="task-type">{{ task.taskName.slice(0, 2) }}详情</span>
+              <span class="task-time">{{ task.executeTime }}</span>
               <span class="task-summary">
-                ({{ task.successCount }}成功, {{ task.progressCount }}进行中,
-                {{ task.failedCount }}失败)
+                ({{ task.detail.success }}成功, {{ task.detail.running }}进行中,
+                {{ task.detail.failed }}失败)
               </span>
-              <el-button size="small"> 关闭 </el-button>
+              <el-button size="small" @click.stop="handleCloseItem(task.id)"> 关闭 </el-button>
             </div>
           </template>
 
           <div class="task-detail">
-            <el-table :data="task.details" border size="small" max-height="300">
-              <el-table-column prop="internalIp" label="内网IP" align="center" />
+            <el-table :data="detailList" border size="small" max-height="300">
+              <el-table-column prop="innerIp" label="内网IP" align="center" />
               <el-table-column prop="publicIp" label="公网IP" align="center" />
-              <el-table-column prop="applicationType" label="应用类型" align="center" />
+              <el-table-column prop="appTypeName" label="应用类型" align="center" />
               <el-table-column prop="status" label="状态" align="center">
                 <template #default="scope">
                   <div class="task-status" :class="scope.row.status"></div
@@ -52,11 +52,12 @@
                       link
                       type="primary"
                       size="small"
-                      @click="handleRetry(scope.row, task.type)"
+                      @click="handleRetry(scope.row, task.taskType)"
                     >
-                      {{ task.type }}
+                      {{ task.taskName }}
                     </el-button>
                     <el-button
+                      v-if="task.taskType !== 'NODE_PROBE'"
                       link
                       type="primary"
                       size="small"
@@ -64,8 +65,8 @@
                       class="log-button"
                     >
                       查看日志
-                    </el-button></div
-                  >
+                    </el-button>
+                  </div>
                 </template>
               </el-table-column>
             </el-table>
@@ -79,25 +80,30 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { getTaskList, getTaskDetail } from '@/api/node'
+import {
+  getExecTaskList,
+  getExecTaskDetail,
+  apiUpdateExecTask,
+  apiNodeSingleProbe
+} from '@/api/node'
 
 export interface TaskDetailItem {
-  internalIp: string
+  innerIp: string
   publicIp: string
-  applicationType: string
+  appTypeName: string
   status: string
   [key: string]: any
 }
 
 export interface Task {
   id: string
-  type: string
-  time: string
-  successCount: number
-  progressCount: number
-  failedCount: number
-  details?: TaskDetailItem[]
+  taskType: string
+  taskName: string
+  executeTime: string
+  status: string
+  detail: { [key: string]: any }
 }
 
 interface Props {
@@ -116,99 +122,92 @@ const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
 })
+// 任务列表
 const taskList = ref<Task[]>([])
+// 任务详情列表
+const detailList = ref<TaskDetailItem[]>([])
 const router = useRouter()
 
 const isExpanded = ref(false)
 const activeTaskId = ref<string>('')
+const taskListTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
-// 获取任务列表
-const getTaskListData = async () => {
-  try {
-    const response = await getTaskList()
-    if (response.data.list && Array.isArray(response.data.list)) {
-      const getOperationName = (type: string): string => {
-        const map: Record<string, string> = {
-          install: '安装',
-          upgrade: '升级',
-          online: '上线',
-          offline: '下线',
-          restart: '重启',
-          reinstall: '重装',
-          uninstall: '卸载'
-        }
-        return map[type] || '任务'
-      }
 
-      const tasks = response.data.list.map((task: any) => ({
-        id: task.id,
-        type: getOperationName(task.type),
-        time: task.time,
-        successCount: task.successCount || 0,
-        progressCount: task.progressCount || 0,
-        failedCount: task.failedCount || 0
-      }))
-      taskList.value = tasks
-    }
-  } catch (error) {
-    console.error('获取任务列表失败:', error)
+// 关闭单条任务详情
+const handleCloseItem = async (taskId: string) => {
+  await apiUpdateExecTask({ id: taskId, isClosed: true })
+  const index = taskList.value.findIndex((task) => task.id === taskId)
+  if (index !== -1) {
+    taskList.value.splice(index, 1)
   }
 }
-// 展开面板
-const handleExpand = () => {
-  isExpanded.value = true
-  getTaskListData()
+
+// 获取任务列表
+const getExecTaskListData = async () => {
+  const res = await getExecTaskList()
+  taskList.value = res.data.list
+  // 判断list中是否有status为RUNNING的任务
+  const hasRunningTask = res.data.list.some((item) => item.status === 'RUNNING')
+  if (hasRunningTask) {
+    startTaskList()
+  } else {
+    stopTaskList()
+  }
 }
-// 收缩面板
-const handleCollapse = () => {
-  stopPolling()
-  isExpanded.value = false
-  activeTaskId.value = ''
+
+// 任务列表开始轮询
+const startTaskList = () => {
+  stopTaskList()
+  taskListTimer.value = setInterval(() => {
+    getExecTaskListData()
+  }, 3000)
 }
-// 关闭悬浮框
-const handleClose = () => {
-  stopPolling()
-  emit('close')
+
+// 任务列表停止轮询
+const stopTaskList = () => {
+  if (taskListTimer.value) {
+    clearInterval(taskListTimer.value)
+    taskListTimer.value = null
+  }
 }
 // 打开/关闭任务详情
 const handleTaskChange = async (taskId: string) => {
   // 有选中任务
   if (taskId) {
     await fetchTaskDetail(taskId)
-    startPolling(taskId)
   } else {
     // 收起时停止轮询
     stopPolling()
   }
 }
 
+// 获取任务详情列表
 const fetchTaskDetail = async (taskId: string) => {
   try {
-    const response = await getTaskDetail(taskId)
-    // 更新对应任务的详情
-    const task = taskList.value.find((t) => t.id === taskId)
-    if (task && response.data) {
-      task.details = response.data.details
-      task.successCount = response.data.successCount || 0
-      task.progressCount = response.data.progressCount || 0
-      task.failedCount = response.data.failedCount || 0
+    const res = await getExecTaskDetail(taskId)
+    detailList.value = res.data
+    // 判断list中是否有status为RUNNING的任务
+    const hasRunningTask = res.data.some((item) => item.status === 'RUNNING')
+    if (hasRunningTask) {
+      startPolling(taskId)
+    } else {
+      stopPolling()
     }
   } catch (error) {
     console.error('获取任务详情失败:', error)
   }
 }
 
-// 开始轮询
+// 任务详情开始轮询
 const startPolling = (taskId: string) => {
   stopPolling()
-
   pollingTimer.value = setInterval(() => {
     fetchTaskDetail(taskId)
   }, 3000)
 }
 
-// 停止轮询
+// 任务详情停止轮询
 const stopPolling = () => {
   if (pollingTimer.value) {
     clearInterval(pollingTimer.value)
@@ -216,6 +215,28 @@ const stopPolling = () => {
   }
 }
 
+// 展开面板
+const handleExpand = () => {
+  isExpanded.value = true
+  getExecTaskListData()
+}
+
+// 收缩面板
+const handleCollapse = () => {
+  stopTaskList()
+  stopPolling()
+  isExpanded.value = false
+  activeTaskId.value = ''
+}
+
+// 关闭悬浮框
+const handleClose = () => {
+  stopTaskList()
+  stopPolling()
+  emit('close')
+}
+
+// 全局点击事件
 const handleGlobalClick = (event: MouseEvent) => {
   if (!visible.value || !panelRef.value) return
   if (panelRef.value.contains(event.target as Node)) return
@@ -224,27 +245,49 @@ const handleGlobalClick = (event: MouseEvent) => {
   }
 }
 
+// 任务状态转译
 const getStatusType = (status: string) => {
   const map = {
     success: '成功',
-    pending: '进行中',
+    running: '进行中',
     failed: '失败'
   }
-  return map[status] || 'pending'
+  return map[status] || 'running'
 }
 
-const handleRetry = (row: TaskDetailItem, operation: string) => {
+// 重试操作
+const handleRetry = (row: TaskDetailItem, type: string) => {
   // 触发重试操作
-  console.log('重试操作:', row, operation)
+  console.log('重试操作:', row, type)
+  switch (type) {
+    case 'NODE_PROBE':
+      handleNodeSingleProbe(row)
+      break
+    default:
+      break
+  }
 }
 
+// 连通测试
+const handleNodeSingleProbe = async (row) => {
+  try {
+    await apiNodeSingleProbe({ ...row })
+    ElMessage.success('连通测试成功')
+  } catch (error) {
+    ElMessage.closeAll()
+    setTimeout(() => {
+      ElMessage.error('连通测试失败')
+    }, 10)
+  }
+}
+// 查看日志
 const handleViewLog = (row: TaskDetailItem, task: Task) => {
   router.push({
     name: 'NodeExecutionHistoryDetail',
     params: { taskId: task.id },
     query: {
       hostId: row.hostId || '',
-      internalIp: row.internalIp
+      innerIp: row.innerIp
     }
   })
 }
@@ -254,6 +297,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  stopTaskList()
   stopPolling()
   document.removeEventListener('click', handleGlobalClick)
 })
@@ -375,7 +419,7 @@ onUnmounted(() => {
     .failed {
       background: #f56c6c;
     }
-    .pending {
+    .running {
       background: #e6a23c;
     }
     .task-item {
@@ -392,8 +436,6 @@ onUnmounted(() => {
       }
     }
     .task-actions {
-      display: flex;
-      justify-content: flex-end;
       .log-button {
         color: #333;
       }

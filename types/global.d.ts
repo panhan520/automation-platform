@@ -62,6 +62,7 @@ declare global {
     data: {
       list: T[]
       pagination: IPagination
+      isPending?: boolean
     }
   }
 

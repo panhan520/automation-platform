@@ -5,7 +5,7 @@ import { ConfigGlobal } from '@/components/ConfigGlobal'
 import { useDesign } from '@/hooks/web/useDesign'
 import { TaskDetailPanel } from '@/components/TaskDetailPanel'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
-import { getTaskList } from '@/api/node'
+import { getExecTaskList } from '@/api/node'
 import dayjs from 'dayjs'
 
 const { getPrefixCls } = useDesign()
@@ -29,7 +29,7 @@ const taskList = computed(() => taskPanelStore.getTasks)
 // 刷新任务列表
 const refreshTaskList = async () => {
   try {
-    const response = await getTaskList()
+    const response = await getExecTaskList()
     if (response.data && Array.isArray(response.data)) {
       const getOperationName = (operation: string): string => {
         const map: Record<string, string> = {
@@ -75,7 +75,7 @@ const initTaskPanelVisibility = async () => {
   } else {
     // 没有缓存，查询当天任务
     try {
-      const response = await getTaskList()
+      const response = await getExecTaskList()
       const hasTasks = response.data && response.data.list.length > 0
       localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, hasTasks ? 'true' : 'false')
       taskPanelVisible.value = hasTasks
