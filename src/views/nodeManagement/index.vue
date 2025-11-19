@@ -163,6 +163,7 @@ const queryParams = reactive({
 })
 // 选中数据
 const selectedRows = ref<NodeRecord[]>([])
+const connectTestLoading = ref(false)
 // 批量操作列表
 // const bulkDropdownOptions = [{ label: '连通测试', command: 'test' }]
 // 顶部筛选栏
@@ -216,6 +217,8 @@ const toolbarButtons = computed<ToolbarButton[]>(() => [
   {
     key: 'bulk',
     label: '连通测试',
+    loading: connectTestLoading.value,
+    disabled: connectTestLoading.value,
     onClick: () => handleConnectTest()
   },
   {
@@ -347,15 +350,24 @@ const getList = async () => {
 }
 // 批量连通测试
 const handleConnectTest = async () => {
-  console.log(selectedRows)
+  if (connectTestLoading.value) return
   if (!selectedRows.value.length) {
     ElMessage.warning('请先选择节点')
     return
   }
-  await apiNodeBatchProbe(selectedRows.value)
-  // 设置缓存为 true，显示任务面板
-  localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
-  taskPanelStore.setVisible(true)
+  connectTestLoading.value = true
+  try {
+    await apiNodeBatchProbe(selectedRows.value)
+    // 设置缓存为 true，显示任务面板
+    localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
+    taskPanelStore.setVisible(true)
+    taskPanelStore.triggerPulse()
+  } catch (error) {
+    console.error('批量连通测试失败:', error)
+    ElMessage.error('连通测试失败，请稍后重试')
+  } finally {
+    connectTestLoading.value = false
+  }
   // 刷新任务列表（在 App.vue 中处理，通过 store 更新）
   // 触发 App.vue 中的任务列表刷新
   // showOperationDialog('test', true, selectedRows.value)

@@ -76,14 +76,25 @@
           @command="(command: string) => handleDropdownCommand(btn, command)"
         >
           <el-tooltip v-if="btn.tooltip" :content="btn.tooltip" placement="top" effect="light">
-            <el-button v-bind="getButtonProps(btn)" :type="btn.type" :disabled="btn.disabled">
+            <el-button
+              v-bind="getButtonProps(btn)"
+              :type="btn.type"
+              :disabled="btn.disabled"
+              :loading="btn.loading"
+            >
               <template v-if="btn.icon" #icon>
                 <component :is="btn.icon" />
               </template>
               <span v-if="btn.label">{{ btn.label }}</span>
             </el-button>
           </el-tooltip>
-          <el-button v-else v-bind="getButtonProps(btn)" :type="btn.type" :disabled="btn.disabled">
+          <el-button
+            v-else
+            v-bind="getButtonProps(btn)"
+            :type="btn.type"
+            :disabled="btn.disabled"
+            :loading="btn.loading"
+          >
             <template v-if="btn.icon" #icon>
               <component :is="btn.icon" />
             </template>
@@ -111,6 +122,7 @@
               :text="btn.text"
               :type="btn.type"
               :disabled="btn.disabled"
+              :loading="btn.loading"
               @click="() => handleButtonClick(btn)"
             >
               <template v-if="btn.icon && !btn.circle && !btn.text" #icon>
@@ -127,6 +139,7 @@
             :text="btn.text"
             :type="btn.type"
             :disabled="btn.disabled"
+            :loading="btn.loading"
             @click="() => handleButtonClick(btn)"
           >
             <template v-if="btn.icon && !btn.circle && !btn.text" #icon>
@@ -181,6 +194,7 @@ interface ButtonItem {
   onCommand?: (command: string) => void
   onClick?: () => void
   placeholder?: string
+  loading?: boolean
 }
 
 interface SearchOption {

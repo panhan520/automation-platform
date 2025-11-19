@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { TableToolbar } from '@/components/TableToolbar'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -98,6 +98,7 @@ export interface ToolbarButton {
   textOnly?: boolean
   tooltip?: string
   disabled?: boolean
+  loading?: boolean
   dropdownOptions?: Array<{ label: string; command: string }>
   onCommand?: (command: string) => void
   onClick?: () => void

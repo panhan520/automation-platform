@@ -6,7 +6,6 @@ import { useDesign } from '@/hooks/web/useDesign'
 import { TaskDetailPanel } from '@/components/TaskDetailPanel'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
 import { getExecTaskList } from '@/api/node'
-import dayjs from 'dayjs'
 
 const { getPrefixCls } = useDesign()
 
@@ -25,42 +24,7 @@ const taskPanelVisible = computed({
 })
 
 const taskList = computed(() => taskPanelStore.getTasks)
-
-// 刷新任务列表
-const refreshTaskList = async () => {
-  try {
-    const response = await getExecTaskList()
-    if (response.data && Array.isArray(response.data)) {
-      const getOperationName = (operation: string): string => {
-        const map: Record<string, string> = {
-          install: '安装详情',
-          upgrade: '升级详情',
-          online: '上线详情',
-          offline: '下线详情',
-          restart: '重启详情',
-          reinstall: '重装详情',
-          uninstall: '卸载详情',
-          test: '测试详情'
-        }
-        return map[operation] || '任务'
-      }
-
-      const tasks = response.data.map((task: any) => ({
-        id: task.id || task.taskId,
-        type: task.type || getOperationName(task.operation),
-        time: task.time || task.createTime || dayjs().format('HH:mm:ss'),
-        operation: task.operation,
-        successCount: task.successCount || 0,
-        progressCount: task.progressCount || 0,
-        failedCount: task.failedCount || 0,
-        details: task.details || []
-      }))
-      taskPanelStore.setTasks(tasks)
-    }
-  } catch (error) {
-    console.error('获取任务列表失败:', error)
-  }
-}
+const pulseSignal = computed(() => taskPanelStore.getPulseSignal)
 
 // 检查并初始化任务面板显示状态
 const initTaskPanelVisibility = async () => {
@@ -69,9 +33,6 @@ const initTaskPanelVisibility = async () => {
   if (cached !== null) {
     // 有缓存，直接使用
     taskPanelVisible.value = cached === 'true'
-    // if (taskPanelVisible.value) {
-    //   await refreshTaskList()
-    // }
   } else {
     // 没有缓存，查询当天任务
     try {
@@ -79,9 +40,6 @@ const initTaskPanelVisibility = async () => {
       const hasTasks = response.data && response.data.list.length > 0
       localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, hasTasks ? 'true' : 'false')
       taskPanelVisible.value = hasTasks
-      // if (hasTasks) {
-      //   await refreshTaskList()
-      // }
     } catch (error) {
       console.error('查询任务列表失败:', error)
       localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'false')
@@ -111,6 +69,7 @@ onMounted(() => {
     <TaskDetailPanel
       v-model:visible="taskPanelVisible"
       :tasks="taskList"
+      :pulse-signal="pulseSignal"
       @close="handleTaskPanelClose"
     />
   </ConfigGlobal>

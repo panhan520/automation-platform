@@ -1,5 +1,10 @@
 <template>
-  <div v-if="visible" ref="panelRef" class="task-detail-panel">
+  <div
+    v-if="visible"
+    ref="panelRef"
+    class="task-detail-panel"
+    :class="{ 'is-pulsing': highlightActive }"
+  >
     <!-- 顶部操作栏 -->
     <div class="panel-header">
       <div class="header-left">
@@ -78,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -109,6 +114,7 @@ export interface Task {
 interface Props {
   visible: boolean
   tasks: Task[]
+  pulseSignal?: number
 }
 
 const props = defineProps<Props>()
@@ -133,6 +139,9 @@ const activeTaskId = ref<string>('')
 const taskListTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
+const highlightActive = ref(false)
+const pulseTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const pulseDuration = 4500
 
 // 关闭单条任务详情
 const handleCloseItem = async (taskId: string) => {
@@ -300,7 +309,32 @@ onUnmounted(() => {
   stopTaskList()
   stopPolling()
   document.removeEventListener('click', handleGlobalClick)
+  if (pulseTimer.value) {
+    clearTimeout(pulseTimer.value)
+    pulseTimer.value = null
+  }
 })
+
+const triggerPulseEffect = () => {
+  if (pulseTimer.value) {
+    clearTimeout(pulseTimer.value)
+    pulseTimer.value = null
+  }
+  highlightActive.value = true
+  pulseTimer.value = setTimeout(() => {
+    highlightActive.value = false
+    pulseTimer.value = null
+  }, pulseDuration)
+}
+
+watch(
+  () => props.pulseSignal,
+  (val, oldVal) => {
+    if (val && val !== oldVal) {
+      triggerPulseEffect()
+    }
+  }
+)
 </script>
 
 <style lang="less" scoped>
@@ -311,6 +345,14 @@ onUnmounted(() => {
   width: 260px;
   z-index: 2000;
   transition: all 0.3s ease;
+  border-radius: 30px;
+
+  &.is-pulsing {
+    animation: panelBreath 2.2s ease-in-out infinite;
+    .panel-header {
+      box-shadow: 0 6px 18px rgba(58, 129, 255, 0.45);
+    }
+  }
 
   .panel-header {
     display: flex;
@@ -440,6 +482,21 @@ onUnmounted(() => {
         color: #333;
       }
     }
+  }
+}
+
+@keyframes panelBreath {
+  0% {
+    box-shadow: 0 0 0 rgba(58, 129, 255, 0.05);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 6px 22px rgba(58, 129, 255, 0.35);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(58, 129, 255, 0.05);
+    transform: translateY(0);
   }
 }
 </style>

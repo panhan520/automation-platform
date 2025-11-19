@@ -4,13 +4,15 @@ import type { Task } from '@/components/TaskDetailPanel'
 interface TaskPanelState {
   visible: boolean
   tasks: Task[]
+  pulseSignal: number
 }
 
 export const useTaskPanelStore = defineStore('taskPanel', {
   state: (): TaskPanelState => {
     return {
       visible: false,
-      tasks: []
+      tasks: [],
+      pulseSignal: 0
     }
   },
   getters: {
@@ -19,6 +21,9 @@ export const useTaskPanelStore = defineStore('taskPanel', {
     },
     getTasks(): Task[] {
       return this.tasks
+    },
+    getPulseSignal(): number {
+      return this.pulseSignal
     }
   },
   actions: {
@@ -36,6 +41,9 @@ export const useTaskPanelStore = defineStore('taskPanel', {
       if (index !== -1) {
         this.tasks[index] = { ...this.tasks[index], ...updates }
       }
+    },
+    triggerPulse() {
+      this.pulseSignal = Date.now()
     }
   },
   persist: true
