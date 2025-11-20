@@ -12,15 +12,27 @@
     @refresh="handleRefresh"
     @page-change="handlePageChange"
   >
-    <template #status="{ row }">
-      <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
-    </template>
-    <template #actions="{ row }">
-      <div class="actions-cell">
-        <el-button type="primary" text size="small" @click="handleEdit(row)">编辑</el-button>
-        <el-button type="success" text size="small" @click="handleExecute(row)">执行</el-button>
-        <el-button type="danger" text size="small" @click="handleDelete(row)">删除</el-button>
-      </div>
+    <template #columns="{ displayColumns }">
+      <template v-for="column in displayColumns" :key="column.prop">
+        <TableActionsColumn
+          v-if="column.prop === 'actions'"
+          :main-actions="taskRowActions"
+          @edit="handleEdit"
+          @action="handleRowAction"
+        />
+        <el-table-column
+          v-else
+          :prop="column.prop"
+          :label="column.label"
+          :width="column.width"
+          :min-width="column.minWidth"
+          :sortable="column.sortable"
+        >
+          <template v-if="column.prop === 'status'" #default="scope">
+            <el-tag :type="getStatusType(scope.row.status)">{{ scope.row.status }}</el-tag>
+          </template>
+        </el-table-column>
+      </template>
     </template>
   </ManagementList>
 
@@ -42,6 +54,7 @@ import { ManagementList, type TableColumn, type ToolbarButton } from '@/componen
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
+import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 
 type ScriptLanguage = 'Shell' | 'Python'
 
@@ -92,6 +105,21 @@ const tableColumns: TableColumn[] = [
   { prop: 'createTime', label: '创建时间', minWidth: 160 },
   { prop: 'executeTime', label: '执行时间', minWidth: 160 },
   { prop: 'actions', label: '操作', width: 200, slot: 'actions' }
+]
+
+const taskRowActions: TableAction[] = [
+  {
+    key: 'execute',
+    label: '执行',
+    type: 'success',
+    text: true
+  },
+  {
+    key: 'delete',
+    label: '删除',
+    type: 'danger',
+    text: true
+  }
 ]
 
 const filteredTasks = computed(() => {
@@ -246,14 +274,20 @@ const handleDelete = async (row: TaskRecord) => {
   }, 300)
 }
 
+const handleRowAction = (actionKey: string, row: TaskRecord) => {
+  if (actionKey === 'execute') {
+    handleExecute(row)
+    return
+  }
+  if (actionKey === 'delete') {
+    handleDelete(row)
+  }
+}
+
 onMounted(() => {
   getList()
 })
 </script>
 
 <style scoped lang="less">
-.actions-cell {
-  display: flex;
-  gap: 8px;
-}
 </style>

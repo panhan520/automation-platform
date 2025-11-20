@@ -53,10 +53,11 @@
                 <template #default="scope">
                   <div class="task-actions">
                     <el-button
-                      v-if="scope.row.status === 'failed'"
+                      v-if="scope.row.status === 'FAILED'"
                       link
                       type="primary"
                       size="small"
+                      :loading="scope.row.loading"
                       @click="handleRetry(scope.row, task.taskType)"
                     >
                       {{ task.taskName }}
@@ -77,6 +78,7 @@
             </el-table>
           </div>
         </el-collapse-item>
+        <el-empty v-if="taskList.length === 0" description="暂无数据" />
       </el-collapse>
     </div>
   </div>
@@ -99,6 +101,7 @@ export interface TaskDetailItem {
   publicIp: string
   appTypeName: string
   status: string
+  task: number
   [key: string]: any
 }
 
@@ -257,11 +260,11 @@ const handleGlobalClick = (event: MouseEvent) => {
 // 任务状态转译
 const getStatusType = (status: string) => {
   const map = {
-    success: '成功',
-    running: '进行中',
-    failed: '失败'
+    SUCCESS: '成功',
+    RUNNING: '进行中',
+    FAILED: '失败'
   }
-  return map[status] || 'running'
+  return map[status] || '进行中'
 }
 
 // 重试操作
@@ -280,13 +283,14 @@ const handleRetry = (row: TaskDetailItem, type: string) => {
 // 连通测试
 const handleNodeSingleProbe = async (row) => {
   try {
-    await apiNodeSingleProbe({ ...row })
-    ElMessage.success('连通测试成功')
+    row.loading = true
+    await apiNodeSingleProbe({ ...row, task_id: row.task, host_id: row.host })
+    fetchTaskDetail(row.task)
   } catch (error) {
     ElMessage.closeAll()
-    setTimeout(() => {
-      ElMessage.error('连通测试失败')
-    }, 10)
+    fetchTaskDetail(row.task)
+  } finally {
+    row.loading = false
   }
 }
 // 查看日志
@@ -392,7 +396,7 @@ watch(
 
   .panel-content {
     width: 600px;
-    max-height: 405px;
+    height: 405px;
     overflow-y: auto;
     padding: 16px;
     background: #fff;
@@ -455,13 +459,13 @@ watch(
       text-align: left;
       display: inline-block;
     }
-    .success {
+    .SUCCESS {
       background: #67c23a;
     }
-    .failed {
+    .FAILED {
       background: #f56c6c;
     }
-    .running {
+    .RUNNING {
       background: #e6a23c;
     }
     .task-item {

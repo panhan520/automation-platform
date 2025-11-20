@@ -30,15 +30,14 @@
           执行命令
         </div>
         <div class="command-toolbar">
-          <el-segmented v-model="form.scriptLanguage" :options="scriptLanguageOptions" block />
           <el-button type="primary" text @click="openTemplateDialog">选择执行模版</el-button>
         </div>
-        <el-input
+        <CodeEditor
           v-model="form.command"
-          type="textarea"
-          :rows="12"
-          class="code-input"
+          v-model:language="form.scriptLanguage"
+          :language-options="scriptLanguageOptions"
           placeholder="请输入需要执行的脚本内容"
+          :rows="12"
         />
       </div>
 
@@ -75,6 +74,7 @@ import { Lightning } from '@element-plus/icons-vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { HostSelectorDialog } from '@/components/HostSelectorDialog'
 import { TemplateSelectDialog } from '@/components/TemplateSelectDialog'
+import { CodeEditor } from '@/components/CodeEditor'
 
 interface HostItem {
   hostId: string
@@ -244,14 +244,9 @@ const handleReset = () => {
 
 .command-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 12px;
-}
-
-.code-input :deep(textarea) {
-  font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
-  min-height: 240px;
 }
 
 .actions {

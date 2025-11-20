@@ -1,5 +1,11 @@
 <template>
-  <el-dialog v-model="visible" width="600px" :close-on-click-modal="false" :show-close="true">
+  <el-dialog
+    v-model="visible"
+    width="600px"
+    :close-on-click-modal="false"
+    :show-close="true"
+    @close="handleCancel"
+  >
     <template #header>
       <div class="dialog-header-success">
         <el-icon class="success-header-icon"><CircleCheckFilled /></el-icon>
@@ -67,22 +73,56 @@
       </div>
       <div class="error-table-wrapper">
         <el-table :data="errorData" border max-height="240" style="width: 100%; overflow-y: auto">
-          <el-table-column prop="hostId" label="主机ID" width="100" />
-          <el-table-column prop="internalIp" label="内网IP" width="120" />
+          <el-table-column prop="innerIp" label="内网IP" width="120" />
           <el-table-column prop="publicIp" label="公网IP" width="120" />
-          <el-table-column prop="nodeTag" label="节点标签" width="100" />
+          <el-table-column prop="nodeTags" label="节点标签" width="100">
+            <template #default="scope">
+              {{ formatObjectValue(scope.row.nodeTags) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="os" label="操作系统" width="100" />
           <el-table-column prop="loginPort" label="登录端口" width="100" />
-          <el-table-column prop="authMethod" label="认证方式" width="100" />
+          <el-table-column prop="authMethod" label="认证方式" width="100">
+            <template #default="scope">
+              {{
+                scope.row.authMethod === 'password'
+                  ? '密码'
+                  : scope.row.authMethod === 'key'
+                    ? '密钥'
+                    : scope.row.authMethod
+              }}
+            </template>
+          </el-table-column>
           <el-table-column prop="loginAccount" label="登录账号" width="120" />
           <el-table-column prop="loginIp" label="登录IP" width="120" />
-          <el-table-column prop="hostname" label="主机名称" width="120" />
-          <el-table-column prop="networkType" label="网络类型" width="100" />
+          <el-table-column prop="hostName" label="主机名称" width="120" />
+          <el-table-column prop="networkType" label="网络类型" width="100">
+            <template #default="scope">
+              {{
+                scope.row.networkType === 'public'
+                  ? '公网'
+                  : scope.row.networkType === 'private'
+                    ? '内网'
+                    : scope.row.networkType
+              }}
+            </template>
+          </el-table-column>
           <el-table-column prop="region" label="地区" width="120" />
           <el-table-column prop="vendorName" label="供应商名称" width="120" />
-          <el-table-column prop="applicationType" label="应用类型" width="100" />
+          <el-table-column prop="appType" label="应用类型" width="100" />
           <el-table-column prop="operator" label="运营商" width="100" />
-          <el-table-column prop="remark" label="备注" min-width="150" />
+          <el-table-column prop="remark" label="备注" min-width="100" />
+          <!-- 错误信息行 -->
+          <template #append>
+            <tr v-for="(error, index) in errorsList" :key="index" v-show="error" class="error-row">
+              <td :colspan="4" class="error-cell">
+                <div class="error-content">
+                  <el-icon class="error-icon"><Warning /></el-icon>
+                  <span>{{ errorsList[index] }}</span>
+                </div>
+              </td>
+            </tr>
+          </template>
         </el-table>
       </div>
     </div>
@@ -134,6 +174,7 @@ const selectedFile = ref<File | null>(null)
 const loading = ref(false)
 const errorDialogVisible = ref(false)
 const errorData = ref<any[]>([])
+const errorsList = ref([])
 
 // 文件大小限制：20MB
 const MAX_FILE_SIZE = 20 * 1024 * 1024
@@ -186,6 +227,23 @@ const handleDownloadTemplate = async () => {
   }
 }
 
+const formatObjectValue = (obj: Record<string, any>) => {
+  if (!obj || typeof obj !== 'object') return ''
+
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      // 确保value是数字类型才进行转换
+      const formattedValue =
+        typeof value === 'number'
+          ? value
+          : typeof value === 'string' && !isNaN(Number(value))
+            ? Number(value)
+            : value
+      return `${key}:${formattedValue}`
+    })
+    .join(', ')
+}
+
 const handleCancel = () => {
   uploadRef.value?.clearFiles()
   selectedFile.value = null
@@ -215,23 +273,24 @@ const handleConfirm = async () => {
 
     loadingInstance.close()
 
-    if (response.data.success) {
+    if (response.data.total) {
       // 导入成功
-      const count = response.data.count || 0
+      const total = response.data.total || 0
       // 显示成功消息
       ElNotification({
         title: '导入成功',
-        message: `已成功导入${count}个节点`,
+        message: `已成功导入${total}个节点`,
         type: 'success'
       })
 
-      emit('success', count)
-      handleCancel()
+      emit('success', total)
     } else {
       // 导入失败，显示错误数据
-      errorData.value = response.data.errorData || []
+      errorData.value = response.data.list || []
+      errorsList.value = response.message || []
       errorDialogVisible.value = true
     }
+    handleCancel()
   } catch (error: any) {
     ElLoading.service().close()
     if (error.response?.data?.errorData) {
@@ -382,12 +441,30 @@ const handleExceed: UploadProps['onExceed'] = (files) => {
 }
 </style>
 
-<style lang="less">
+<style lang="less" scoped>
 // 全局样式：导入成功消息
 .import-success-toast {
   .el-message__content {
     white-space: pre-line;
     line-height: 1.6;
+  }
+}
+.error-row {
+  background-color: #fef0f0;
+  .error-cell {
+    padding: 5px;
+    border-bottom: 1px solid #f56c6c;
+    .error-content {
+      display: flex;
+      align-items: center;
+      color: #f56c6c;
+      font-size: 13px;
+      .error-icon {
+        margin-right: 8px;
+        font-size: 14px;
+        vertical-align: middle;
+      }
+    }
   }
 }
 </style>

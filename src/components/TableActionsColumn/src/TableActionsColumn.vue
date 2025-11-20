@@ -1,18 +1,50 @@
 <template>
-  <el-table-column label="操作" :width="width" fixed="right">
+  <el-table-column label="操作" :width="width" :fixed="fixed">
     <template #default="scope">
       <div class="table-actions">
-        <div class="table-button" @click="handleEdit(scope.row)">编辑</div>
-        <el-dropdown v-if="actions.length" @command="handleCommand" trigger="click">
-          <div class="table-button">更多</div>
+        <el-button
+          v-if="showEdit"
+          link
+          size="small"
+          type="primary"
+          class="table-button"
+          @click="handleEdit(scope.row)"
+        >
+          {{ editLabel }}
+        </el-button>
+        <template v-for="action in resolveMainActions(scope.row)" :key="action.key">
+          <el-button
+            v-if="isActionVisible(action, scope.row)"
+            size="small"
+            :type="action.type || (action.danger ? 'danger' : 'primary')"
+            :text="action.text ?? true"
+            :link="action.link ?? false"
+            :plain="action.plain ?? false"
+            :disabled="isActionDisabled(action, scope.row)"
+            class="table-button"
+            @click="() => handleMainAction(action.key, scope.row)"
+          >
+            <template v-if="action.icon" #icon>
+              <component :is="action.icon" />
+            </template>
+            {{ action.label }}
+          </el-button>
+        </template>
+        <el-dropdown
+          v-if="resolveDropdownActions(scope.row).length"
+          @command="handleCommand"
+          trigger="click"
+        >
+          <div class="table-button dropdown-trigger">{{ dropdownLabel }}</div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
-                v-for="action in typeof actions === 'function' ? actions(scope.row) : actions"
+                v-for="action in resolveDropdownActions(scope.row)"
                 :key="action.key"
                 :command="{ action: action.key, row: scope.row }"
                 :divided="action.divided"
                 :style="action.danger ? 'color: #f56c6c' : ''"
+                :disabled="isActionDisabled(action, scope.row)"
               >
                 {{ action.label }}
               </el-dropdown-item>
@@ -25,21 +57,42 @@
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 export interface TableAction {
   key: string
   label: string
   divided?: boolean
   danger?: boolean
+  icon?: Component
+  disabled?: boolean | ((row: any) => boolean)
+  show?: boolean | ((row: any) => boolean)
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'
+  text?: boolean
+  link?: boolean
+  plain?: boolean
 }
+
+type ActionConfig = TableAction[] | ((row: any) => TableAction[])
 
 interface Props {
   width?: string | number
-  actions?: TableAction[] | ((row: any) => TableAction[])
+  fixed?: boolean | 'left' | 'right'
+  actions?: ActionConfig
+  mainActions?: ActionConfig
+  showEdit?: boolean
+  editLabel?: string
+  dropdownLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   width: 120,
-  actions: () => []
+  fixed: 'right' as const,
+  actions: () => [],
+  mainActions: () => [],
+  showEdit: true,
+  editLabel: '编辑',
+  dropdownLabel: '更多'
 })
 
 const emit = defineEmits<{
@@ -47,8 +100,38 @@ const emit = defineEmits<{
   (e: 'action', action: string, row: any): void
 }>()
 
+const resolveActionList = (config: ActionConfig, row: any) => {
+  const list = typeof config === 'function' ? config(row) : config
+  return (list || []).filter((action) => isActionVisible(action, row))
+}
+
+const resolveMainActions = (row: any) => resolveActionList(props.mainActions, row)
+
+const resolveDropdownActions = (row: any) => resolveActionList(props.actions, row)
+
+const isActionVisible = (action: TableAction, row: any) => {
+  if (typeof action.show === 'function') {
+    return action.show(row)
+  }
+  if (typeof action.show === 'boolean') {
+    return action.show
+  }
+  return true
+}
+
+const isActionDisabled = (action: TableAction, row: any) => {
+  if (typeof action.disabled === 'function') {
+    return action.disabled(row)
+  }
+  return Boolean(action.disabled)
+}
+
 const handleEdit = (row: any) => {
   emit('edit', row)
+}
+
+const handleMainAction = (actionKey: string, row: any) => {
+  emit('action', actionKey, row)
 }
 
 const handleCommand = ({ action, row }: { action: string; row: any }) => {
@@ -60,10 +143,16 @@ const handleCommand = ({ action, row }: { action: string; row: any }) => {
 .table-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 
-  .more-link {
+  .table-button {
     cursor: pointer;
+    font-size: 13px;
+  }
+
+  .dropdown-trigger {
+    color: #409eff;
   }
 }
 </style>

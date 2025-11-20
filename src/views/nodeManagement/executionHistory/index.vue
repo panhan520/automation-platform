@@ -11,18 +11,32 @@
     @refresh="getList"
     @page-change="handlePageChange"
   >
-    <template #executionResult="{ row }">
-      <div class="status-cell">
-        <el-icon :class="['status-icon', statusIconClass(row.executionResult)]">
-          <component :is="statusIcon(row.executionResult)" />
-        </el-icon>
-        <span>{{ row.executionResult }}</span>
-      </div>
-    </template>
-    <template #actions="{ row }">
-      <el-button type="primary" text size="small" @click="handleViewDetails(row)"
-        >查看详情</el-button
-      >
+    <template #columns="{ displayColumns }">
+      <template v-for="column in displayColumns" :key="column.prop">
+        <TableActionsColumn
+          v-if="column.prop === 'actions'"
+          :show-edit="false"
+          :main-actions="executionRowActions"
+          @action="handleRowAction"
+        />
+        <el-table-column
+          v-else
+          :prop="column.prop"
+          :label="column.label"
+          :width="column.width"
+          :min-width="column.minWidth"
+          :sortable="column.sortable"
+        >
+          <template v-if="column.prop === 'executionResult'" #default="scope">
+            <div class="status-cell">
+              <el-icon :class="['status-icon', statusIconClass(scope.row.executionResult)]">
+                <component :is="statusIcon(scope.row.executionResult)" />
+              </el-icon>
+              <span>{{ scope.row.executionResult }}</span>
+            </div>
+          </template>
+        </el-table-column>
+      </template>
     </template>
   </ManagementList>
 </template>
@@ -33,6 +47,7 @@ import { useRouter } from 'vue-router'
 import { Check, CloseBold, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
+import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 
 interface ExecutionRecord {
   id: number
@@ -82,6 +97,15 @@ const tableColumns: TableColumn[] = [
   { prop: 'executionTime', label: '执行时间', minWidth: 180 },
   { prop: 'executionResult', label: '执行结果', width: 140, slot: 'executionResult' },
   { prop: 'actions', label: '操作', width: 120, slot: 'actions' }
+]
+
+const executionRowActions: TableAction[] = [
+  {
+    key: 'detail',
+    label: '查看详情',
+    type: 'primary',
+    text: true
+  }
 ]
 
 const filteredRecords = computed(() =>
@@ -172,6 +196,12 @@ const handleViewDetails = (record: ExecutionRecord) => {
     name: 'NodeExecutionHistoryDetail',
     params: { taskId: record.taskId }
   })
+}
+
+const handleRowAction = (actionKey: string, row: ExecutionRecord) => {
+  if (actionKey === 'detail') {
+    handleViewDetails(row)
+  }
 }
 
 onMounted(() => {

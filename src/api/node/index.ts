@@ -24,7 +24,7 @@ export const apiGetNodeDownload = () => {
 }
 
 // 通过Excel导入节点数据
-export const apiNodeImport = (formData: FormData) => {
+export const apiNodeImport = (formData: FormData): Promise<IPaginationResponse> => {
   return request.post({
     url: '/api/v1/node/import/',
     data: formData,

@@ -15,6 +15,7 @@
       @refresh="handleRefresh"
       @page-change="handlePageChange"
       @selection-change="handleSelectionChange"
+      @sort-change="handleTableSortChange"
       storageKey="nodeManagement_columnConfig"
     >
       <!-- 统计信息 -->
@@ -67,6 +68,12 @@
                 <span class="status-color" :class="getNodeStatusColor(scope.row.status)"></span
                 >{{ getNodeStatusText(scope.row.status) }}
               </el-tag>
+              <span v-else-if="col.prop === 'os'">
+                <el-icon style="margin-right: 5px"><Monitor /></el-icon>{{ scope.row[col.prop] }}
+              </span>
+              <span v-else-if="col.prop === 'nodeTags'">
+                {{ formatObjectValue(scope.row[col.prop]) }}
+              </span>
               <span v-else>{{ scope.row[col.prop] }}</span>
             </template>
           </el-table-column>
@@ -118,7 +125,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Setting, Refresh } from '@element-plus/icons-vue'
+import { Search, Setting, Refresh, Monitor } from '@element-plus/icons-vue'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -159,7 +166,9 @@ const queryParams = reactive({
   pageSize: 10,
   query: '',
   appTypeName: '',
-  nodeTags: ''
+  nodeTags: '',
+  orderBy: '',
+  order: ''
 })
 // 选中数据
 const selectedRows = ref<NodeRecord[]>([])
@@ -172,7 +181,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'query',
     type: 'input',
     placeholder: '搜索公网IP/内网IP/主机名称',
-    width: 200,
+    width: 220,
     prefixIcon: Search
   },
   {
@@ -257,24 +266,25 @@ const normalizeNodeTags = (tags?: any): Record<string, string> => {
 const columnDialogVisible = ref(false)
 const managementListRef = ref<InstanceType<typeof ManagementList>>()
 const tableColumns = ref<ColumnItem[]>([
-  { prop: 'innerIp', label: '内网IP', visible: true, order: 0, sortable: true, minWidth: 100 },
-  { prop: 'hostName', label: '主机名', visible: true, order: 1, sortable: true, minWidth: 120 },
-  { prop: 'id', label: '主机ID', visible: true, order: 2, isDisabled: true },
-  { prop: 'cpu', label: 'CPU', visible: true, order: 3 }, // todo: 待完善
-  { prop: 'appTypeName', label: '应用类型', visible: true, order: 4, slot: true },
-  { prop: 'region', label: '地区', visible: true, order: 5 },
-  { prop: 'os', label: '操作系统', visible: true, order: 6 },
-  { prop: 'systemInfo', label: '系统信息', visible: true, order: 7, slot: true, minWidth: 100 }, // todo: 待完善
+  { prop: 'id', label: '主机ID', visible: true, order: 0, isDisabled: true },
+  { prop: 'innerIp', label: '内网IP', visible: true, order: 1, sortable: true, minWidth: 100 },
+  { prop: 'publicIp', label: '公网IP', visible: true, order: 2, minWidth: 100 },
+  { prop: 'hostName', label: '主机名称', visible: true, order: 3, sortable: true, minWidth: 120 },
+  { prop: 'appTypeName', label: '应用类型', visible: true, order: 4, slot: true, minWidth: 120 },
+  { prop: 'region', label: '地区', visible: true, order: 5, minWidth: 150 },
+  { prop: 'os', label: '操作系统', visible: true, order: 6, slot: true, minWidth: 100 },
+  { prop: 'vendorName', label: '供应商名称', visible: true, order: 7, minWidth: 100 },
   { prop: 'status', label: '节点状态', visible: true, order: 8, slot: true },
-  { prop: 'remark', label: '备注', visible: true, order: 9, minWidth: 100 },
+  { prop: 'nodeTags', label: '节点标签', visible: true, order: 9, slot: true },
   {
-    prop: 'lastCheckTime', // todo: 待完善
+    prop: 'lastCheckTime',
     label: '最后心跳',
     visible: true,
     order: 10,
     sortable: true,
     minWidth: 150
-  }
+  },
+  { prop: 'remark', label: '备注', visible: true, order: 11, minWidth: 100 }
 ])
 
 // 转换为 TableColumn 类型供 ManagementList 使用
@@ -337,6 +347,23 @@ const getNodeStatusColor = (status: string) => {
   }
   return map[status] || 'yellow'
 }
+const formatObjectValue = (obj: Record<string, any>) => {
+  if (!obj || typeof obj !== 'object') return ''
+
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      // 确保value是数字类型才进行转换
+      const formattedValue =
+        typeof value === 'number'
+          ? value
+          : typeof value === 'string' && !isNaN(Number(value))
+            ? Number(value)
+            : value
+      return `${key}:${formattedValue}`
+    })
+    .join(', ')
+}
+
 // 获取节点列表
 const getList = async () => {
   try {
@@ -488,6 +515,14 @@ const handlePageChange = (page: number, pageSize: number) => {
 // 选择行
 const handleSelectionChange = (selection: NodeRecord[]) => {
   selectedRows.value = selection
+}
+
+const handleTableSortChange = (sorts: any) => {
+  console.log('sort:', sorts)
+  queryParams.orderBy = sorts.prop
+  queryParams.order = sorts.order
+  queryParams.page = 1
+  getList()
 }
 
 const handleImportExcel = () => {

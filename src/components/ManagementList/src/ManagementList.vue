@@ -18,6 +18,7 @@
       v-loading="loading"
       @selection-change="handleSelectionChange"
       @filter-change="onFilterChange"
+      @sort-change="onSortChange"
     >
       <el-table-column v-if="showSelection" type="selection" width="50" />
       <slot name="columns" :display-columns="displayColumns">
@@ -40,6 +41,9 @@
           </template>
         </el-table-column>
       </slot>
+      <template #empty>
+        <el-empty description="暂无数据" />
+      </template>
     </el-table>
 
     <!-- 批量操作栏 -->
@@ -152,6 +156,7 @@ const emit = defineEmits<{
   (e: 'selection-change', selectedRows: any[]): void
   (e: 'bulk-action', actionKey: string, selectedRows: any[]): void
   (e: 'filter-change', filters: ToolbarFilter[]): void
+  (e: 'sort-change', sort: { prop: string; order: string }): void
 }>()
 
 const selectedRows = ref<any[]>([])
@@ -338,6 +343,15 @@ const handleRefresh = (params: any) => {
 }
 const onFilterChange = (filters: ToolbarFilter[]) => {
   emit('filter-change', filters)
+}
+
+const onSortChange = (sorts) => {
+  if (sorts.order === 'ascending') {
+    sorts.order = 'asc'
+  } else if (sorts.order === 'descending') {
+    sorts.order = 'desc'
+  }
+  emit('sort-change', sorts)
 }
 
 const handlePageChange = (page: number, pageSize: number) => {

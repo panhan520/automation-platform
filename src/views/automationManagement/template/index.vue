@@ -13,16 +13,29 @@
       @refresh="handleRefresh"
       @page-change="handlePageChange"
     >
-      <template #templateType="{ row }">
-        <el-tag :type="getTemplateTypeTagType(row.templateType)">{{ row.templateType }}</el-tag>
-      </template>
-      <template #actions="{ row }">
-        <div class="actions-cell">
-          <el-button type="primary" text size="small" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" text size="small" @click="handleMoreAction('delete', row)">
-            删除
-          </el-button>
-        </div>
+      <template #columns="{ displayColumns }">
+        <template v-for="column in displayColumns" :key="column.prop">
+          <TableActionsColumn
+            v-if="column.prop === 'actions'"
+            :main-actions="templateRowActions"
+            @edit="handleEdit"
+            @action="handleRowAction"
+          />
+          <el-table-column
+            v-else
+            :prop="column.prop"
+            :label="column.label"
+            :width="column.width"
+            :min-width="column.minWidth"
+            :sortable="column.sortable"
+          >
+            <template v-if="column.prop === 'templateType'" #default="scope">
+              <el-tag :type="getTemplateTypeTagType(scope.row.templateType)">
+                {{ scope.row.templateType }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </template>
       </template>
     </ManagementList>
 
@@ -46,6 +59,7 @@ import { ManagementList, type TableColumn, type ToolbarButton } from '@/componen
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
+import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 
 type ScriptLanguage = 'Shell' | 'Python'
 
@@ -125,6 +139,15 @@ const tableColumns: TableColumn[] = [
   { prop: 'templateContent', label: '模版内容', minWidth: 220 },
   { prop: 'description', label: '描述信息' },
   { prop: 'actions', label: '操作', width: 160, slot: 'actions' }
+]
+
+const templateRowActions: TableAction[] = [
+  {
+    key: 'delete',
+    label: '删除',
+    type: 'danger',
+    text: true
+  }
 ]
 
 const filteredTemplates = computed(() => {
@@ -259,6 +282,10 @@ const handleMoreAction = (action: string, row: TemplateRecord) => {
   }
 }
 
+const handleRowAction = (actionKey: string, row: TemplateRecord) => {
+  handleMoreAction(actionKey, row)
+}
+
 const getTemplateTypeTagType = (type: string) => {
   const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
     系统信息: 'primary',
@@ -276,10 +303,5 @@ onMounted(() => {
 <style scoped lang="less">
 .template-management-page {
   padding-bottom: 16px;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 8px;
 }
 </style>

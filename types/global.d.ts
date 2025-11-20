@@ -63,7 +63,9 @@ declare global {
       list: T[]
       pagination: IPagination
       isPending?: boolean
+      total?: number
     }
+    message?: string | Array
   }
 
   declare interface ThemeTypes {

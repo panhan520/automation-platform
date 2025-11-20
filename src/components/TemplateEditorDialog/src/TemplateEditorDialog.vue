@@ -26,12 +26,12 @@
       </el-form-item>
 
       <el-form-item label="模版内容" prop="templateContent">
-        <el-input
+        <CodeEditor
           v-model="form.templateContent"
-          type="textarea"
-          :rows="10"
-          class="code-input"
+          :language="form.scriptLanguage"
+          :show-language-switcher="false"
           placeholder="请输入脚本内容"
+          :rows="12"
         />
       </el-form-item>
 
@@ -188,6 +188,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { HostSelectorDialog } from '@/components/HostSelectorDialog'
+import { CodeEditor } from '@/components/CodeEditor'
 
 interface ParameterItem {
   id: number
@@ -527,11 +528,6 @@ const handleConfirm = () => {
 
 .param-table {
   margin-top: 12px;
-}
-
-.code-input :deep(textarea) {
-  font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
-  min-height: 230px;
 }
 
 .selected-hosts {
