@@ -72,8 +72,40 @@
         </span>
       </div>
       <div class="error-table-wrapper">
-        <el-table :data="errorData" border max-height="240" style="width: 100%; overflow-y: auto">
-          <el-table-column prop="innerIp" label="内网IP" width="120" />
+        <el-table
+          :data="displayErrorTable"
+          border
+          max-height="320"
+          style="width: 100%; overflow-y: auto"
+          :span-method="errorSpanMethod"
+          :row-class-name="getErrorRowClass"
+        >
+          <el-table-column prop="innerIp" label="内网IP" width="120">
+            <template #default="scope">
+              <template v-if="scope.row.__rowType === 'error'">
+                <div class="error-row-cell">
+                  <div class="error-row-title">
+                    <el-icon class="error-icon"><Warning /></el-icon>
+                    <span>
+                      {{
+                        scope.row.rowNumber
+                          ? `第${scope.row.rowNumber}行数据校验失败`
+                          : '该行数据校验失败'
+                      }}
+                    </span>
+                  </div>
+                  <ul class="error-row-list">
+                    <li v-for="(msg, idx) in scope.row.errorMessageLines" :key="idx">
+                      {{ msg }}
+                    </li>
+                  </ul>
+                </div>
+              </template>
+              <template v-else>
+                {{ scope.row.innerIp }}
+              </template>
+            </template>
+          </el-table-column>
           <el-table-column prop="publicIp" label="公网IP" width="120" />
           <el-table-column prop="nodeTags" label="节点标签" width="100">
             <template #default="scope">
@@ -112,17 +144,6 @@
           <el-table-column prop="appType" label="应用类型" width="100" />
           <el-table-column prop="operator" label="运营商" width="100" />
           <el-table-column prop="remark" label="备注" min-width="100" />
-          <!-- 错误信息行 -->
-          <template #append>
-            <tr v-for="(error, index) in errorsList" :key="index" v-show="error" class="error-row">
-              <td :colspan="4" class="error-cell">
-                <div class="error-content">
-                  <el-icon class="error-icon"><Warning /></el-icon>
-                  <span>{{ errorsList[index] }}</span>
-                </div>
-              </td>
-            </tr>
-          </template>
         </el-table>
       </div>
     </div>
@@ -135,21 +156,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage, ElLoading, ElNotification } from 'element-plus'
 import {
   UploadFilled,
   Download,
   CircleCloseFilled,
-  CircleCheckFilled
+  CircleCheckFilled,
+  Warning
 } from '@element-plus/icons-vue'
-import type {
-  UploadFile,
-  UploadFiles,
-  UploadInstance,
-  UploadProps,
-  UploadRawFile
-} from 'element-plus'
+import type { UploadFile, UploadInstance, UploadProps, UploadRawFile } from 'element-plus'
 import { apiNodeImport, apiGetNodeDownload } from '@/api/node'
 import { genFileId } from 'element-plus'
 interface Props {
@@ -174,12 +190,128 @@ const selectedFile = ref<File | null>(null)
 const loading = ref(false)
 const errorDialogVisible = ref(false)
 const errorData = ref<any[]>([])
-const errorsList = ref([])
+const errorsList = ref<string[]>([])
+const TOTAL_ERROR_COLUMNS = 15
+
+const extractRowNumber = (message?: string) => {
+  if (!message) return undefined
+  const match = message.match(/第(\d+)行/)
+  return match ? Number(match[1]) : undefined
+}
+
+const normalizeErrorDetails = (message?: string) => {
+  if (!message) return []
+  const payload = message.split('：').slice(1).join('：').trim()
+
+  // 只处理第一个 [ 和最后一个 ]
+  let content = payload
+  const firstBracketIndex = content.indexOf('[')
+  const lastBracketIndex = content.lastIndexOf(']')
+
+  if (firstBracketIndex !== -1 && lastBracketIndex !== -1 && lastBracketIndex > firstBracketIndex) {
+    // 提取第一个 [ 和最后一个 ] 之间的内容
+    content = content.substring(firstBracketIndex + 1, lastBracketIndex)
+
+    // 移除首尾的引号
+    content = content.replace(/^['"]+|['"]+$/g, '')
+
+    // 只按最外层的逗号分割，保留内部的数组结构
+    const segments: string[] = []
+    let currentSegment = ''
+    let bracketDepth = 0
+    let inQuotes = false
+    let quoteChar = ''
+
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i]
+
+      if ((char === '"' || char === "'") && (i === 0 || content[i - 1] !== '\\')) {
+        if (!inQuotes) {
+          inQuotes = true
+          quoteChar = char
+        } else if (char === quoteChar) {
+          inQuotes = false
+          quoteChar = ''
+        }
+        currentSegment += char
+      } else if (char === '[' && !inQuotes) {
+        bracketDepth++
+        currentSegment += char
+      } else if (char === ']' && !inQuotes) {
+        bracketDepth--
+        currentSegment += char
+      } else if (char === ',' && bracketDepth === 0 && !inQuotes) {
+        // 只在最外层且不在引号内时分割
+        const trimmed = currentSegment.replace(/^['"]+|['"]+$/g, '').trim()
+        if (trimmed) {
+          segments.push(trimmed)
+        }
+        currentSegment = ''
+      } else {
+        currentSegment += char
+      }
+    }
+
+    // 添加最后一个片段
+    if (currentSegment.trim()) {
+      const trimmed = currentSegment.replace(/^['"]+|['"]+$/g, '').trim()
+      if (trimmed) {
+        segments.push(trimmed)
+      }
+    }
+
+    if (segments.length > 0) {
+      return segments
+    }
+  }
+
+  // 如果没有找到括号，返回原始消息
+  return [message]
+}
+
+const normalizedErrorList = computed(() =>
+  errorsList.value.map((msg) => normalizeErrorDetails(msg))
+)
+
+const displayErrorTable = computed(() => {
+  const rows: any[] = []
+  errorData.value.forEach((row, index) => {
+    rows.push({
+      ...row,
+      __rowIndex: index,
+      __rowType: 'data'
+    })
+    const errorMessages = normalizedErrorList.value[index]
+    if (errorMessages && errorMessages.length) {
+      rows.push({
+        __rowType: 'error',
+        __rowIndex: index,
+        rowNumber: extractRowNumber(errorsList.value[index]),
+        errorMessageLines: errorMessages
+      })
+    }
+  })
+  return rows
+})
+
+const errorSpanMethod = ({ row, columnIndex }: { row: any; columnIndex: number }) => {
+  if (row.__rowType === 'error') {
+    if (columnIndex === 0) {
+      return [1, TOTAL_ERROR_COLUMNS]
+    }
+    return [0, 0]
+  }
+  return [1, 1]
+}
+
+const getErrorRowClass = ({ row }: { row: any }) => {
+  return row.__rowType === 'error' ? 'error-row' : ''
+}
 
 // 文件大小限制：20MB
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 
-const handleFileChange = (file: UploadFile, files: UploadFiles) => {
+const handleFileChange = (file: UploadFile) => {
   const rawFile = file.raw
   if (!rawFile) return
 
@@ -439,32 +571,39 @@ const handleExceed: UploadProps['onExceed'] = (files) => {
   justify-content: flex-end;
   gap: 12px;
 }
+
+.error-row {
+  background-color: #fff7f7;
+}
+.error-row-cell {
+  color: #d14b4b;
+  font-size: 13px;
+
+  .error-row-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+
+  .error-row-list {
+    margin: 6px 0 0 18px;
+    padding: 0;
+    list-style: disc;
+    color: #b91c1c;
+    li {
+      list-style: none;
+    }
+  }
+}
 </style>
 
-<style lang="less" scoped>
+<style lang="less">
 // 全局样式：导入成功消息
 .import-success-toast {
   .el-message__content {
     white-space: pre-line;
     line-height: 1.6;
-  }
-}
-.error-row {
-  background-color: #fef0f0;
-  .error-cell {
-    padding: 5px;
-    border-bottom: 1px solid #f56c6c;
-    .error-content {
-      display: flex;
-      align-items: center;
-      color: #f56c6c;
-      font-size: 13px;
-      .error-icon {
-        margin-right: 8px;
-        font-size: 14px;
-        vertical-align: middle;
-      }
-    }
   }
 }
 </style>
