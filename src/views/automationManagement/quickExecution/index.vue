@@ -29,16 +29,28 @@
           <span class="required">*</span>
           执行命令
         </div>
-        <div class="command-toolbar">
-          <el-button type="primary" text @click="openTemplateDialog">选择执行模版</el-button>
-        </div>
         <CodeEditor
           v-model="form.command"
           v-model:language="form.scriptLanguage"
           :language-options="scriptLanguageOptions"
           placeholder="请输入需要执行的脚本内容"
           :rows="12"
-        />
+        >
+          <template #header-left-extra>
+            <el-tooltip content="支持通过变量引用共享脚本片段" placement="top">
+              <div class="global-hint">
+                <el-icon><QuestionFilled /></el-icon>
+                <span>使用全局变量?</span>
+              </div>
+            </el-tooltip>
+          </template>
+          <template #header-right>
+            <el-button type="primary" plain @click="openTemplateDialog">
+              <el-icon class="btn-icon"><Plus /></el-icon>
+              从执行模版中选择
+            </el-button>
+          </template>
+        </CodeEditor>
       </div>
 
       <div class="actions">
@@ -70,7 +82,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Lightning } from '@element-plus/icons-vue'
+import { Lightning, QuestionFilled, Plus } from '@element-plus/icons-vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { HostSelectorDialog } from '@/components/HostSelectorDialog'
 import { TemplateSelectDialog } from '@/components/TemplateSelectDialog'
@@ -242,13 +254,6 @@ const handleReset = () => {
   gap: 8px;
 }
 
-.command-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
 .actions {
   display: flex;
   gap: 16px;
@@ -256,5 +261,19 @@ const handleReset = () => {
 
 .btn-icon {
   margin-right: 4px;
+}
+
+.global-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #8c8fa1;
+  cursor: help;
+
+  .el-icon {
+    font-size: 14px;
+    color: #b1b5c4;
+  }
 }
 </style>

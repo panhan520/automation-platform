@@ -1,12 +1,17 @@
 <template>
   <div class="code-editor" :class="{ disabled }">
-    <div v-if="showLanguageHeader" class="editor-header">
-      <slot name="toolbar">
-        <template v-if="showLanguageSwitcher && languageOptions.length">
-          <el-segmented v-model="innerLanguage" :options="languageOptions" size="small" />
-        </template>
-        <span v-else class="language-indicator">{{ innerLanguage }}</span>
-      </slot>
+    <div v-if="showHeader" class="editor-header">
+      <div class="header-left">
+        <slot name="language">
+          <template v-if="shouldRenderDefaultLanguage">
+            <el-segmented v-model="innerLanguage" :options="languageOptions" />
+          </template>
+        </slot>
+        <slot name="header-left-extra"></slot>
+      </div>
+      <div class="header-right">
+        <slot name="header-right"></slot>
+      </div>
     </div>
     <div class="editor-body">
       <div ref="lineNumberRef" class="line-numbers">
@@ -29,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useSlots, watch } from 'vue'
 
 interface LanguageOption {
   label: string
@@ -72,6 +77,7 @@ const emit = defineEmits<{
 
 const textareaRef = ref<HTMLTextAreaElement>()
 const lineNumberRef = ref<HTMLDivElement>()
+const slots = useSlots()
 
 const localValue = ref(props.modelValue)
 watch(
@@ -111,7 +117,21 @@ const textareaStyle = computed(() => {
   }
 })
 
-const showLanguageHeader = computed(() => props.showLanguageSwitcher || !!innerLanguage.value)
+const shouldRenderDefaultLanguage = computed(
+  () => props.showLanguageSwitcher || !!innerLanguage.value
+)
+
+const hasLanguageSlot = computed(() => Boolean(slots.language))
+const hasLeftExtraSlot = computed(() => Boolean(slots['header-left-extra']))
+const hasRightSlot = computed(() => Boolean(slots['header-right']))
+
+const showHeader = computed(
+  () =>
+    shouldRenderDefaultLanguage.value ||
+    hasLanguageSlot.value ||
+    hasLeftExtraSlot.value ||
+    hasRightSlot.value
+)
 
 const syncScroll = () => {
   if (textareaRef.value && lineNumberRef.value) {
@@ -153,48 +173,74 @@ const insertText = (text: string) => {
 
 <style scoped lang="less">
 .code-editor {
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  background: #f9fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
   display: flex;
   flex-direction: column;
   font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  transition: box-shadow 0.2s ease;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 
   &.disabled {
     opacity: 0.6;
+  }
+
+  &:focus-within {
+    border-color: #409eff;
+    box-shadow: 0 12px 32px rgba(64, 158, 255, 0.18);
   }
 }
 
 .editor-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e4e7ed;
-  background: #fdfdff;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid #eef1f6;
+  background: linear-gradient(180deg, #f9fbff 0%, #f2f5fa 100%);
+  border-radius: 12px 12px 0 0;
+  gap: 12px;
 
-  .language-indicator {
-    font-size: 12px;
-    color: #606266;
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    :deep(.el-button) {
+      border-radius: 6px;
+    }
   }
 }
 
 .editor-body {
   display: flex;
   width: 100%;
+  background: #fff;
+  border-radius: 0 0 12px 12px;
 }
 
 .line-numbers {
-  width: 48px;
-  padding: 12px 8px 12px 4px;
+  width: 56px;
+  padding: 16px 10px 16px 6px;
   text-align: right;
-  background: #f4f6fb;
-  color: #a0a4b1;
+  background: #f6f7fb;
+  color: #9ba3b4;
   font-size: 13px;
-  line-height: 22px;
+  line-height: 24px;
   overflow: hidden;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid #ebeef5;
+  border-bottom-left-radius: 12px;
 
   span {
     display: block;
@@ -207,11 +253,12 @@ const insertText = (text: string) => {
   outline: none;
   resize: none;
   background: #fff;
-  padding: 12px;
-  font-size: 13px;
-  line-height: 22px;
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 24px;
   color: #1f2d3d;
   font-family: inherit;
+  border-bottom-right-radius: 12px;
 
   &::placeholder {
     color: #b8b9c3;
