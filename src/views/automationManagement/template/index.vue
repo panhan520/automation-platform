@@ -12,6 +12,7 @@
       @search="handleSearch"
       @refresh="handleRefresh"
       @page-change="handlePageChange"
+      storageKey="template_columnConfig"
     >
       <template #columns="{ displayColumns }">
         <template v-for="column in displayColumns" :key="column.prop">
@@ -29,10 +30,22 @@
             :min-width="column.minWidth"
             :sortable="column.sortable"
           >
-            <template v-if="column.prop === 'templateType'" #default="scope">
-              <el-tag :type="getTemplateTypeTagType(scope.row.templateType)">
+            <template #default="scope">
+              <el-tag
+                v-if="column.prop === 'templateType'"
+                :type="getTemplateTypeTagType(scope.row.templateType)"
+              >
                 {{ scope.row.templateType }}
               </el-tag>
+              <el-tooltip
+                v-if="column.prop === 'templateContent'"
+                class="box-item"
+                effect="dark"
+                :content="scope.row.templateContent"
+                placement="top"
+              >
+                {{ scope.row.templateContent }}
+              </el-tooltip>
             </template>
           </el-table-column>
         </template>
@@ -57,7 +70,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn, type ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 
@@ -91,7 +104,7 @@ interface ParameterItem {
 interface HostItem {
   hostId: string
   hostName: string
-  internalIp: string
+  innerIp: string
   publicIp: string
 }
 
@@ -113,6 +126,7 @@ const queryParams = reactive({
   pageSize: 10,
   keyword: ''
 })
+const appTypeList = ref<string[]>([])
 
 const toolbarButtons: ToolbarButton[] = [
   {
@@ -125,20 +139,35 @@ const toolbarButtons: ToolbarButton[] = [
 
 const toolbarFilters: ToolbarFilter[] = [
   {
+    key: 'appTypeName',
+    type: 'select',
+    placeholder: '全部模版类型',
+    width: 200,
+    clearable: true,
+    options: appTypeList.value.map((item) => ({ label: item, value: item }))
+  },
+  {
     key: 'keyword',
     type: 'input',
     placeholder: '搜索模版名称',
-    width: 260,
+    width: 200,
     prefixIcon: Search
+  },
+  {
+    key: 'reset',
+    type: 'text',
+    placeholder: '重置',
+    icon: Refresh,
+    onClick: () => handleReset()
   }
 ]
 
 const tableColumns: TableColumn[] = [
-  { prop: 'templateName', label: '模版名称' },
-  { prop: 'templateType', label: '模版类型', slot: 'templateType' },
-  { prop: 'templateContent', label: '模版内容', minWidth: 220 },
-  { prop: 'description', label: '描述信息' },
-  { prop: 'actions', label: '操作', width: 160, slot: 'actions' }
+  { prop: 'templateName', label: '模版名称', order: 0 },
+  { prop: 'templateType', label: '模版类型', slot: 'templateType', order: 1 },
+  { prop: 'templateContent', label: '模版内容', minWidth: 150, slot: 'templateContent', order: 2 },
+  { prop: 'description', label: '描述信息', minWidth: 150, order: 3 },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 4 }
 ]
 
 const templateRowActions: TableAction[] = [
@@ -149,7 +178,13 @@ const templateRowActions: TableAction[] = [
     text: true
   }
 ]
-
+const handleReset = () => {
+  // queryParams.query = ''
+  // queryParams.appTypeName = ''
+  // queryParams.nodeTags = ''
+  // queryParams.page = 1
+  // getList()
+}
 const filteredTemplates = computed(() => {
   if (!queryParams.keyword) {
     return allTemplates.value
@@ -168,9 +203,9 @@ const totalRecords = computed(() => filteredTemplates.value.length)
 
 const templateTypes = ref(['系统信息', '部署模版', '运维脚本'])
 const availableHosts = ref<HostItem[]>([
-  { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', internalIp: '172.21.0.12' },
-  { hostId: '2', hostName: '名称2', publicIp: '121.199.4.33', internalIp: '172.21.0.10' },
-  { hostId: '3', hostName: '名称3', publicIp: '10.0.0.12', internalIp: '172.21.0.1' }
+  { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
+  { hostId: '2', hostName: '名称2', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
+  { hostId: '3', hostName: '名称3', publicIp: '10.0.0.12', innerIp: '172.21.0.1' }
 ])
 
 const templateDialogVisible = ref(false)
@@ -211,7 +246,7 @@ const handleTemplateSubmit = (payload: TemplateEditorPayload) => {
         target.parameters = payload.parameters
         target.hosts = payload.hosts
       }
-      ElMessage.success('模版更新成功')
+      ElMessage.success('更新成功')
     } else {
       allTemplates.value.unshift({
         id: Date.now(),
@@ -223,7 +258,7 @@ const handleTemplateSubmit = (payload: TemplateEditorPayload) => {
         parameters: payload.parameters,
         hosts: payload.hosts
       })
-      ElMessage.success('模版创建成功')
+      ElMessage.success('创建成功')
     }
     templateDialogLoading.value = false
     templateDialogVisible.value = false

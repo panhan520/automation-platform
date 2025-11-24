@@ -279,14 +279,27 @@ const initTableColumnDrag = () => {
       cell.removeAttribute('data-sortable-id')
     })
 
+    // 获取操作列的索引（如果存在）
+    const actionsColumnIndex = displayColumns.value.findIndex((col) => col.prop === 'actions')
+    const actionsCellIndex =
+      actionsColumnIndex !== -1 ? actionsColumnIndex + (props.showSelection ? 1 : 0) : -1
+
     // 创建 Sortable
     sortableInstance = Sortable.create(headerRow, {
       animation: 150,
       handle: '.cell', // 只拖 div.cell 区域
       draggable: 'th.el-table__cell', // 限制可拖元素
       filter: (item) => {
-        if (props.showSelection && item instanceof Element && item === headerCells[0]) return true
-
+        // 过滤掉 selection 列
+        if (props.showSelection) {
+          const allCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
+          if (item instanceof HTMLElement && item === allCells[0]) return true
+        }
+        // 过滤掉操作列
+        if (actionsCellIndex !== -1 && item instanceof HTMLElement) {
+          const allCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
+          if (item === allCells[actionsCellIndex]) return true
+        }
         return false
       },
       onEnd: ({ oldIndex, newIndex }) => {
@@ -297,13 +310,45 @@ const initTableColumnDrag = () => {
         const end = props.showSelection ? newIndex - 1 : newIndex
         if (start < 0 || end < 0) return
 
-        const cols = [...columnConfig.value]
-        const moved = cols.splice(start, 1)[0]
-        cols.splice(end, 0, moved)
+        // 确保索引在有效范围内
+        if (start >= displayColumns.value.length || end >= displayColumns.value.length) return
 
-        cols.forEach((c, i) => (c.order = i))
-        columnConfig.value = cols
-        saveToStorage(cols)
+        // 获取被拖动的列
+        const movedColumn = displayColumns.value[start]
+        if (!movedColumn) return
+
+        // 从 columnConfig 中找到对应的列并更新顺序
+        const cols = [...columnConfig.value]
+        const movedConfig = cols.find((c) => c.prop === movedColumn.prop)
+
+        if (movedConfig) {
+          // 移除旧位置
+          const oldConfigIndex = cols.findIndex((c) => c.prop === movedColumn.prop)
+          if (oldConfigIndex !== -1) {
+            cols.splice(oldConfigIndex, 1)
+          }
+
+          // 计算新位置（基于 displayColumns 的顺序）
+          const targetColumn = displayColumns.value[end]
+          if (targetColumn) {
+            const newConfigIndex = cols.findIndex((c) => c.prop === targetColumn.prop)
+            if (newConfigIndex !== -1) {
+              cols.splice(newConfigIndex, 0, movedConfig)
+            } else {
+              cols.splice(end, 0, movedConfig)
+            }
+          } else {
+            cols.splice(end, 0, movedConfig)
+          }
+
+          // 更新所有列的 order
+          cols.forEach((c, i) => {
+            c.order = i
+          })
+
+          columnConfig.value = cols
+          saveToStorage(cols)
+        }
       }
     })
   })

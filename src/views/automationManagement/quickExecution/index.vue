@@ -19,7 +19,7 @@
             closable
             @close="removeSelectedHost(host.hostId)"
           >
-            [{{ host.hostId }}] {{ host.internalIp }}
+            [{{ host.hostId }}] {{ host.innerIp }}
           </el-tag>
         </div>
       </div>
@@ -29,28 +29,7 @@
           <span class="required">*</span>
           执行命令
         </div>
-        <CodeEditor
-          v-model="form.command"
-          v-model:language="form.scriptLanguage"
-          :language-options="scriptLanguageOptions"
-          placeholder="请输入需要执行的脚本内容"
-          :rows="12"
-        >
-          <template #header-left-extra>
-            <el-tooltip content="支持通过变量引用共享脚本片段" placement="top">
-              <div class="global-hint">
-                <el-icon><QuestionFilled /></el-icon>
-                <span>使用全局变量?</span>
-              </div>
-            </el-tooltip>
-          </template>
-          <template #header-right>
-            <el-button type="primary" plain @click="openTemplateDialog">
-              <el-icon class="btn-icon"><Plus /></el-icon>
-              从执行模版中选择
-            </el-button>
-          </template>
-        </CodeEditor>
+        <CodeEditor v-model="form.command" :rows="12" />
       </div>
 
       <div class="actions">
@@ -91,7 +70,7 @@ import { CodeEditor } from '@/components/CodeEditor'
 interface HostItem {
   hostId: string
   hostName: string
-  internalIp: string
+  innerIp: string
   publicIp: string
 }
 
@@ -117,9 +96,9 @@ const form = reactive({
 
 const executing = ref(false)
 const availableHosts = ref<HostItem[]>([
-  { hostId: '1', hostName: '节点-01', publicIp: '192.21.0.11', internalIp: '172.21.0.12' },
-  { hostId: '2', hostName: '节点-02', publicIp: '121.199.4.33', internalIp: '172.21.0.10' },
-  { hostId: '3', hostName: '节点-03', publicIp: '10.0.0.3', internalIp: '172.21.0.3' }
+  { hostId: '1', hostName: '节点-01', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
+  { hostId: '2', hostName: '节点-02', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
+  { hostId: '3', hostName: '节点-03', publicIp: '10.0.0.3', innerIp: '172.21.0.3' }
 ])
 const selectedHosts = ref<HostItem[]>([])
 const hostSelectorVisible = ref(false)

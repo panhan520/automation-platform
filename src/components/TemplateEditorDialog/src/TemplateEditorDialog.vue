@@ -2,15 +2,19 @@
   <el-dialog
     v-model="dialogVisible"
     :title="title"
+    top="5vh"
     :width="mode === 'template' ? '720px' : '680px'"
     :close-on-click-modal="false"
+    @close="handleCancel"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
       <el-form-item v-if="mode === 'template'" label="模版类型" prop="templateType">
-        <el-select v-model="form.templateType" placeholder="请选择模版类型" style="width: 100%">
+        <el-select v-model="form.templateType" placeholder="请选择模版类型" style="width: 85%">
           <el-option v-for="type in localTemplateTypes" :key="type" :label="type" :value="type" />
         </el-select>
-        <el-link type="primary" class="inline-link" @click="openTypeDialog">添加类型</el-link>
+        <el-button type="primary" class="inline-link" @click="openTypeDialog" link
+          >添加类型</el-button
+        >
       </el-form-item>
 
       <el-form-item v-if="mode === 'template'" label="模版名称" prop="templateName">
@@ -26,17 +30,11 @@
       </el-form-item>
 
       <el-form-item label="模版内容" prop="templateContent">
-        <CodeEditor
-          v-model="form.templateContent"
-          :language="form.scriptLanguage"
-          :show-language-switcher="false"
-          placeholder="请输入脚本内容"
-          :rows="12"
-        />
+        <CodeEditor v-model="form.templateContent" :rows="12" />
       </el-form-item>
 
       <el-form-item label="参数化">
-        <el-link type="primary" class="inline-link" @click="openParameterDialog">添加参数</el-link>
+        <el-button type="primary" @click="openParameterDialog" link>添加参数</el-button>
         <el-table
           v-if="parameterList.length"
           :data="parameterList"
@@ -62,7 +60,7 @@
 
       <el-form-item label="目标主机">
         <div class="host-row">
-          <el-link type="primary" class="inline-link" @click="openHostSelector">选择主机</el-link>
+          <el-button link type="primary" @click="openHostSelector">选择主机</el-button>
           <span v-if="selectedHosts.length" class="selected-count">
             已选择 {{ selectedHosts.length }} 台
           </span>
@@ -74,7 +72,7 @@
             closable
             @close="removeSelectedHost(host.hostId)"
           >
-            [{{ host.hostId }}] {{ host.internalIp }}
+            [{{ host.hostId }}] {{ host.innerIp }}
           </el-tag>
         </div>
       </el-form-item>
@@ -84,7 +82,7 @@
           v-model="form.remark"
           type="textarea"
           :rows="3"
-          placeholder="请输入备注信息"
+          :placeholder="`请输入${mode === 'template' ? '模版' : '任务'}备注信息`"
           maxlength="100"
           show-word-limit
         />
@@ -100,7 +98,12 @@
   </el-dialog>
 
   <!-- 添加类型 -->
-  <el-dialog v-model="typeDialogVisible" title="添加模版类型" width="360px">
+  <el-dialog
+    v-model="typeDialogVisible"
+    title="添加模版类型"
+    width="400px"
+    @close="handleAddTemplateTypeCancel"
+  >
     <el-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-width="90px">
       <el-form-item label="模版类型" prop="type">
         <el-input v-model="typeForm.type" placeholder="请输入模版类型" />
@@ -108,35 +111,82 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="typeDialogVisible = false">取消</el-button>
+        <el-button @click="handleAddTemplateTypeCancel">取消</el-button>
         <el-button type="primary" @click="handleAddTemplateType">确定</el-button>
       </div>
     </template>
   </el-dialog>
 
   <!-- 添加参数 -->
-  <el-dialog v-model="parameterDialogVisible" title="添加参数" width="540px">
+  <el-dialog
+    v-model="parameterDialogVisible"
+    title="添加参数"
+    width="540px"
+    @close="handleParameterCancel"
+  >
     <el-form
       ref="parameterFormRef"
       :model="parameterForm"
       :rules="parameterRules"
       label-width="100px"
     >
-      <el-form-item label="参数名" prop="name">
+      <el-form-item prop="name">
+        <template #label>
+          <span
+            >参数名称
+            <el-tooltip content="参数的简短名称" placement="top">
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
         <el-input v-model="parameterForm.name" placeholder="请输入参数名称" />
       </el-form-item>
-      <el-form-item label="变量名" prop="variable">
-        <el-input v-model="parameterForm.variable" placeholder="请输入变量名" />
+      <el-form-item prop="variable">
+        <template #label>
+          <span
+            >变量名称
+            <el-tooltip
+              content="在脚本使用的变量名称，固定前缀_SPUG_ + 输入的变量名，例如变量名name，则最终生成环境变量为
+                _SPUG_name"
+              placement="top"
+              popper-class="custom-tooltip"
+            >
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-input v-model="parameterForm.variable" placeholder="请输入变量名称" />
       </el-form-item>
-      <el-form-item label="参数类型" prop="type">
+      <el-form-item prop="type">
+        <template #label>
+          <span
+            >参数类型
+            <el-tooltip content="不同类型展示的形式不同" placement="top">
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
         <el-segmented v-model="parameterForm.type" :options="parameterTypeOptions" block />
       </el-form-item>
-      <el-form-item v-if="parameterForm.type === 'select'" label="可选项" prop="optionsText">
+      <el-form-item v-if="parameterForm.type === 'select'" prop="optionsText">
+        <template #label>
+          <span
+            >可选项
+            <el-tooltip
+              content="每项单独一行，每行可以用英文冒号分割前边是值后边是显示的内容。"
+              placement="top"
+              popper-class="custom-tooltip"
+            >
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+
         <el-input
           v-model="parameterForm.optionsText"
           type="textarea"
           :rows="3"
-          placeholder="每行一个选项，例如：\ntest:测试环境\nprod:生产环境"
+          placeholder="每行一个选项，例如：&#10;test:测试环境&#10;prod:生产环境"
         />
       </el-form-item>
       <el-form-item v-if="parameterForm.type === 'command'" label="主机属性" prop="hostAttribute">
@@ -153,13 +203,34 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="必填">
-        <el-switch v-model="parameterForm.required" />
+      <el-form-item>
+        <template #label>
+          <span
+            >必填
+            <el-tooltip content="该参数是否为必填项" placement="top">
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-switch
+          v-model="parameterForm.required"
+          active-text="是"
+          inactive-text="否"
+          inline-prompt
+        />
       </el-form-item>
       <el-form-item label="默认值">
         <el-input v-model="parameterForm.defaultValue" placeholder="请输入默认值" />
       </el-form-item>
-      <el-form-item label="提示信息">
+      <el-form-item>
+        <template #label>
+          <span
+            >提示信息
+            <el-tooltip content="会展示在参数的输入框下方" placement="top">
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
         <el-input
           v-model="parameterForm.hint"
           type="textarea"
@@ -170,7 +241,7 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="parameterDialogVisible = false">取消</el-button>
+        <el-button @click="handleParameterCancel">取消</el-button>
         <el-button type="primary" @click="handleParameterConfirm">确定</el-button>
       </div>
     </template>
@@ -189,6 +260,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { HostSelectorDialog } from '@/components/HostSelectorDialog'
 import { CodeEditor } from '@/components/CodeEditor'
+import { ElMessage } from 'element-plus'
 
 interface ParameterItem {
   id: number
@@ -206,7 +278,7 @@ interface ParameterItem {
 interface HostItem {
   hostId: string
   hostName: string
-  internalIp: string
+  innerIp: string
   publicIp: string
 }
 
@@ -324,19 +396,25 @@ const typeForm = reactive({ type: '' })
 const typeRules: FormRules = {
   type: [{ required: true, message: '请输入模版类型', trigger: 'blur' }]
 }
-
+// 打开添加类型弹框
 const openTypeDialog = () => {
   typeForm.type = ''
   typeDialogVisible.value = true
 }
-
+// 添加类型取消
+const handleAddTemplateTypeCancel = () => {
+  typeFormRef.value?.resetFields()
+  typeDialogVisible.value = false
+}
+// 确认添加类型
 const handleAddTemplateType = () => {
   typeFormRef.value?.validate((valid) => {
     if (!valid) return
     if (!localTemplateTypes.value.includes(typeForm.type)) {
       localTemplateTypes.value.push(typeForm.type)
+      ElMessage.success('添加成功')
     }
-    typeDialogVisible.value = false
+    handleAddTemplateTypeCancel()
     form.templateType = typeForm.type
   })
 }
@@ -358,8 +436,10 @@ const parameterForm = reactive({
 const parameterRules: FormRules = {
   name: [{ required: true, message: '请输入参数名称', trigger: 'blur' }],
   variable: [{ required: true, message: '请输入变量名', trigger: 'blur' }],
+  type: [{ required: true, message: '请选择参数类型', trigger: 'change' }],
   optionsText: [
     {
+      required: true,
       trigger: 'blur',
       validator: (_rule, value, callback) => {
         if (parameterForm.type === 'select' && !value) {
@@ -372,6 +452,7 @@ const parameterRules: FormRules = {
   ],
   hostAttribute: [
     {
+      required: true,
       trigger: 'change',
       validator: (_rule, value, callback) => {
         if (parameterForm.type === 'command' && !value) {
@@ -392,7 +473,7 @@ const parameterTypeOptions = [
 ]
 
 const hostAttributes = [
-  { label: '内网IP', value: 'internalIp' },
+  { label: '内网IP', value: 'innerIp' },
   { label: '公网IP', value: 'publicIp' },
   { label: '主机名称', value: 'hostName' }
 ]
@@ -424,7 +505,12 @@ const editParameter = (row: ParameterItem) => {
   parameterForm.hint = row.hint || ''
   parameterDialogVisible.value = true
 }
-
+// 添加参数弹框取消
+const handleParameterCancel = () => {
+  parameterFormRef.value?.resetFields()
+  parameterDialogVisible.value = false
+}
+// 添加参数弹框确认
 const handleParameterConfirm = () => {
   parameterFormRef.value?.validate((valid) => {
     if (!valid) return
@@ -458,7 +544,8 @@ const handleParameterConfirm = () => {
     } else {
       parameterList.value.push(item)
     }
-    parameterDialogVisible.value = false
+    ElMessage.success('添加成功')
+    handleParameterCancel()
   })
 }
 
@@ -473,11 +560,11 @@ const hostSource = computed<HostItem[]>(() => {
     return props.availableHosts
   }
   return [
-    { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', internalIp: '172.21.0.12' },
-    { hostId: '3', hostName: '名称A', publicIp: '121.199.4.33', internalIp: '172.21.0.10' },
-    { hostId: '6', hostName: '名称B', publicIp: '192.168.0.22', internalIp: '172.21.0.11' },
-    { hostId: '9', hostName: '名称123', publicIp: '192.168.0.33', internalIp: '172.21.0.1' },
-    { hostId: '10', hostName: 'ABCDE', publicIp: '192.168.0.44', internalIp: '172.21.0.15' }
+    { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
+    { hostId: '3', hostName: '名称A', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
+    { hostId: '6', hostName: '名称B', publicIp: '192.168.0.22', innerIp: '172.21.0.11' },
+    { hostId: '9', hostName: '名称123', publicIp: '192.168.0.33', innerIp: '172.21.0.1' },
+    { hostId: '10', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' }
   ]
 })
 
@@ -494,6 +581,7 @@ const removeSelectedHost = (hostId: string) => {
 }
 
 const handleCancel = () => {
+  formRef.value?.resetFields()
   dialogVisible.value = false
 }
 
@@ -517,11 +605,23 @@ const handleConfirm = () => {
       parameters: parameterList.value,
       hosts: selectedHosts.value
     })
+    formRef.value?.resetFields()
   })
 }
 </script>
 
 <style scoped lang="less">
+:deep(.el-segmented.is-block .el-segmented__item) {
+  min-width: 80px;
+}
+:deep(.el-dialog) {
+  max-height: 85vh;
+  top: -90px;
+}
+.question-icon {
+  vertical-align: middle;
+  margin-top: -2px;
+}
 .inline-link {
   margin-left: 12px;
 }
@@ -547,6 +647,5 @@ const handleConfirm = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 </style>

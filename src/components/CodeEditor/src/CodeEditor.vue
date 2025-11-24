@@ -1,40 +1,16 @@
 <template>
   <div class="code-editor" :class="{ disabled }">
-    <div v-if="showHeader" class="editor-header">
-      <div class="header-left">
-        <slot name="language">
-          <template v-if="shouldRenderDefaultLanguage">
-            <el-segmented v-model="innerLanguage" :options="languageOptions" />
-          </template>
-        </slot>
-        <slot name="header-left-extra"></slot>
-      </div>
-      <div class="header-right">
-        <slot name="header-right"></slot>
-      </div>
-    </div>
-    <div class="editor-body">
-      <div ref="lineNumberRef" class="line-numbers">
-        <span v-for="line in lineNumbers" :key="line">{{ line }}</span>
-      </div>
-      <textarea
-        ref="textareaRef"
-        v-model="localValue"
-        class="code-textarea"
-        :placeholder="placeholder"
-        :readonly="readonly"
-        :disabled="disabled"
-        :style="textareaStyle"
-        @scroll="syncScroll"
-        @input="handleInput"
-        @keydown="handleKeydown"
-      ></textarea>
-    </div>
+    <div class="editor-body" ref="editorContainer" :style="editorStyle"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, useSlots, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import ace from 'ace-builds'
+import 'ace-builds/src-noconflict/mode-sh'
+import 'ace-builds/src-noconflict/mode-python'
+import 'ace-builds/src-noconflict/theme-github'
+import 'ace-builds/src-noconflict/ext-language_tools'
 
 interface LanguageOption {
   label: string
@@ -75,193 +51,164 @@ const emit = defineEmits<{
   (e: 'update:language', value: string): void
 }>()
 
-const textareaRef = ref<HTMLTextAreaElement>()
-const lineNumberRef = ref<HTMLDivElement>()
-const slots = useSlots()
+const editorContainer = ref<HTMLDivElement | null>(null)
+const editorInstance = ref<ace.Ace.Editor | null>(null)
 
 const localValue = ref(props.modelValue)
+const innerLanguage = ref(props.language)
+
+const editorStyle = computed(() => {
+  const baseHeight = Math.max(props.rows, 4) * 24
+  const maxHeight = typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight
+  return {
+    minHeight: `${baseHeight}px`,
+    maxHeight,
+    width: '100%'
+  }
+})
+
+const languageToAceMode = (lang: string) => {
+  const map: Record<string, string> = {
+    Shell: 'ace/mode/sh',
+    shell: 'ace/mode/sh',
+    bash: 'ace/mode/sh',
+    Python: 'ace/mode/python',
+    python: 'ace/mode/python'
+  }
+  return map[lang] || 'ace/mode/text'
+}
+
+const initEditor = () => {
+  if (!editorContainer.value) return
+
+  editorInstance.value = ace.edit(editorContainer.value, {
+    mode: languageToAceMode(innerLanguage.value),
+    theme: 'ace/theme/github',
+    fontSize: 14,
+    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+    showPrintMargin: false,
+    showLineNumbers: true,
+    highlightActiveLine: true,
+    enableBasicAutocompletion: true,
+    enableLiveAutocompletion: false,
+    enableSnippets: false,
+    readOnly: props.readonly || props.disabled,
+    placeholder: props.placeholder,
+    minLines: Math.max(props.rows, 4),
+    maxLines: props.maxHeight ? undefined : Math.max(props.rows, 4),
+    wrap: false,
+    tabSize: 2,
+    useSoftTabs: true,
+    scrollPastEnd: 0
+  })
+
+  // 自定义主题样式（使用类型断言绕过类型检查）
+  editorInstance.value.setOptions({
+    'editor.lineHighlightBackground': '#f2f5fa',
+    'editor.lineHighlightBorder': '#dfe3eb',
+    'editor.cursorStyle': 'slim',
+    'editor.cursorColor': '#111827',
+    'editor.lineNumberColor': '#c4c7d1',
+    'editor.activeLineNumberColor': '#2563eb'
+  } as any)
+
+  // 设置初始值
+  editorInstance.value.setValue(localValue.value || '', -1)
+
+  // 监听内容变化
+  editorInstance.value.on('change', () => {
+    const value = editorInstance.value?.getValue() || ''
+    if (value !== localValue.value) {
+      localValue.value = value
+      emit('update:modelValue', value)
+      emit('change', value)
+    }
+  })
+
+  // 监听焦点变化
+  editorContainer.value.addEventListener('focus', () => {
+    editorInstance.value?.focus()
+  })
+}
+
+const updateEditorValue = (value: string) => {
+  if (editorInstance.value && editorInstance.value.getValue() !== value) {
+    editorInstance.value.setValue(value || '', -1)
+  }
+}
+
+const updateEditorLanguage = (lang: string) => {
+  if (editorInstance.value) {
+    editorInstance.value.session.setMode(languageToAceMode(lang))
+  }
+}
+
+const updateReadonlyState = () => {
+  if (editorInstance.value) {
+    editorInstance.value.setReadOnly(props.readonly || props.disabled)
+  }
+}
+
 watch(
   () => props.modelValue,
   (val) => {
-    if (val !== localValue.value) {
-      localValue.value = val ?? ''
+    const value = val ?? ''
+    if (value !== localValue.value) {
+      localValue.value = value
+      updateEditorValue(value)
     }
   }
 )
 
-const innerLanguage = ref(props.language)
 watch(
   () => props.language,
   (val) => {
     if (val && val !== innerLanguage.value) {
       innerLanguage.value = val
+      updateEditorLanguage(val)
     }
   }
 )
 
 watch(innerLanguage, (val) => {
   emit('update:language', val)
+  updateEditorLanguage(val)
 })
 
-const lineNumbers = computed(() => {
-  const count = localValue.value ? localValue.value.split('\n').length : 1
-  return Array.from({ length: count || 1 }, (_, index) => index + 1)
-})
-
-const textareaStyle = computed(() => {
-  const baseHeight = Math.max(props.rows, 4) * 22
-  const maxHeight = typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight
-  return {
-    minHeight: `${baseHeight}px`,
-    maxHeight
-  }
-})
-
-const shouldRenderDefaultLanguage = computed(
-  () => props.showLanguageSwitcher || !!innerLanguage.value
+watch(
+  () => props.readonly || props.disabled,
+  () => updateReadonlyState()
 )
 
-const hasLanguageSlot = computed(() => Boolean(slots.language))
-const hasLeftExtraSlot = computed(() => Boolean(slots['header-left-extra']))
-const hasRightSlot = computed(() => Boolean(slots['header-right']))
-
-const showHeader = computed(
-  () =>
-    shouldRenderDefaultLanguage.value ||
-    hasLanguageSlot.value ||
-    hasLeftExtraSlot.value ||
-    hasRightSlot.value
-)
-
-const syncScroll = () => {
-  if (textareaRef.value && lineNumberRef.value) {
-    lineNumberRef.value.scrollTop = textareaRef.value.scrollTop
-  }
-}
-
-const handleInput = (event: Event) => {
-  const value = (event.target as HTMLTextAreaElement).value
-  localValue.value = value
-  emit('update:modelValue', value)
-  emit('change', value)
-}
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Tab') {
-    event.preventDefault()
-    insertText('  ')
-  }
-}
-
-const insertText = (text: string) => {
-  const textarea = textareaRef.value
-  if (!textarea) return
-  const start = textarea.selectionStart
-  const end = textarea.selectionEnd
-  const value = localValue.value
-  const newValue = `${value.slice(0, start)}${text}${value.slice(end)}`
-  localValue.value = newValue
-  emit('update:modelValue', newValue)
-  emit('change', newValue)
+onMounted(() => {
   nextTick(() => {
-    const newPosition = start + text.length
-    textarea.selectionStart = newPosition
-    textarea.selectionEnd = newPosition
+    initEditor()
   })
-}
+})
+
+onBeforeUnmount(() => {
+  if (editorInstance.value) {
+    editorInstance.value.destroy()
+    editorInstance.value = null
+  }
+})
 </script>
 
 <style scoped lang="less">
-.code-editor {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-
-  &.disabled {
-    opacity: 0.6;
-  }
-
-  &:focus-within {
-    border-color: #409eff;
-    box-shadow: 0 12px 32px rgba(64, 158, 255, 0.18);
-  }
-}
-
-.editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px;
-  border-bottom: 1px solid #eef1f6;
-  background: linear-gradient(180deg, #f9fbff 0%, #f2f5fa 100%);
-  border-radius: 12px 12px 0 0;
-  gap: 12px;
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-
-    :deep(.el-button) {
-      border-radius: 6px;
-    }
-  }
-}
-
 .editor-body {
-  display: flex;
+  :deep(.ace_gutter) {
+    background: #f6f7fb;
+    color: #9ba3b4;
+  }
+  :deep(.ace_active-line) {
+    background: #f2f5fa !important;
+  }
+}
+.code-editor {
+  display: block;
   width: 100%;
-  background: #fff;
-  border-radius: 0 0 12px 12px;
 }
-
-.line-numbers {
-  width: 56px;
-  padding: 16px 10px 16px 6px;
-  text-align: right;
-  background: #f6f7fb;
-  color: #9ba3b4;
-  font-size: 13px;
-  line-height: 24px;
-  overflow: hidden;
-  border-right: 1px solid #ebeef5;
-  border-bottom-left-radius: 12px;
-
-  span {
-    display: block;
-  }
-}
-
-.code-textarea {
-  flex: 1;
-  border: none;
-  outline: none;
-  resize: none;
-  background: #fff;
-  padding: 16px 18px;
-  font-size: 14px;
-  line-height: 24px;
-  color: #1f2d3d;
-  font-family: inherit;
-  border-bottom-right-radius: 12px;
-
-  &::placeholder {
-    color: #b8b9c3;
-  }
+.editor-body {
+  min-height: 200px;
 }
 </style>

@@ -143,12 +143,14 @@ const handleCommand = ({ action, row }: { action: string; row: any }) => {
 .table-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 
   .table-button {
     cursor: pointer;
     font-size: 13px;
+    margin: 0;
+    padding: 0;
   }
 
   .dropdown-trigger {
