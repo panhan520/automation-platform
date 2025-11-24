@@ -11,6 +11,9 @@
       <el-form-item v-if="mode === 'template'" label="模版类型" prop="templateType">
         <el-select v-model="form.templateType" placeholder="请选择模版类型" style="width: 86%">
           <el-option v-for="type in localTemplateTypes" :key="type" :label="type" :value="type" />
+          <template #empty>
+            <el-empty :image-size="80" description="暂无数据" />
+          </template>
         </el-select>
         <el-button type="primary" class="inline-link" @click="openTypeDialog" link
           >添加类型</el-button
@@ -191,6 +194,9 @@
             :label="attr.label"
             :value="attr.value"
           />
+          <template #empty>
+            <el-empty :image-size="80" description="暂无数据" />
+          </template>
         </el-select>
       </el-form-item>
       <el-form-item>

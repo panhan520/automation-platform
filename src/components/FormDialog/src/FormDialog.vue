@@ -84,11 +84,8 @@
             <span v-if="option.dept" class="dept">{{ getDeptName(option.dept) }}</span>
             {{ option.label }}
           </el-option>
-          <template v-if="!field.options || field.options.length === 0" #empty>
-            <div class="empty-select">
-              <img class="empty-icon" :src="emptyDataImg" />
-              <div class="empty-text">暂无数据</div>
-            </div>
+          <template #empty>
+            <el-empty :image-size="80" description="暂无数据" />
           </template>
         </el-select>
         <!-- 选择器（多选） -->
@@ -109,11 +106,8 @@
             :label="option.label"
             :value="option.value"
           />
-          <template v-if="!field.options || field.options.length === 0" #empty>
-            <div class="empty-select">
-              <img class="empty-icon" :src="emptyDataImg" />
-              <div class="empty-text">暂无数据</div>
-            </div>
+          <template #empty>
+            <el-empty :image-size="80" description="暂无数据" />
           </template>
         </el-select>
         <!-- 多行文本 -->
@@ -355,22 +349,5 @@ watch(
 }
 .dept {
   margin-right: 5px;
-}
-.empty-select {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 0;
-  color: #909399;
-
-  .empty-icon {
-    width: 80px;
-    margin-bottom: 8px;
-  }
-
-  .empty-text {
-    font-size: 12px;
-  }
 }
 </style>

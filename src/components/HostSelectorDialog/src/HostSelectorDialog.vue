@@ -52,6 +52,9 @@
           <el-table-column prop="appTypeName" label="应用类型" />
           <el-table-column prop="operator" label="运营商" />
           <el-table-column prop="remark" label="备注" />
+          <template #empty>
+            <el-empty description="暂无数据" />
+          </template>
         </el-table>
         <div class="host-pagination">
           <Pagination
