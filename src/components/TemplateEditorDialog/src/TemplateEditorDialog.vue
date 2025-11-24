@@ -9,7 +9,7 @@
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
       <el-form-item v-if="mode === 'template'" label="模版类型" prop="templateType">
-        <el-select v-model="form.templateType" placeholder="请选择模版类型" style="width: 85%">
+        <el-select v-model="form.templateType" placeholder="请选择模版类型" style="width: 86%">
           <el-option v-for="type in localTemplateTypes" :key="type" :label="type" :value="type" />
         </el-select>
         <el-button type="primary" class="inline-link" @click="openTypeDialog" link
@@ -34,7 +34,7 @@
       </el-form-item>
 
       <el-form-item label="参数化">
-        <el-button type="primary" @click="openParameterDialog" link>添加参数</el-button>
+        <!-- 已选参数列表 -->
         <el-table
           v-if="parameterList.length"
           :data="parameterList"
@@ -42,38 +42,28 @@
           size="small"
           class="param-table"
         >
-          <el-table-column prop="name" label="参数名" width="120" />
-          <el-table-column prop="variable" label="变量名" width="140" />
-          <el-table-column prop="typeLabel" label="类型" width="120" />
+          <el-table-column prop="name" label="参数名" />
+          <el-table-column prop="variable" label="变量名" />
           <el-table-column label="操作" width="120">
             <template #default="scope">
-              <el-button type="primary" text size="small" @click="editParameter(scope.row)"
+              <el-button type="primary" link size="small" @click="editParameter(scope.row)"
                 >编辑</el-button
               >
-              <el-button type="danger" text size="small" @click="removeParameter(scope.row.id)">
+              <el-button type="danger" link size="small" @click="removeParameter(scope.row.id)">
                 删除
               </el-button>
             </template>
           </el-table-column>
         </el-table>
+        <el-button type="primary" @click="openParameterDialog" link>添加参数</el-button>
       </el-form-item>
 
       <el-form-item label="目标主机">
         <div class="host-row">
-          <el-button link type="primary" @click="openHostSelector">选择主机</el-button>
           <span v-if="selectedHosts.length" class="selected-count">
             已选择 {{ selectedHosts.length }} 台
           </span>
-        </div>
-        <div v-if="selectedHosts.length" class="selected-hosts">
-          <el-tag
-            v-for="host in selectedHosts"
-            :key="host.hostId"
-            closable
-            @close="removeSelectedHost(host.hostId)"
-          >
-            [{{ host.hostId }}] {{ host.innerIp }}
-          </el-tag>
+          <el-button link type="primary" @click="openHostSelector">选择主机</el-button>
         </div>
       </el-form-item>
 
@@ -246,7 +236,7 @@
       </div>
     </template>
   </el-dialog>
-
+  <!-- 选择主机 -->
   <HostSelectorDialog
     v-model:visible="hostSelectorVisible"
     v-model="selectedHosts"
@@ -628,13 +618,6 @@ const handleConfirm = () => {
 
 .param-table {
   margin-top: 12px;
-}
-
-.selected-hosts {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .dialog-footer {

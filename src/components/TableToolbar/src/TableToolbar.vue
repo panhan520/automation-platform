@@ -30,6 +30,9 @@
               :label="option.label"
               :value="option.value"
             />
+            <template #empty>
+              <el-empty :image-size="80" description="暂无数据" />
+            </template>
           </el-select>
           <!-- 重置按钮 -->
           <el-button v-else-if="filter.type === 'text'" @click="() => handleButtonClick(filter)">

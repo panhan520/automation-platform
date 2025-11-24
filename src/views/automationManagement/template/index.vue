@@ -137,7 +137,7 @@ const toolbarButtons: ToolbarButton[] = [
   }
 ]
 
-const toolbarFilters: ToolbarFilter[] = [
+const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
     key: 'appTypeName',
     type: 'select',
@@ -160,7 +160,7 @@ const toolbarFilters: ToolbarFilter[] = [
     icon: Refresh,
     onClick: () => handleReset()
   }
-]
+])
 
 const tableColumns: TableColumn[] = [
   { prop: 'templateName', label: '模版名称', order: 0 },
