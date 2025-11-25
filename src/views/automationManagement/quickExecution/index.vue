@@ -296,7 +296,7 @@ const submitExecution = (params: Record<string, any>) => {
     font-size: 18px;
     line-height: 26px;
     color: #0c0d0e;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     text-align: left;
   }
 }
