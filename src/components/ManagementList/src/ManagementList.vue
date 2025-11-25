@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { TableToolbar } from '@/components/TableToolbar'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -279,29 +279,24 @@ const initTableColumnDrag = () => {
       cell.removeAttribute('data-sortable-id')
     })
 
-    // 获取操作列的索引（如果存在）
-    const actionsColumnIndex = displayColumns.value.findIndex((col) => col.prop === 'actions')
-    const actionsCellIndex =
-      actionsColumnIndex !== -1 ? actionsColumnIndex + (props.showSelection ? 1 : 0) : -1
+    const columnProps = displayColumns.value.map((col) => col.prop)
+    headerCells.forEach((cell, index) => {
+      const prop = columnProps[index]
+      if (prop) {
+        cell.setAttribute('data-column-prop', prop)
+      }
+      if (prop === 'actions') {
+        cell.classList.add('no-drag-column')
+      } else {
+        cell.classList.remove('no-drag-column')
+      }
+    })
 
     // 创建 Sortable
     sortableInstance = Sortable.create(headerRow, {
       animation: 150,
       handle: '.cell', // 只拖 div.cell 区域
-      draggable: 'th.el-table__cell', // 限制可拖元素
-      filter: (item) => {
-        // 过滤掉 selection 列
-        if (props.showSelection) {
-          const allCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
-          if (item instanceof HTMLElement && item === allCells[0]) return true
-        }
-        // 过滤掉操作列
-        if (actionsCellIndex !== -1 && item instanceof HTMLElement) {
-          const allCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
-          if (item === allCells[actionsCellIndex]) return true
-        }
-        return false
-      },
+      draggable: 'th.el-table__cell:not(.no-drag-column)', // 限制可拖元素
       onEnd: ({ oldIndex, newIndex }) => {
         if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
 
@@ -318,7 +313,7 @@ const initTableColumnDrag = () => {
         if (!movedColumn) return
 
         // 从 columnConfig 中找到对应的列并更新顺序
-        const cols = [...columnConfig.value]
+        const cols = columnConfig.value.map((col) => ({ ...col }))
         const movedConfig = cols.find((c) => c.prop === movedColumn.prop)
 
         if (movedConfig) {
@@ -348,6 +343,10 @@ const initTableColumnDrag = () => {
 
           columnConfig.value = cols
           saveToStorage(cols)
+          nextTick(() => {
+            tableRef.value?.doLayout()
+            initTableColumnDrag()
+          })
         }
       }
     })

@@ -36,7 +36,9 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :disabled="!currentTemplate" @click="handleConfirm">确定</el-button>
+        <el-button type="primary" :disabled="!currentTemplate" @click="handleConfirm">
+          确定
+        </el-button>
       </div>
     </template>
   </el-dialog>
@@ -46,6 +48,18 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { RefreshRight, Search } from '@element-plus/icons-vue'
 
+interface TemplateParameter {
+  id: number
+  name: string
+  variable: string
+  type: 'text' | 'password' | 'select'
+  required: boolean
+  options?: Array<{ label: string; value: string }>
+  hint?: string
+  helper?: string
+  defaultValue?: string
+}
+
 interface TemplateItem {
   id: number
   name: string
@@ -54,6 +68,7 @@ interface TemplateItem {
   content: string
   remark?: string
   scriptLanguage: 'Shell' | 'Python'
+  parameters?: TemplateParameter[]
 }
 
 const props = withDefaults(
@@ -98,9 +113,9 @@ const filteredTemplates = computed(() =>
   })
 )
 
-const currentTemplate = computed(() =>
-  props.templates.find((tpl) => tpl.id === currentId.value) || null
-)
+const currentTemplate = computed(() => {
+  return props.templates.find((tpl) => tpl.id === currentId.value) || null
+})
 
 const handleCurrentChange = (row: TemplateItem) => {
   currentId.value = row?.id ?? null
@@ -143,5 +158,3 @@ watch(
   gap: 12px;
 }
 </style>
-
-

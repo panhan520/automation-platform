@@ -62,6 +62,16 @@
       :loading="templateDialogLoading"
       @submit="handleTemplateSubmit"
     />
+
+    <DeleteConfirmDialog
+      v-model:visible="deleteDialog.visible"
+      title="删除模版"
+      :target-name="deleteDialog.target?.templateName || ''"
+      description="删除后该模版将被清除且无法被引用，请谨慎操作。"
+      :loading="deleteDialog.loading"
+      @confirm="confirmDeleteTemplate"
+      @cancel="handleDeleteCancel"
+    />
   </div>
 </template>
 
@@ -73,6 +83,7 @@ import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 
 type ScriptLanguage = 'Shell' | 'Python'
 
@@ -268,7 +279,7 @@ const handleTemplateSubmit = (payload: TemplateEditorPayload) => {
 const tableSample = [
   {
     id: 1,
-    templateName: '获取内存使用情况',
+    templateName: '系统监控模版',
     templateType: '系统信息',
     templateContent: 'free -m',
     description: '查询目标机器内存占用',
@@ -276,7 +287,7 @@ const tableSample = [
   },
   {
     id: 2,
-    templateName: '采集磁盘状态',
+    templateName: '数据库备份模版',
     templateType: '系统信息',
     templateContent: 'df -h',
     description: '磁盘巡检',
@@ -310,15 +321,43 @@ const handleEdit = (row: TemplateRecord) => {
   openTemplateDialog(row)
 }
 
-const handleMoreAction = (action: string, row: TemplateRecord) => {
-  if (action === 'delete') {
-    allTemplates.value = allTemplates.value.filter((item) => item.id !== row.id)
+const deleteDialog = reactive<{
+  visible: boolean
+  target: TemplateRecord | null
+  loading: boolean
+}>({
+  visible: false,
+  target: null,
+  loading: false
+})
+
+const openDeleteDialog = (row: TemplateRecord) => {
+  deleteDialog.target = row
+  deleteDialog.visible = true
+}
+
+const confirmDeleteTemplate = () => {
+  if (!deleteDialog.target) return
+  deleteDialog.loading = true
+  setTimeout(() => {
+    allTemplates.value = allTemplates.value.filter((item) => item.id !== deleteDialog.target?.id)
     ElMessage.success('删除成功')
-  }
+    deleteDialog.visible = false
+    deleteDialog.loading = false
+    deleteDialog.target = null
+  }, 400)
+}
+
+const handleDeleteCancel = () => {
+  deleteDialog.target = null
 }
 
 const handleRowAction = (actionKey: string, row: TemplateRecord) => {
-  handleMoreAction(actionKey, row)
+  if (actionKey === 'delete') {
+    openDeleteDialog(row)
+    return
+  }
+  handleEdit(row)
 }
 
 const getTemplateTypeTagType = (type: string) => {
