@@ -2,6 +2,7 @@
   <ContentWrap>
     <div class="quick-execution">
       <div class="page-title">快速执行</div>
+      <!-- 目标主机 -->
       <div class="host-card">
         <div class="card-header">
           <div class="title">
@@ -11,24 +12,33 @@
           <el-button type="primary" @click="openHostSelector">添加目标主机</el-button>
         </div>
         <div v-if="selectedHosts.length" class="selected-wrapper">
-          <div class="selected-meta">
-            <span>已选择 {{ selectedHosts.length }} 台主机</span>
-            <el-button link type="primary" @click="clearSelectedHosts">清空</el-button>
-          </div>
-          <el-table :data="selectedHosts" border size="small" max-height="220">
-            <el-table-column prop="hostId" label="主机ID" />
-            <el-table-column prop="innerIp" label="内网IP" />
-            <el-table-column prop="publicIp" label="公网IP" />
-            <el-table-column label="操作" width="80">
-              <template #default="{ row }">
-                <el-button type="primary" link @click="removeSelectedHost(row.hostId)"
-                  >移除</el-button
-                >
+          <el-collapse expand-icon-position="left" model-value="1">
+            <el-collapse-item name="1" :icon="CaretRight">
+              <template #title>
+                <div class="selected-meta">
+                  <span
+                    >已选择<span class="selected-count">{{ selectedHosts.length }}</span
+                    >台主机</span
+                  >
+                </div>
               </template>
-            </el-table-column>
-          </el-table>
+              <el-table :data="selectedHosts" border size="small" max-height="220">
+                <el-table-column prop="hostId" label="主机ID" />
+                <el-table-column prop="innerIp" label="内网IP" />
+                <el-table-column prop="publicIp" label="公网IP" />
+                <el-table-column label="操作" width="80">
+                  <template #default="{ row }">
+                    <el-button type="primary" link @click="removeSelectedHost(row.hostId)"
+                      >移除</el-button
+                    >
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
+      <!-- 执行命令 -->
       <div class="command-card">
         <div class="card-header">
           <div class="left-wrapper">
@@ -42,15 +52,6 @@
             <el-button type="primary" @click="openTemplateDialog">选择执行模版</el-button>
           </div>
         </div>
-
-        <div v-if="selectedTemplate" class="template-info">
-          <div>
-            当前模版：<span class="template-name">{{ selectedTemplate.name }}</span>
-            <el-tag size="small" type="info">{{ selectedTemplate.type }}</el-tag>
-          </div>
-          <el-button link type="primary" @click="clearSelectedTemplate">清除</el-button>
-        </div>
-
         <CodeEditor v-model="form.command" v-model:language="form.scriptLanguage" :rows="14" />
       </div>
       <div class="actions">
@@ -89,7 +90,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Odometer } from '@element-plus/icons-vue'
+import { Odometer, CaretRight } from '@element-plus/icons-vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { HostSelectorDialog } from '@/components/HostSelectorDialog'
 import { TemplateSelectDialog } from '@/components/TemplateSelectDialog'
@@ -226,10 +227,6 @@ const openHostSelector = () => {
   hostSelectorVisible.value = true
 }
 
-const clearSelectedHosts = () => {
-  selectedHosts.value = []
-}
-
 const removeSelectedHost = (hostId: string) => {
   selectedHosts.value = selectedHosts.value.filter((host) => host.hostId !== hostId)
 }
@@ -239,10 +236,6 @@ const openTemplateDialog = () => {
     loadTemplates()
   }
   templateDialogVisible.value = true
-}
-
-const clearSelectedTemplate = () => {
-  selectedTemplate.value = null
 }
 
 const handleTemplateSelected = (template: TemplateItem) => {
@@ -283,6 +276,18 @@ const submitExecution = (params: Record<string, any>) => {
 </script>
 
 <style scoped lang="less">
+.el-collapse {
+  border: solid 1px #ebeef5;
+  padding: 0 15px;
+  border-radius: 8px;
+}
+:deep(.el-collapse-item__content) {
+  padding-bottom: 20px !important;
+}
+:deep(.el-table--small) {
+  margin: 0;
+}
+
 .quick-execution {
   display: flex;
   flex-direction: column;
@@ -329,11 +334,15 @@ const submitExecution = (params: Record<string, any>) => {
 }
 
 .selected-wrapper {
+  margin: 12px 0 0;
   .selected-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    .selected-count {
+      color: #1664ff;
+      margin: 0 5px;
+    }
   }
 }
 
