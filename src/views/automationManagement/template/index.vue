@@ -84,6 +84,7 @@ import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
+import { apiGetTemplatesList } from '@/api/template'
 
 type ScriptLanguage = 'Shell' | 'Python'
 
@@ -137,17 +138,8 @@ const queryParams = reactive({
   pageSize: 10,
   keyword: ''
 })
-const appTypeList = ref<string[]>([])
-
-const toolbarButtons: ToolbarButton[] = [
-  {
-    key: 'create',
-    label: '新建模版',
-    type: 'primary',
-    onClick: () => openTemplateDialog()
-  }
-]
-
+const templateTypeList = ref<string[]>([])
+// 表格筛选项（左侧）
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
     key: 'appTypeName',
@@ -155,7 +147,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     placeholder: '全部模版类型',
     width: 200,
     clearable: true,
-    options: appTypeList.value.map((item) => ({ label: item, value: item }))
+    options: templateTypeList.value.map((item) => ({ label: item, value: item }))
   },
   {
     key: 'keyword',
@@ -172,7 +164,16 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     onClick: () => handleReset()
   }
 ])
-
+// 表格操作项（右侧）
+const toolbarButtons: ToolbarButton[] = [
+  {
+    key: 'create',
+    label: '新建模版',
+    type: 'primary',
+    onClick: () => openTemplateDialog()
+  }
+]
+// 表格列
 const tableColumns: TableColumn[] = [
   { prop: 'templateName', label: '模版名称', order: 0 },
   { prop: 'templateType', label: '模版类型', slot: 'templateType', order: 1 },
@@ -180,7 +181,7 @@ const tableColumns: TableColumn[] = [
   { prop: 'description', label: '描述信息', minWidth: 150, order: 3 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 4 }
 ]
-
+// 行内操作栏
 const templateRowActions: TableAction[] = [
   {
     key: 'delete',
@@ -189,6 +190,35 @@ const templateRowActions: TableAction[] = [
     text: true
   }
 ]
+// 获取模版列表
+const getList = async () => {
+  try {
+    loading.value = true
+    // const res = await apiGetTemplatesList(queryParams)
+    // allTemplates.value = res.data.list || []
+    allTemplates.value = [
+      {
+        id: 1,
+        templateName: '系统监控模版',
+        templateType: '系统信息',
+        templateContent: 'free -m',
+        description: '查询目标机器内存占用',
+        scriptLanguage: 'Shell' as ScriptLanguage
+      },
+      {
+        id: 2,
+        templateName: '数据库备份模版',
+        templateType: '系统信息',
+        templateContent: 'df -h',
+        description: '磁盘巡检',
+        scriptLanguage: 'Shell' as ScriptLanguage
+      }
+    ]
+  } finally {
+    loading.value = false
+  }
+}
+// 重置按钮
 const handleReset = () => {
   // queryParams.query = ''
   // queryParams.appTypeName = ''
@@ -274,33 +304,6 @@ const handleTemplateSubmit = (payload: TemplateEditorPayload) => {
     templateDialogLoading.value = false
     templateDialogVisible.value = false
   }, 600)
-}
-
-const tableSample = [
-  {
-    id: 1,
-    templateName: '系统监控模版',
-    templateType: '系统信息',
-    templateContent: 'free -m',
-    description: '查询目标机器内存占用',
-    scriptLanguage: 'Shell' as ScriptLanguage
-  },
-  {
-    id: 2,
-    templateName: '数据库备份模版',
-    templateType: '系统信息',
-    templateContent: 'df -h',
-    description: '磁盘巡检',
-    scriptLanguage: 'Shell' as ScriptLanguage
-  }
-]
-
-const getList = async () => {
-  loading.value = true
-  setTimeout(() => {
-    allTemplates.value = tableSample
-    loading.value = false
-  }, 300)
 }
 
 const handleSearch = (params: Record<string, any>) => {
