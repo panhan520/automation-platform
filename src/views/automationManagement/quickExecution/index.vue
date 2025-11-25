@@ -127,17 +127,17 @@ interface TemplateItem {
   hostCount: number
   content: string
   remark?: string
-  scriptLanguage: 'Shell' | 'Python'
+  scriptLanguage: 'sh' | 'python'
   parameters?: TemplateParameter[]
 }
 
 const scriptLanguageOptions = [
-  { label: 'Shell', value: 'Shell' },
-  { label: 'Python', value: 'Python' }
+  { label: 'Shell', value: 'sh' },
+  { label: 'Python', value: 'python' }
 ]
 
 const form = reactive({
-  scriptLanguage: 'Shell' as 'Shell' | 'Python',
+  scriptLanguage: 'sh' as 'sh' | 'python',
   command: ''
 })
 
@@ -169,7 +169,7 @@ const loadTemplates = () => {
         hostCount: 0,
         content: 'free -m',
         remark: '查看当前主机内存',
-        scriptLanguage: 'Shell',
+        scriptLanguage: 'sh',
         parameters: [
           {
             id: 101,
@@ -187,7 +187,7 @@ const loadTemplates = () => {
         hostCount: 2,
         content: 'df -h',
         remark: '磁盘巡检',
-        scriptLanguage: 'Shell',
+        scriptLanguage: 'sh',
         parameters: [
           {
             id: 102,
@@ -216,7 +216,7 @@ const loadTemplates = () => {
         hostCount: 1,
         content: "print('hello world')",
         remark: 'Python示例',
-        scriptLanguage: 'Python'
+        scriptLanguage: 'python'
       }
     ]
     templateLoading.value = false

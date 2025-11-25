@@ -167,7 +167,7 @@ import {
 } from '@element-plus/icons-vue'
 import type { UploadFile, UploadInstance, UploadProps, UploadRawFile } from 'element-plus'
 import { apiNodeImport, apiGetNodeDownload } from '@/api/node'
-import { genFileId } from 'element-plus'
+// import { genFileId } from 'element-plus'
 interface Props {
   visible: boolean
 }
@@ -440,7 +440,7 @@ const handleConfirm = async () => {
 const handleExceed: UploadProps['onExceed'] = (files) => {
   selectedFile.value = null
   const file = files[0] as UploadRawFile
-  file.uid = genFileId()
+  // file.uid = genFileId()
   // 创建完整的UploadFile对象
   const uploadFile: UploadFile = {
     name: file.name,

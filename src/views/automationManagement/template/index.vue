@@ -2,7 +2,7 @@
   <div class="template-management-page">
     <ManagementList
       :title="title"
-      :table-data="displayTableData"
+      :table-data="allTemplates"
       :loading="loading"
       :total-records="totalRecords"
       :toolbar-buttons="toolbarButtons"
@@ -31,20 +31,17 @@
             :sortable="column.sortable"
           >
             <template #default="scope">
-              <el-tag
-                v-if="column.prop === 'templateType'"
-                :type="getTemplateTypeTagType(scope.row.templateType)"
-              >
-                {{ scope.row.templateType }}
+              <el-tag v-if="column.prop === 'type'" :type="getTemplateTypeTagType(scope.row.type)">
+                {{ scope.row.type }}
               </el-tag>
               <el-tooltip
-                v-if="column.prop === 'templateContent'"
+                v-if="column.prop === 'body'"
                 class="box-item"
                 effect="dark"
-                :content="scope.row.templateContent"
+                :content="scope.row.body"
                 placement="top"
               >
-                {{ scope.row.templateContent }}
+                {{ scope.row.body }}
               </el-tooltip>
             </template>
           </el-table-column>
@@ -84,9 +81,9 @@ import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
-import { apiGetTemplatesList } from '@/api/template'
+import { apiGetTemplatesList, apiGetTemplatesType } from '@/api/template'
 
-type ScriptLanguage = 'Shell' | 'Python'
+type ScriptLanguage = 'sh' | 'python'
 
 interface TemplateRecord {
   id: number
@@ -121,13 +118,13 @@ interface HostItem {
 }
 
 interface TemplateEditorPayload {
-  templateType?: string
-  templateName?: string
-  scriptLanguage: ScriptLanguage
-  templateContent: string
-  remark?: string
+  type?: string
+  name?: string
+  interpreter: ScriptLanguage
+  body: string
+  desc?: string
   parameters: ParameterItem[]
-  hosts: HostItem[]
+  host_ids: HostItem[]
 }
 
 const title = '模版管理'
@@ -136,13 +133,14 @@ const allTemplates = ref<TemplateRecord[]>([])
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  keyword: ''
+  query: '',
+  type: ''
 })
 const templateTypeList = ref<string[]>([])
 // 表格筛选项（左侧）
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
-    key: 'appTypeName',
+    key: 'type',
     type: 'select',
     placeholder: '全部模版类型',
     width: 200,
@@ -150,7 +148,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     options: templateTypeList.value.map((item) => ({ label: item, value: item }))
   },
   {
-    key: 'keyword',
+    key: 'query',
     type: 'input',
     placeholder: '搜索模版名称',
     width: 200,
@@ -175,10 +173,10 @@ const toolbarButtons: ToolbarButton[] = [
 ]
 // 表格列
 const tableColumns: TableColumn[] = [
-  { prop: 'templateName', label: '模版名称', order: 0 },
-  { prop: 'templateType', label: '模版类型', slot: 'templateType', order: 1 },
-  { prop: 'templateContent', label: '模版内容', minWidth: 150, slot: 'templateContent', order: 2 },
-  { prop: 'description', label: '描述信息', minWidth: 150, order: 3 },
+  { prop: 'name', label: '模版名称', order: 0 },
+  { prop: 'type', label: '模版类型', slot: 'type', order: 1 },
+  { prop: 'body', label: '模版内容', minWidth: 150, slot: 'body', order: 2 },
+  { prop: 'desc', label: '描述信息', minWidth: 150, order: 3 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 4 }
 ]
 // 行内操作栏
@@ -190,58 +188,8 @@ const templateRowActions: TableAction[] = [
     text: true
   }
 ]
-// 获取模版列表
-const getList = async () => {
-  try {
-    loading.value = true
-    // const res = await apiGetTemplatesList(queryParams)
-    // allTemplates.value = res.data.list || []
-    allTemplates.value = [
-      {
-        id: 1,
-        templateName: '系统监控模版',
-        templateType: '系统信息',
-        templateContent: 'free -m',
-        description: '查询目标机器内存占用',
-        scriptLanguage: 'Shell' as ScriptLanguage
-      },
-      {
-        id: 2,
-        templateName: '数据库备份模版',
-        templateType: '系统信息',
-        templateContent: 'df -h',
-        description: '磁盘巡检',
-        scriptLanguage: 'Shell' as ScriptLanguage
-      }
-    ]
-  } finally {
-    loading.value = false
-  }
-}
-// 重置按钮
-const handleReset = () => {
-  // queryParams.query = ''
-  // queryParams.appTypeName = ''
-  // queryParams.nodeTags = ''
-  // queryParams.page = 1
-  // getList()
-}
-const filteredTemplates = computed(() => {
-  if (!queryParams.keyword) {
-    return allTemplates.value
-  }
-  return allTemplates.value.filter((item) =>
-    item.templateName.toLowerCase().includes(queryParams.keyword.toLowerCase())
-  )
-})
 
-const displayTableData = computed(() => {
-  const start = (queryParams.page - 1) * queryParams.pageSize
-  return filteredTemplates.value.slice(start, start + queryParams.pageSize)
-})
-
-const totalRecords = computed(() => filteredTemplates.value.length)
-
+const totalRecords = ref(0)
 const templateTypes = ref(['系统信息', '部署模版', '运维脚本'])
 const availableHosts = ref<HostItem[]>([
   { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
@@ -251,21 +199,56 @@ const availableHosts = ref<HostItem[]>([
 
 const templateDialogVisible = ref(false)
 const templateDialogLoading = ref(false)
-const editorInitialData = ref<TemplateEditorPayload | null>(null)
+const editorInitialData = ref(null)
 const currentEditingId = ref<number | null>(null)
 const dialogTitle = computed(() => (editorInitialData.value ? '编辑模版' : '新建模版'))
 
-const openTemplateDialog = (row?: TemplateRecord) => {
+// 获取模版列表
+const getList = async () => {
+  try {
+    loading.value = true
+    const res = await apiGetTemplatesList(queryParams)
+    allTemplates.value = res.data.list
+    totalRecords.value = res.data.pagination.total
+    // allTemplates.value = [
+    //   {
+    //     id: 1,
+    //     templateName: '系统监控模版',
+    //     templateType: '系统信息',
+    //     templateContent: 'free -m',
+    //     description: '查询目标机器内存占用',
+    //     scriptLanguage: 'Shell' as ScriptLanguage
+    //   },
+    //   {
+    //     id: 2,
+    //     templateName: '数据库备份模版',
+    //     templateType: '系统信息',
+    //     templateContent: 'df -h',
+    //     description: '磁盘巡检',
+    //     scriptLanguage: 'Shell' as ScriptLanguage
+    //   }
+    // ]
+  } finally {
+    loading.value = false
+  }
+}
+// 获取模版类型列表
+const getTemplateTypeList = async () => {
+  const res = await apiGetTemplatesType()
+  templateTypeList.value = res.data.list
+}
+// 重置按钮
+const handleReset = () => {
+  queryParams.query = ''
+  queryParams.type = ''
+  queryParams.page = 1
+  getList()
+}
+const openTemplateDialog = (row?) => {
   if (row) {
     currentEditingId.value = row.id
     editorInitialData.value = {
-      templateType: row.templateType,
-      templateName: row.templateName,
-      scriptLanguage: row.scriptLanguage,
-      templateContent: row.templateContent,
-      remark: row.remark,
-      parameters: row.parameters || [],
-      hosts: row.hosts || []
+      ...row
     }
   } else {
     currentEditingId.value = null
@@ -274,7 +257,7 @@ const openTemplateDialog = (row?: TemplateRecord) => {
   templateDialogVisible.value = true
 }
 
-const handleTemplateSubmit = (payload: TemplateEditorPayload) => {
+const handleTemplateSubmit = (payload) => {
   templateDialogLoading.value = true
   setTimeout(() => {
     if (currentEditingId.value) {
@@ -307,8 +290,10 @@ const handleTemplateSubmit = (payload: TemplateEditorPayload) => {
 }
 
 const handleSearch = (params: Record<string, any>) => {
-  queryParams.keyword = params.keyword || ''
+  queryParams.query = params.query || ''
+  queryParams.type = params.type || ''
   queryParams.page = 1
+  getList()
 }
 
 const handleRefresh = () => {
@@ -318,6 +303,7 @@ const handleRefresh = () => {
 const handlePageChange = (page: number, pageSize: number) => {
   queryParams.page = page
   queryParams.pageSize = pageSize
+  getList()
 }
 
 const handleEdit = (row: TemplateRecord) => {
@@ -374,6 +360,7 @@ const getTemplateTypeTagType = (type: string) => {
 
 onMounted(() => {
   getList()
+  getTemplateTypeList()
 })
 </script>
 

@@ -8,8 +8,8 @@
     @close="handleCancel"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
-      <el-form-item v-if="mode === 'template'" label="模版类型" prop="templateType">
-        <el-select v-model="form.templateType" placeholder="请选择模版类型" style="width: 86%">
+      <el-form-item v-if="mode === 'template'" label="模版类型" prop="type">
+        <el-select v-model="form.type" placeholder="请选择模版类型" style="width: 86%">
           <el-option v-for="type in localTemplateTypes" :key="type" :label="type" :value="type" />
           <template #empty>
             <el-empty :image-size="80" description="暂无数据" />
@@ -20,20 +20,20 @@
         >
       </el-form-item>
 
-      <el-form-item v-if="mode === 'template'" label="模版名称" prop="templateName">
-        <el-input v-model="form.templateName" placeholder="请输入模版名称" />
+      <el-form-item v-if="mode === 'template'" label="模版名称" prop="name">
+        <el-input v-model="form.name" placeholder="请输入模版名称" />
       </el-form-item>
 
-      <el-form-item v-if="mode === 'task'" label="任务名称" prop="taskName">
-        <el-input v-model="form.taskName" placeholder="请输入任务名称" />
+      <el-form-item v-if="mode === 'task'" label="任务名称" prop="name">
+        <el-input v-model="form.name" placeholder="请输入任务名称" />
       </el-form-item>
 
-      <el-form-item label="脚本语言" prop="scriptLanguage">
-        <el-segmented v-model="form.scriptLanguage" :options="scriptLanguageOptions" block />
+      <el-form-item label="脚本语言" prop="interpreter">
+        <el-segmented v-model="form.interpreter" :options="interpreterOptions" block />
       </el-form-item>
 
-      <el-form-item label="模版内容" prop="templateContent">
-        <CodeEditor v-model="form.templateContent" :rows="12" />
+      <el-form-item label="模版内容" prop="body">
+        <CodeEditor v-model="form.body" :rows="12" />
       </el-form-item>
 
       <el-form-item label="参数化">
@@ -72,7 +72,7 @@
 
       <el-form-item label="备注信息">
         <el-input
-          v-model="form.remark"
+          v-model="form.desc"
           type="textarea"
           :rows="3"
           :placeholder="`请输入${mode === 'template' ? '模版' : '任务'}备注信息`"
@@ -279,14 +279,13 @@ interface HostItem {
 }
 
 interface TemplateEditorData {
-  templateType?: string
-  templateName?: string
-  taskName?: string
-  scriptLanguage: 'Shell' | 'Python'
-  templateContent: string
-  remark?: string
+  type: string
+  name: string
+  interpreter: 'sh' | 'python'
+  body: string
+  desc?: string
   parameters?: ParameterItem[]
-  hosts?: HostItem[]
+  host_ids?: HostItem[]
 }
 
 const props = withDefaults(
@@ -310,10 +309,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
-  (
-    e: 'submit',
-    payload: TemplateEditorData & { parameters: ParameterItem[]; hosts: HostItem[] }
-  ): void
+  (e: 'submit', payload): void
 }>()
 
 const dialogVisible = computed({
@@ -324,25 +320,24 @@ const dialogVisible = computed({
 const formRef = ref<FormInstance>()
 const submitLoading = computed(() => props.loading)
 
-const scriptLanguageOptions = [
-  { label: 'Shell', value: 'Shell' },
-  { label: 'Python', value: 'Python' }
+const interpreterOptions = [
+  { label: 'Shell', value: 'sh' },
+  { label: 'Python', value: 'python' }
 ]
 
 const form = reactive({
-  templateType: '',
-  templateName: '',
-  taskName: '',
-  scriptLanguage: 'Shell',
-  templateContent: '',
-  remark: ''
+  type: '',
+  name: '',
+  interpreter: 'sh',
+  body: '',
+  desc: ''
 })
 
 const formRules: FormRules = {
-  templateType: [{ required: true, message: '请选择模版类型', trigger: 'change' }],
+  type: [{ required: true, message: '请选择模版类型', trigger: 'change' }],
   templateName: [{ required: true, message: '请输入模版名称', trigger: 'blur' }],
-  taskName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-  templateContent: [{ required: true, message: '请输入模版内容', trigger: 'blur' }]
+  name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
+  body: [{ required: true, message: '请输入模版内容', trigger: 'blur' }]
 }
 
 const parameterList = ref<ParameterItem[]>([])
@@ -356,16 +351,15 @@ watch(
   },
   { immediate: true }
 )
-
-const applyInitialData = (data?: TemplateEditorData | null) => {
-  form.templateType = data?.templateType || ''
-  form.templateName = data?.templateName || ''
-  form.taskName = data?.taskName || ''
-  form.scriptLanguage = data?.scriptLanguage || 'Shell'
-  form.templateContent = data?.templateContent || ''
-  form.remark = data?.remark || ''
-  parameterList.value = data?.parameters ? [...data.parameters] : []
-  selectedHosts.value = data?.hosts ? [...data.hosts] : []
+// 设置默认值
+const applyInitialData = (data) => {
+  form.type = data?.type || ''
+  form.name = data?.name || ''
+  form.interpreter = data?.interpreter || 'sh'
+  form.body = data?.body || ''
+  form.desc = data?.desc || ''
+  parameterList.value = data?.parameters
+  selectedHosts.value = data?.host_ids
 }
 
 watch(
@@ -376,15 +370,15 @@ watch(
   { immediate: true }
 )
 
-watch(
-  () => props.mode,
-  () => {
-    if (props.mode === 'task') {
-      form.templateType = ''
-      form.templateName = ''
-    }
-  }
-)
+// watch(
+//   () => props.mode,
+//   () => {
+//     if (props.mode === 'task') {
+//       form.type = ''
+//       form.name = ''
+//     }
+//   }
+// )
 
 const typeDialogVisible = ref(false)
 const typeFormRef = ref<FormInstance>()
@@ -408,10 +402,10 @@ const handleAddTemplateType = () => {
     if (!valid) return
     if (!localTemplateTypes.value.includes(typeForm.type)) {
       localTemplateTypes.value.push(typeForm.type)
+      form.type = typeForm.type
       ElMessage.success('添加成功')
     }
     handleAddTemplateTypeCancel()
-    form.templateType = typeForm.type
   })
 }
 
@@ -585,22 +579,17 @@ const handleConfirm = () => {
   formRef.value?.validate((valid) => {
     if (!valid) return
     if (props.mode === 'template') {
-      if (!form.templateType) {
+      if (!form.type) {
         return
       }
-    } else if (!form.taskName) {
+    } else if (!form.name) {
       return
     }
-    emit('submit', {
-      templateType: form.templateType,
-      templateName: form.templateName,
-      taskName: form.taskName,
-      scriptLanguage: form.scriptLanguage as 'Shell' | 'Python',
-      templateContent: form.templateContent,
-      remark: form.remark,
-      parameters: parameterList.value,
-      hosts: selectedHosts.value
-    })
+    const formData = {
+      ...form,
+      host_ids: selectedHosts.value.map((host) => host.hostId)
+    }
+    emit('submit', formData)
     formRef.value?.resetFields()
   })
 }

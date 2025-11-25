@@ -31,10 +31,10 @@ const props = withDefaults(
   }>(),
   {
     modelValue: '',
-    language: 'Shell',
+    language: 'sh',
     languageOptions: () => [
-      { label: 'Shell', value: 'Shell' },
-      { label: 'Python', value: 'Python' }
+      { label: 'Shell', value: 'sh' },
+      { label: 'Python', value: 'python' }
     ],
     showLanguageSwitcher: true,
     placeholder: '',
@@ -69,7 +69,7 @@ const editorStyle = computed(() => {
 
 const languageToAceMode = (lang: string) => {
   const map: Record<string, string> = {
-    Shell: 'ace/mode/sh',
+    sh: 'ace/mode/sh',
     shell: 'ace/mode/sh',
     bash: 'ace/mode/sh',
     Python: 'ace/mode/python',

@@ -67,7 +67,7 @@ interface TemplateItem {
   hostCount: number
   content: string
   remark?: string
-  scriptLanguage: 'Shell' | 'Python'
+  scriptLanguage: 'sh' | 'python'
   parameters?: TemplateParameter[]
 }
 

@@ -22,8 +22,8 @@ import {
   uye,
   x_,
   zP
-} from "./chunk-OT7WPXV5.js";
-import "./chunk-HKJ2B2AA.js";
+} from './chunk-OT7WPXV5.js'
+import './chunk-HKJ2B2AA.js'
 export {
   Zve as Boot,
   QO as DomEditor,
@@ -48,4 +48,4 @@ export {
   zP as i18nChangeLanguage,
   $P as i18nGetResources,
   HP as t
-};
+}

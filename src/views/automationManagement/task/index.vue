@@ -56,7 +56,7 @@ import { Search } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 
-type ScriptLanguage = 'Shell' | 'Python'
+type ScriptLanguage = 'sh' | 'python'
 
 interface TaskRecord {
   id: number
@@ -137,8 +137,8 @@ const displayTableData = computed(() => {
 const totalRecords = computed(() => filteredTasks.value.length)
 
 const availableHosts = ref([
-  { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', internalIp: '172.21.0.12' },
-  { hostId: '2', hostName: '名称2', publicIp: '121.199.4.33', internalIp: '172.21.0.10' }
+  { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
+  { hostId: '2', hostName: '名称2', publicIp: '121.199.4.33', innerIp: '172.21.0.10' }
 ])
 
 const taskDialogVisible = ref(false)
@@ -163,7 +163,7 @@ const openTaskDialog = (row?: TaskRecord) => {
     taskEditorData.value = {
       taskName: '',
       templateContent: '',
-      scriptLanguage: 'Shell',
+      scriptLanguage: 'sh',
       remark: '',
       parameters: [],
       hosts: []
@@ -224,7 +224,7 @@ const getList = async () => {
         status: '已完成',
         createTime: '2025-01-12 10:00:00',
         executeTime: '2025-01-12 10:01:12',
-        scriptLanguage: 'Shell',
+        scriptLanguage: 'sh',
         templateContent: 'free -m'
       }
     ]
@@ -289,5 +289,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="less">
-</style>
+<style scoped lang="less"></style>

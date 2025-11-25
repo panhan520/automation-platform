@@ -6,9 +6,20 @@
     :close-on-click-modal="false"
     @close="handleClose"
   >
-    <el-form ref="formRef" :model="formData" :rules="rules" :label-width="labelWidth" @submit.prevent>
+    <el-form
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      :label-width="labelWidth"
+      @submit.prevent
+    >
       <!-- 固定字段：用户名称等只读信息 -->
-      <el-form-item v-if="fixedFields && fixedFields.length > 0" v-for="fixedField in fixedFields" :key="fixedField.prop" :label="fixedField.label">
+      <el-form-item
+        v-if="fixedFields && fixedFields.length > 0"
+        v-for="fixedField in fixedFields"
+        :key="fixedField.prop"
+        :label="fixedField.label"
+      >
         <el-input :model-value="fixedField.value" readonly disabled />
       </el-form-item>
 
@@ -475,4 +486,3 @@ const handleConfirm = async () => {
   }
 }
 </style>
-

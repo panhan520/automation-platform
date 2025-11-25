@@ -48,4 +48,3 @@ export const useTaskPanelStore = defineStore('taskPanel', {
   },
   persist: true
 })
-
