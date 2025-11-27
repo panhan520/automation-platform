@@ -144,7 +144,8 @@ const formDialogFields = computed<FormField[]>(() => [
     label: '应用类型',
     type: 'input',
     placeholder: '请输入应用类型',
-    required: true
+    required: true,
+    maxlength: 50
   },
   {
     prop: 'lifeCycle',

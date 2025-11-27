@@ -58,9 +58,9 @@
             <template v-else>
               <el-input
                 v-model="form.credentialKey"
-                type="textarea"
-                :rows="2"
-                placeholder="请粘贴密钥内容"
+                type="password"
+                placeholder="请输入密钥"
+                show-password
                 clearable
               />
             </template>
@@ -536,7 +536,7 @@ const rules = reactive<FormRules>({
           }
         }
         if (form.authMethod === 'key' && !form.credentialKey) {
-          callback(new Error('请填写密钥内容'))
+          callback(new Error('请输入密钥'))
           return
         }
         callback()
@@ -568,10 +568,10 @@ const computedTitle = computed(() =>
 
 const canSave = computed(() => connectivityStatus.value === 'success' && !props.loading)
 
-const resetConnectivityStatus = () => {
-  if (connectivityStatus.value === 'idle') return
-  connectivityStatus.value = 'idle'
-}
+// const resetConnectivityStatus = () => {
+//   if (connectivityStatus.value === 'idle') return
+//   connectivityStatus.value = 'idle'
+// }
 
 const convertTagsToList = (source?: any): NodeTagItem[] => {
   const list: NodeTagItem[] = []
@@ -669,6 +669,7 @@ const nextTickInit = () => {
 
 const applyDefaultData = (data: NodeFormDefaultData) => {
   if (!data) return
+  connectivityStatus.value = 'success'
   const {
     region,
     regionCodes,
@@ -718,16 +719,16 @@ watch(
     } else {
       form.loginIp = form.innerIp
     }
-    resetConnectivityStatus()
+    // resetConnectivityStatus()
   }
 )
 
-watch(
-  () => [form.innerIp, form.publicIp, form.loginAccount, form.loginPort],
-  () => {
-    resetConnectivityStatus()
-  }
-)
+// watch(
+//   () => [form.innerIp, form.publicIp, form.loginAccount, form.loginPort],
+//   () => {
+//     resetConnectivityStatus()
+//   }
+// )
 
 const addNodeTag = () => {
   if (nodeTagItems.value.length >= maxTags) return
@@ -736,7 +737,7 @@ const addNodeTag = () => {
 
 const removeNodeTag = (index: number) => {
   nodeTagItems.value.splice(index, 1)
-  resetConnectivityStatus()
+  // resetConnectivityStatus()
 }
 
 const handleConnectivityTest = async () => {

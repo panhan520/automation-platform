@@ -154,7 +154,9 @@ const handleCommand = ({ action, row }: { action: string; row: any }) => {
   }
 
   .dropdown-trigger {
-    color: #409eff;
+    color: #1664ff;
+    font-size: 12px;
+    font-weight: bold;
   }
 }
 </style>
