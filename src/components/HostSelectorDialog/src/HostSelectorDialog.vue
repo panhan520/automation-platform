@@ -4,12 +4,7 @@
       <!-- 左侧表格 -->
       <div class="host-table">
         <div class="host-search">
-          <el-input
-            v-model="filters.hostId"
-            placeholder="搜索主机ID"
-            clearable
-            :prefix-icon="Search"
-          />
+          <el-input v-model="filters.id" placeholder="搜索主机ID" clearable :prefix-icon="Search" />
           <el-input
             v-model="filters.publicIp"
             placeholder="搜索公网IP"
@@ -27,7 +22,7 @@
           ref="tableRef"
           :data="allNodes"
           height="320"
-          row-key="hostId"
+          row-key="id"
           @selection-change="handleSelectionChange"
         >
           <el-table-column
@@ -36,7 +31,7 @@
             fixed
             :selectable="() => !isSelectionDisabled"
           />
-          <el-table-column prop="hostId" label="主机ID" />
+          <el-table-column prop="id" label="主机ID" />
           <el-table-column prop="innerIp" label="内网IP" min-width="100" />
           <el-table-column prop="publicIp" label="公网IP" min-width="100" />
           <el-table-column prop="nodeTags" label="节点标签" />
@@ -86,9 +81,9 @@
             style="height: 313px"
           />
           <div v-else class="selected-list">
-            <div v-for="host in filteredSelectedHosts" :key="host.hostId" class="selected-item">
-              <div class="info"> [{{ host.hostId }}] [内] {{ host.innerIp }} </div>
-              <el-button type="text" @click="removeTempHost(host.hostId)"
+            <div v-for="host in filteredSelectedHosts" :key="host.id" class="selected-item">
+              <div class="info"> [{{ host.id }}] [内] {{ host.innerIp }} </div>
+              <el-button type="text" @click="removeTempHost(host.id)"
                 ><el-icon><Close /></el-icon
               ></el-button>
             </div>
@@ -112,24 +107,20 @@
 import { onMounted, computed, reactive, ref, watch, nextTick } from 'vue'
 import { ElTable, ElMessage } from 'element-plus'
 import { Search, Close, Delete } from '@element-plus/icons-vue'
-// import { apiGetNodeList } from '@/api/node/index'
+import { apiGetNodeList } from '@/api/node/index'
 import { debounce } from 'lodash-es'
 
 interface HostItem {
-  hostId: string
-  hostName: string
+  id: number
   innerIp: string
-  publicIp: string
 }
 
 const props = withDefaults(
   defineProps<{
     visible: boolean
-    hosts: HostItem[]
     modelValue?: HostItem[]
   }>(),
   {
-    hosts: () => [],
     modelValue: () => []
   }
 )
@@ -150,12 +141,12 @@ const totalRecords = ref(0)
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  hostId: '',
+  id: '',
   publicIp: '',
   innerIp: ''
 })
 const filters = reactive({
-  hostId: '',
+  id: '',
   innerIp: '',
   publicIp: '',
   selectedInnerIp: '' // 用于右侧选中列表的搜索
@@ -173,50 +164,7 @@ const stopSyncSelection = ref(false)
 const getList = async () => {
   try {
     loading.value = true
-    const params = {
-      page: queryParams.page,
-      pageSize: queryParams.pageSize,
-      ...(queryParams.hostId && { hostId: queryParams.hostId }),
-      ...(queryParams.publicIp && { publicIp: queryParams.publicIp }),
-      ...(queryParams.innerIp && { innerIp: queryParams.innerIp })
-    }
-    // const res = await apiGetNodeList(params)
-    let res
-    if (queryParams.page === 1) {
-      res = {
-        data: {
-          list: [
-            { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
-            { hostId: '2', hostName: '名称A', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
-            { hostId: '3', hostName: '名称B', publicIp: '192.168.0.22', innerIp: '172.21.0.11' },
-            { hostId: '4', hostName: '名称123', publicIp: '192.168.0.33', innerIp: '172.21.0.1' },
-            { hostId: '5', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' },
-            { hostId: '6', hostName: '名称A', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
-            { hostId: '7', hostName: '名称B', publicIp: '192.168.0.22', innerIp: '172.21.0.11' },
-            { hostId: '8', hostName: '名称123', publicIp: '192.168.0.33', innerIp: '172.21.0.1' },
-            { hostId: '9', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' }
-          ],
-          pagination: {
-            total: 100
-          }
-        }
-      }
-    } else {
-      res = {
-        data: {
-          list: [
-            { hostId: '10', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' },
-            { hostId: '11', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' },
-            { hostId: '12', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' },
-            { hostId: '13', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' },
-            { hostId: '14', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' }
-          ],
-          pagination: {
-            total: 100
-          }
-        }
-      }
-    }
+    const res = await apiGetNodeList(queryParams)
     allNodes.value = res.data.list
     totalRecords.value = res.data.pagination.total
     // 加载完数据后同步选中状态
@@ -237,9 +185,9 @@ const debouncedSearch = debounce(() => {
 
 // 监听搜索条件变化（左侧三个搜索框）
 watch(
-  () => [filters.hostId, filters.publicIp, filters.innerIp],
-  ([hostId, publicIp, innerIp]) => {
-    queryParams.hostId = hostId
+  () => [filters.id, filters.publicIp, filters.innerIp],
+  ([id, publicIp, innerIp]) => {
+    queryParams.id = id
     queryParams.publicIp = publicIp
     queryParams.innerIp = innerIp
     debouncedSearch()
@@ -271,7 +219,7 @@ const syncTableSelection = () => {
   stopSyncSelection.value = true
   tableRef.value.clearSelection()
   allNodes.value.forEach((node) => {
-    if (tempSelection.value.find((item) => item.hostId === node.hostId)) {
+    if (tempSelection.value.find((item) => item.id === node.id)) {
       tableRef.value?.toggleRowSelection(node, true)
     }
   })
@@ -287,13 +235,17 @@ watch(
   (val) => {
     if (val) {
       // 对话框打开时，从 modelValue 初始化选中列表
-      tempSelection.value = props.modelValue ? [...props.modelValue] : []
+      tempSelection.value = []
+      props.modelValue.forEach((host) => {
+        tempSelection.value.push({ ...host })
+      })
+      // tempSelection.value = props.modelValue ? [...props.modelValue] : []
       // 重置搜索条件
-      filters.hostId = ''
+      filters.id = ''
       filters.publicIp = ''
       filters.innerIp = ''
       filters.selectedInnerIp = ''
-      queryParams.hostId = ''
+      queryParams.id = ''
       queryParams.publicIp = ''
       queryParams.innerIp = ''
       queryParams.page = 1
@@ -322,7 +274,7 @@ const handleSelectionChange = (selection: HostItem[]) => {
   if (stopSyncSelection.value) return
   // 添加新选中的节点
   selection.forEach((host) => {
-    if (!tempSelection.value.find((item) => item.hostId === host.hostId)) {
+    if (!tempSelection.value.find((item) => item.id === host.id)) {
       if (tempSelection.value.length >= MAX_SELECTION) {
         ElMessage.warning(`单次最多${MAX_SELECTION}台主机`)
         // 取消当前行的选中
@@ -335,11 +287,11 @@ const handleSelectionChange = (selection: HostItem[]) => {
 }
 
 // 删除选中的主机
-const removeTempHost = (hostId: string) => {
+const removeTempHost = (id: number) => {
   // 从选中列表移除
-  tempSelection.value = tempSelection.value.filter((host) => host.hostId !== hostId)
+  tempSelection.value = tempSelection.value.filter((host) => host.id !== id)
   // 如果该主机在当前页面，取消表格选中
-  const row = allNodes.value.find((item) => item.hostId === hostId)
+  const row = allNodes.value.find((item) => item.id === id)
   if (row && tableRef.value) {
     tableRef.value.toggleRowSelection(row, false)
   }
@@ -416,6 +368,7 @@ onMounted(() => {
       padding: 5px 0 0;
       .selected-list {
         height: 313px;
+        overflow: auto;
         .selected-item {
           width: 47%;
           margin-left: 3%;

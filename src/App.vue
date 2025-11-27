@@ -29,23 +29,23 @@ const pulseSignal = computed(() => taskPanelStore.getPulseSignal)
 // 检查并初始化任务面板显示状态
 const initTaskPanelVisibility = async () => {
   const CACHE_KEY_IS_SHOW_DETAIL = 'nodeManagement_isShowDetail'
-  const cached = localStorage.getItem(CACHE_KEY_IS_SHOW_DETAIL)
-  if (cached !== null) {
-    // 有缓存，直接使用
-    taskPanelVisible.value = cached === 'true'
-  } else {
-    // 没有缓存，查询当天任务
-    try {
-      const response = await getExecTaskList()
-      const hasTasks = response.data && response.data.list.length > 0
-      localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, hasTasks ? 'true' : 'false')
-      taskPanelVisible.value = hasTasks
-    } catch (error) {
-      console.error('查询任务列表失败:', error)
-      localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'false')
-      taskPanelVisible.value = false
-    }
+  // const cached = localStorage.getItem(CACHE_KEY_IS_SHOW_DETAIL)
+  // if (cached !== null) {
+  //   // 有缓存，直接使用
+  //   taskPanelVisible.value = cached === 'true'
+  // } else {
+  // 没有缓存，查询当天任务
+  try {
+    const response = await getExecTaskList()
+    const hasTasks = response.data && response.data.list.length > 0
+    localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, hasTasks ? 'true' : 'false')
+    taskPanelVisible.value = hasTasks
+  } catch (error) {
+    console.error('查询任务列表失败:', error)
+    localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'false')
+    taskPanelVisible.value = false
   }
+  // }
 }
 
 // 关闭任务面板

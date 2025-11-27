@@ -140,7 +140,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       proxy: {
         // 选项写法
         '/api/v1': {
-          target: 'http://172.31.28.121:8000',
+          target: 'https://gateway.observe.dev.eks.gainetics.io/aomp',
           changeOrigin: true
         }
       },

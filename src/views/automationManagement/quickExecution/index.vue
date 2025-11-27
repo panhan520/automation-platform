@@ -23,7 +23,7 @@
                 </div>
               </template>
               <el-table :data="selectedHosts" border size="small" max-height="220">
-                <el-table-column prop="hostId" label="主机ID" />
+                <el-table-column prop="id" label="主机ID" />
                 <el-table-column prop="innerIp" label="内网IP" />
                 <el-table-column prop="publicIp" label="公网IP" />
                 <el-table-column label="操作" width="80">
@@ -114,10 +114,8 @@ interface TemplateParameter {
 }
 
 interface HostItem {
-  hostId: string
-  hostName: string
+  id: number
   innerIp: string
-  publicIp: string
 }
 
 interface TemplateItem {

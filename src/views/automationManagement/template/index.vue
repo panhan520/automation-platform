@@ -53,8 +53,7 @@
       v-model:visible="templateDialogVisible"
       :title="dialogTitle"
       mode="template"
-      :template-types="templateTypes"
-      :available-hosts="availableHosts"
+      :template-types="templateTypeList"
       :initial-data="editorInitialData"
       :loading="templateDialogLoading"
       @submit="handleTemplateSubmit"
@@ -81,7 +80,12 @@ import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
-import { apiGetTemplatesList, apiGetTemplatesType } from '@/api/template'
+import {
+  apiGetTemplatesList,
+  apiGetTemplatesType,
+  apiCreateTemplates,
+  apiDeleteTemplate
+} from '@/api/template'
 
 type ScriptLanguage = 'sh' | 'python'
 
@@ -106,8 +110,8 @@ interface ParameterItem {
   options?: Array<{ label: string; value: string }>
   hostAttribute?: string
   required: boolean
-  defaultValue?: string
-  hint?: string
+  default?: string
+  desc?: string
 }
 
 interface HostItem {
@@ -190,13 +194,6 @@ const templateRowActions: TableAction[] = [
 ]
 
 const totalRecords = ref(0)
-const templateTypes = ref(['系统信息', '部署模版', '运维脚本'])
-const availableHosts = ref<HostItem[]>([
-  { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
-  { hostId: '2', hostName: '名称2', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
-  { hostId: '3', hostName: '名称3', publicIp: '10.0.0.12', innerIp: '172.21.0.1' }
-])
-
 const templateDialogVisible = ref(false)
 const templateDialogLoading = ref(false)
 const editorInitialData = ref(null)
@@ -244,6 +241,7 @@ const handleReset = () => {
   queryParams.page = 1
   getList()
 }
+// 打开编辑保存模版的弹框
 const openTemplateDialog = (row?) => {
   if (row) {
     currentEditingId.value = row.id
@@ -256,37 +254,22 @@ const openTemplateDialog = (row?) => {
   }
   templateDialogVisible.value = true
 }
-
-const handleTemplateSubmit = (payload) => {
-  templateDialogLoading.value = true
-  setTimeout(() => {
+// 新建编辑模版的保存操作
+const handleTemplateSubmit = async (payload) => {
+  try {
+    templateDialogLoading.value = true
+    const params = { ...payload }
     if (currentEditingId.value) {
-      const target = allTemplates.value.find((item) => item.id === currentEditingId.value)
-      if (target) {
-        target.templateType = payload.templateType || target.templateType
-        target.templateContent = payload.templateContent
-        target.scriptLanguage = payload.scriptLanguage
-        target.description = payload.remark || ''
-        target.parameters = payload.parameters
-        target.hosts = payload.hosts
-      }
-      ElMessage.success('更新成功')
-    } else {
-      allTemplates.value.unshift({
-        id: Date.now(),
-        templateName: payload.templateName || '新模版',
-        templateType: payload.templateType || '系统信息',
-        templateContent: payload.templateContent,
-        description: payload.remark || '',
-        scriptLanguage: payload.scriptLanguage,
-        parameters: payload.parameters,
-        hosts: payload.hosts
-      })
-      ElMessage.success('创建成功')
+      params.id = currentEditingId.value
     }
+    await apiCreateTemplates(params)
+    ElMessage.success(currentEditingId.value ? '编辑成功' : '添加成功')
+    getList()
     templateDialogLoading.value = false
     templateDialogVisible.value = false
-  }, 600)
+  } finally {
+    templateDialogLoading.value = false
+  }
 }
 
 const handleSearch = (params: Record<string, any>) => {

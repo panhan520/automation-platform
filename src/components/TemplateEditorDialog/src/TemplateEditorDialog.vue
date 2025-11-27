@@ -159,9 +159,17 @@
             </el-tooltip>
           </span>
         </template>
-        <el-segmented v-model="parameterForm.type" :options="parameterTypeOptions" block />
+        <el-segmented
+          v-model="parameterForm.type"
+          :options="
+            form.interpreter === 'python'
+              ? parameterTypeOptions.filter((item) => item.value !== 'namespace')
+              : parameterTypeOptions
+          "
+          block
+        />
       </el-form-item>
-      <el-form-item v-if="parameterForm.type === 'select'" prop="optionsText">
+      <el-form-item v-if="parameterForm.type === 'select'" prop="options">
         <template #label>
           <span
             >可选项
@@ -176,13 +184,13 @@
         </template>
 
         <el-input
-          v-model="parameterForm.optionsText"
+          v-model="parameterForm.options"
           type="textarea"
           :rows="3"
           placeholder="每行一个选项，例如：&#10;test:测试环境&#10;prod:生产环境"
         />
       </el-form-item>
-      <el-form-item v-if="parameterForm.type === 'command'" label="主机属性" prop="hostAttribute">
+      <el-form-item v-if="parameterForm.type === 'namespace'" label="主机属性" prop="hostAttribute">
         <el-select
           v-model="parameterForm.hostAttribute"
           placeholder="请选择主机属性"
@@ -216,7 +224,7 @@
         />
       </el-form-item>
       <el-form-item label="默认值">
-        <el-input v-model="parameterForm.defaultValue" placeholder="请输入默认值" />
+        <el-input v-model="parameterForm.default" placeholder="请输入默认值" />
       </el-form-item>
       <el-form-item>
         <template #label>
@@ -228,7 +236,7 @@
           </span>
         </template>
         <el-input
-          v-model="parameterForm.hint"
+          v-model="parameterForm.desc"
           type="textarea"
           :rows="2"
           placeholder="请输入该参数的帮助提示信息"
@@ -246,7 +254,6 @@
   <HostSelectorDialog
     v-model:visible="hostSelectorVisible"
     v-model="selectedHosts"
-    :hosts="hostSource"
     @confirm="handleHostSelectionConfirm"
   />
 </template>
@@ -259,23 +266,20 @@ import { CodeEditor } from '@/components/CodeEditor'
 import { ElMessage } from 'element-plus'
 
 interface ParameterItem {
-  id: number
+  id?: number
   name: string
   variable: string
-  type: 'text' | 'password' | 'select' | 'command'
-  typeLabel: string
-  options?: Array<{ label: string; value: string }>
+  type: 'text' | 'password' | 'select' | 'namespace'
+  options?: string
   hostAttribute?: string
   required: boolean
-  defaultValue?: string
-  hint?: string
+  default?: string
+  desc?: string
 }
 
 interface HostItem {
-  hostId: string
-  hostName: string
+  id: number
   innerIp: string
-  publicIp: string
 }
 
 interface TemplateEditorData {
@@ -294,14 +298,12 @@ const props = withDefaults(
     title: string
     mode?: 'template' | 'task'
     templateTypes?: string[]
-    availableHosts?: HostItem[]
     initialData?: TemplateEditorData | null
     loading?: boolean
   }>(),
   {
     mode: 'template',
     templateTypes: () => [],
-    availableHosts: () => [],
     initialData: null,
     loading: false
   }
@@ -319,12 +321,6 @@ const dialogVisible = computed({
 
 const formRef = ref<FormInstance>()
 const submitLoading = computed(() => props.loading)
-
-const interpreterOptions = [
-  { label: 'Shell', value: 'sh' },
-  { label: 'Python', value: 'python' }
-]
-
 const form = reactive({
   type: '',
   name: '',
@@ -332,18 +328,26 @@ const form = reactive({
   body: '',
   desc: ''
 })
-
+const parameterList = ref<ParameterItem[]>([])
+const selectedHosts = ref<HostItem[]>([])
+const localTemplateTypes = ref<string[]>([])
+const interpreterOptions = [
+  { label: 'Shell', value: 'sh' },
+  { label: 'Python', value: 'python' }
+]
 const formRules: FormRules = {
   type: [{ required: true, message: '请选择模版类型', trigger: 'change' }],
   templateName: [{ required: true, message: '请输入模版名称', trigger: 'blur' }],
   name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
   body: [{ required: true, message: '请输入模版内容', trigger: 'blur' }]
 }
-
-const parameterList = ref<ParameterItem[]>([])
-const selectedHosts = ref<HostItem[]>([])
-
-const localTemplateTypes = ref<string[]>([])
+// 模版类型弹框相关
+const typeDialogVisible = ref(false)
+const typeFormRef = ref<FormInstance>()
+const typeForm = reactive({ type: '' })
+const typeRules: FormRules = {
+  type: [{ required: true, message: '请输入模版类型', trigger: 'blur' }]
+}
 watch(
   () => props.templateTypes,
   (types) => {
@@ -351,24 +355,27 @@ watch(
   },
   { immediate: true }
 )
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      applyInitialData(props.initialData)
+    }
+  },
+  { immediate: true }
+)
+
 // 设置默认值
 const applyInitialData = (data) => {
+  console.log(data)
   form.type = data?.type || ''
   form.name = data?.name || ''
   form.interpreter = data?.interpreter || 'sh'
   form.body = data?.body || ''
   form.desc = data?.desc || ''
-  parameterList.value = data?.parameters
-  selectedHosts.value = data?.host_ids
+  parameterList.value = data?.parameters || []
+  selectedHosts.value = data?.host_id_ip_map || []
 }
-
-watch(
-  () => props.initialData,
-  (val) => {
-    applyInitialData(val || undefined)
-  },
-  { immediate: true }
-)
 
 // watch(
 //   () => props.mode,
@@ -380,12 +387,6 @@ watch(
 //   }
 // )
 
-const typeDialogVisible = ref(false)
-const typeFormRef = ref<FormInstance>()
-const typeForm = reactive({ type: '' })
-const typeRules: FormRules = {
-  type: [{ required: true, message: '请输入模版类型', trigger: 'blur' }]
-}
 // 打开添加类型弹框
 const openTypeDialog = () => {
   typeForm.type = ''
@@ -404,6 +405,9 @@ const handleAddTemplateType = () => {
       localTemplateTypes.value.push(typeForm.type)
       form.type = typeForm.type
       ElMessage.success('添加成功')
+    } else {
+      form.type = typeForm.type
+      ElMessage.warning('该类型已存在')
     }
     handleAddTemplateTypeCancel()
   })
@@ -415,19 +419,19 @@ const parameterForm = reactive({
   id: 0,
   name: '',
   variable: '',
-  type: 'text' as 'text' | 'password' | 'select' | 'command',
-  optionsText: '',
+  type: 'text' as 'text' | 'password' | 'select' | 'namespace',
+  options: '',
   hostAttribute: '',
   required: false,
-  defaultValue: '',
-  hint: ''
+  default: '',
+  desc: ''
 })
 
 const parameterRules: FormRules = {
   name: [{ required: true, message: '请输入参数名称', trigger: 'blur' }],
   variable: [{ required: true, message: '请输入变量名', trigger: 'blur' }],
   type: [{ required: true, message: '请选择参数类型', trigger: 'change' }],
-  optionsText: [
+  options: [
     {
       required: true,
       trigger: 'blur',
@@ -445,7 +449,7 @@ const parameterRules: FormRules = {
       required: true,
       trigger: 'change',
       validator: (_rule, value, callback) => {
-        if (parameterForm.type === 'command' && !value) {
+        if (parameterForm.type === 'namespace' && !value) {
           callback(new Error('请选择主机属性'))
         } else {
           callback()
@@ -459,7 +463,7 @@ const parameterTypeOptions = [
   { label: '文本框', value: 'text' },
   { label: '密码框', value: 'password' },
   { label: '下拉选择', value: 'select' },
-  { label: '命令空间', value: 'command' }
+  { label: '命令空间', value: 'namespace' }
 ]
 
 const hostAttributes = [
@@ -467,32 +471,30 @@ const hostAttributes = [
   { label: '公网IP', value: 'publicIp' },
   { label: '主机名称', value: 'hostName' }
 ]
-
+// 打开参数弹框
 const openParameterDialog = () => {
   parameterForm.id = Date.now()
   parameterForm.name = ''
   parameterForm.variable = ''
   parameterForm.type = 'text'
-  parameterForm.optionsText = ''
+  parameterForm.options = ''
   parameterForm.hostAttribute = ''
   parameterForm.required = false
-  parameterForm.defaultValue = ''
-  parameterForm.hint = ''
+  parameterForm.default = ''
+  parameterForm.desc = ''
   parameterDialogVisible.value = true
 }
-
+// 编辑参数
 const editParameter = (row: ParameterItem) => {
   parameterForm.id = row.id
   parameterForm.name = row.name
   parameterForm.variable = row.variable
   parameterForm.type = row.type
-  parameterForm.optionsText = row.options
-    ? row.options.map((opt) => `${opt.value}:${opt.label}`).join('\n')
-    : ''
+  parameterForm.options = row.options || ''
   parameterForm.hostAttribute = row.hostAttribute || ''
   parameterForm.required = row.required
-  parameterForm.defaultValue = row.defaultValue || ''
-  parameterForm.hint = row.hint || ''
+  parameterForm.default = row.default || ''
+  parameterForm.desc = row.desc || ''
   parameterDialogVisible.value = true
 }
 // 添加参数弹框取消
@@ -504,30 +506,19 @@ const handleParameterCancel = () => {
 const handleParameterConfirm = () => {
   parameterFormRef.value?.validate((valid) => {
     if (!valid) return
-    const typeLabel =
-      parameterTypeOptions.find((opt) => opt.value === parameterForm.type)?.label || '文本框'
-    const item: ParameterItem = {
-      id: parameterForm.id,
-      name: parameterForm.name,
-      variable: parameterForm.variable,
-      type: parameterForm.type,
-      typeLabel,
-      required: parameterForm.required,
-      defaultValue: parameterForm.defaultValue,
-      hint: parameterForm.hint
-    }
-    if (parameterForm.type === 'select') {
-      item.options = (parameterForm.optionsText || '')
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => {
-          const [value, label] = line.split(':')
-          return { value: (value || '').trim(), label: (label || value || '').trim() }
-        })
-    }
-    if (parameterForm.type === 'command') {
-      item.hostAttribute = parameterForm.hostAttribute
-    }
+    const item: ParameterItem = { ...parameterForm }
+    // if (parameterForm.type === 'select') {
+    //   item.options = (parameterForm.options || '')
+    //     .split('\n')
+    //     .filter(Boolean)
+    //     .map((line) => {
+    //       const [value, label] = line.split(':')
+    //       return { value: (value || '').trim(), label: (label || value || '').trim() }
+    //     })
+    // }
+    // if (parameterForm.type === 'namespace') {
+    //   item.hostAttribute = parameterForm.hostAttribute
+    // }
     const index = parameterList.value.findIndex((param) => param.id === item.id)
     if (index > -1) {
       parameterList.value.splice(index, 1, item)
@@ -545,29 +536,12 @@ const removeParameter = (id: number) => {
 
 const hostSelectorVisible = ref(false)
 
-const hostSource = computed<HostItem[]>(() => {
-  if (props.availableHosts.length > 0) {
-    return props.availableHosts
-  }
-  return [
-    { hostId: '1', hostName: '名称1', publicIp: '192.21.0.11', innerIp: '172.21.0.12' },
-    { hostId: '3', hostName: '名称A', publicIp: '121.199.4.33', innerIp: '172.21.0.10' },
-    { hostId: '6', hostName: '名称B', publicIp: '192.168.0.22', innerIp: '172.21.0.11' },
-    { hostId: '9', hostName: '名称123', publicIp: '192.168.0.33', innerIp: '172.21.0.1' },
-    { hostId: '10', hostName: 'ABCDE', publicIp: '192.168.0.44', innerIp: '172.21.0.15' }
-  ]
-})
-
 const openHostSelector = () => {
   hostSelectorVisible.value = true
 }
 
-const handleHostSelectionConfirm = (hosts: HostItem[]) => {
+const handleHostSelectionConfirm = (hosts) => {
   selectedHosts.value = hosts
-}
-
-const removeSelectedHost = (hostId: string) => {
-  selectedHosts.value = selectedHosts.value.filter((host) => host.hostId !== hostId)
 }
 
 const handleCancel = () => {
@@ -578,19 +552,12 @@ const handleCancel = () => {
 const handleConfirm = () => {
   formRef.value?.validate((valid) => {
     if (!valid) return
-    if (props.mode === 'template') {
-      if (!form.type) {
-        return
-      }
-    } else if (!form.name) {
-      return
-    }
     const formData = {
       ...form,
-      host_ids: selectedHosts.value.map((host) => host.hostId)
+      host_ids: selectedHosts.value.map((host) => host.id),
+      parameters: parameterList.value
     }
     emit('submit', formData)
-    formRef.value?.resetFields()
   })
 }
 </script>
