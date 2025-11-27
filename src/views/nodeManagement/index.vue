@@ -347,6 +347,7 @@ const getNodeStatusColor = (status: string) => {
   }
   return map[status] || 'yellow'
 }
+// 转换标签格式
 const formatObjectValue = (obj: Record<string, any>) => {
   if (!obj || typeof obj !== 'object') return ''
 

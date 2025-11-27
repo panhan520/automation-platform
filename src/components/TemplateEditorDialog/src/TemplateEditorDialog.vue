@@ -190,9 +190,9 @@
           placeholder="每行一个选项，例如：&#10;test:测试环境&#10;prod:生产环境"
         />
       </el-form-item>
-      <el-form-item v-if="parameterForm.type === 'namespace'" label="主机属性" prop="hostAttribute">
+      <el-form-item v-if="parameterForm.type === 'namespace'" label="主机属性" prop="property">
         <el-select
-          v-model="parameterForm.hostAttribute"
+          v-model="parameterForm.property"
           placeholder="请选择主机属性"
           style="width: 100%"
         >
@@ -271,7 +271,7 @@ interface ParameterItem {
   variable: string
   type: 'text' | 'password' | 'select' | 'namespace'
   options?: string
-  hostAttribute?: string
+  property?: string
   required: boolean
   default?: string
   desc?: string
@@ -421,7 +421,7 @@ const parameterForm = reactive({
   variable: '',
   type: 'text' as 'text' | 'password' | 'select' | 'namespace',
   options: '',
-  hostAttribute: '',
+  property: '',
   required: false,
   default: '',
   desc: ''
@@ -444,7 +444,7 @@ const parameterRules: FormRules = {
       }
     }
   ],
-  hostAttribute: [
+  property: [
     {
       required: true,
       trigger: 'change',
@@ -467,9 +467,10 @@ const parameterTypeOptions = [
 ]
 
 const hostAttributes = [
-  { label: '内网IP', value: 'innerIp' },
-  { label: '公网IP', value: 'publicIp' },
-  { label: '主机名称', value: 'hostName' }
+  { label: '地区', value: 'region' },
+  { label: '节点标签', value: 'nodeTags' },
+  { label: '运营商', value: 'operator' },
+  { label: '供应商名称', value: 'vendorName' }
 ]
 // 打开参数弹框
 const openParameterDialog = () => {
@@ -478,20 +479,20 @@ const openParameterDialog = () => {
   parameterForm.variable = ''
   parameterForm.type = 'text'
   parameterForm.options = ''
-  parameterForm.hostAttribute = ''
+  parameterForm.property = ''
   parameterForm.required = false
   parameterForm.default = ''
   parameterForm.desc = ''
   parameterDialogVisible.value = true
 }
 // 编辑参数
-const editParameter = (row: ParameterItem) => {
+const editParameter = (row) => {
   parameterForm.id = row.id
   parameterForm.name = row.name
   parameterForm.variable = row.variable
   parameterForm.type = row.type
   parameterForm.options = row.options || ''
-  parameterForm.hostAttribute = row.hostAttribute || ''
+  parameterForm.property = row.property || ''
   parameterForm.required = row.required
   parameterForm.default = row.default || ''
   parameterForm.desc = row.desc || ''
@@ -507,18 +508,6 @@ const handleParameterConfirm = () => {
   parameterFormRef.value?.validate((valid) => {
     if (!valid) return
     const item: ParameterItem = { ...parameterForm }
-    // if (parameterForm.type === 'select') {
-    //   item.options = (parameterForm.options || '')
-    //     .split('\n')
-    //     .filter(Boolean)
-    //     .map((line) => {
-    //       const [value, label] = line.split(':')
-    //       return { value: (value || '').trim(), label: (label || value || '').trim() }
-    //     })
-    // }
-    // if (parameterForm.type === 'namespace') {
-    //   item.hostAttribute = parameterForm.hostAttribute
-    // }
     const index = parameterList.value.findIndex((param) => param.id === item.id)
     if (index > -1) {
       parameterList.value.splice(index, 1, item)

@@ -16,5 +16,5 @@ export const apiGetTemplatesType = (): Promise<IPaginationResponse> => {
 
 // 删除执行模板
 export const apiDeleteTemplate = (id): Promise<IPaginationResponse> => {
-  return request.delete({ url: `/api/v1/exec/templates/delete/${id}` })
+  return request.delete({ url: `/api/v1/exec/templates/delete/?id=${id}` })
 }

@@ -62,7 +62,7 @@
     <DeleteConfirmDialog
       v-model:visible="deleteDialog.visible"
       title="删除模版"
-      :target-name="deleteDialog.target?.templateName || ''"
+      :target-name="deleteDialog.target?.name || ''"
       description="删除后该模版将被清除且无法被引用，请谨慎操作。"
       :loading="deleteDialog.loading"
       @confirm="confirmDeleteTemplate"
@@ -87,15 +87,15 @@ import {
   apiDeleteTemplate
 } from '@/api/template'
 
-type ScriptLanguage = 'sh' | 'python'
+type Interpreter = 'sh' | 'python'
 
 interface TemplateRecord {
   id: number
-  templateName: string
-  templateType: string
-  templateContent: string
-  description: string
-  scriptLanguage: ScriptLanguage
+  name: string
+  type: string
+  body: string
+  desc: string
+  interpreter: Interpreter
   remark?: string
   hosts?: HostItem[]
   parameters?: ParameterItem[]
@@ -119,16 +119,6 @@ interface HostItem {
   hostName: string
   innerIp: string
   publicIp: string
-}
-
-interface TemplateEditorPayload {
-  type?: string
-  name?: string
-  interpreter: ScriptLanguage
-  body: string
-  desc?: string
-  parameters: ParameterItem[]
-  host_ids: HostItem[]
 }
 
 const title = '模版管理'
@@ -207,24 +197,6 @@ const getList = async () => {
     const res = await apiGetTemplatesList(queryParams)
     allTemplates.value = res.data.list
     totalRecords.value = res.data.pagination.total
-    // allTemplates.value = [
-    //   {
-    //     id: 1,
-    //     templateName: '系统监控模版',
-    //     templateType: '系统信息',
-    //     templateContent: 'free -m',
-    //     description: '查询目标机器内存占用',
-    //     scriptLanguage: 'Shell' as ScriptLanguage
-    //   },
-    //   {
-    //     id: 2,
-    //     templateName: '数据库备份模版',
-    //     templateType: '系统信息',
-    //     templateContent: 'df -h',
-    //     description: '磁盘巡检',
-    //     scriptLanguage: 'Shell' as ScriptLanguage
-    //   }
-    // ]
   } finally {
     loading.value = false
   }
@@ -307,17 +279,19 @@ const openDeleteDialog = (row: TemplateRecord) => {
   deleteDialog.target = row
   deleteDialog.visible = true
 }
-
-const confirmDeleteTemplate = () => {
+// 删除模版
+const confirmDeleteTemplate = async () => {
   if (!deleteDialog.target) return
-  deleteDialog.loading = true
-  setTimeout(() => {
-    allTemplates.value = allTemplates.value.filter((item) => item.id !== deleteDialog.target?.id)
+  try {
+    deleteDialog.loading = true
+    await apiDeleteTemplate(deleteDialog.target.id)
     ElMessage.success('删除成功')
+    getList()
     deleteDialog.visible = false
-    deleteDialog.loading = false
     deleteDialog.target = null
-  }, 400)
+  } finally {
+    deleteDialog.loading = false
+  }
 }
 
 const handleDeleteCancel = () => {

@@ -4,17 +4,11 @@
       <!-- 左侧表格 -->
       <div class="host-table">
         <div class="host-search">
-          <el-input v-model="filters.id" placeholder="搜索主机ID" clearable :prefix-icon="Search" />
           <el-input
-            v-model="filters.publicIp"
-            placeholder="搜索公网IP"
+            v-model="filters.query"
+            placeholder="搜索公网IP/内网IP/主机名称"
             clearable
-            :prefix-icon="Search"
-          />
-          <el-input
-            v-model="filters.innerIp"
-            placeholder="搜索内网IP"
-            clearable
+            style="width: 240px"
             :prefix-icon="Search"
           />
         </div>
@@ -34,19 +28,37 @@
           <el-table-column prop="id" label="主机ID" />
           <el-table-column prop="innerIp" label="内网IP" min-width="100" />
           <el-table-column prop="publicIp" label="公网IP" min-width="100" />
-          <el-table-column prop="nodeTags" label="节点标签" />
+          <el-table-column prop="nodeTags" label="节点标签">
+            <template v-slot="scope">
+              {{ formatObjectValue(scope.row.nodeTags) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="os" label="操作系统" />
           <el-table-column prop="loginPort" label="登录端口" />
           <el-table-column prop="authMethod" label="认证方式" />
           <el-table-column prop="loginAccount" label="登录账号" />
           <el-table-column prop="loginIp" label="登录IP" min-width="100" />
-          <el-table-column prop="hostName" label="主机名称" />
-          <el-table-column prop="networkType" label="网络类型" />
-          <el-table-column prop="region" label="地区" />
+          <el-table-column prop="hostName" label="主机名称" min-width="120" />
+          <el-table-column prop="networkType" label="网络类型">
+            <template v-slot="scope">
+              {{
+                scope.row.networkType === 'public'
+                  ? '公网'
+                  : scope.row.networkType === 'private'
+                    ? '内网'
+                    : '未知'
+              }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="region" label="地区" min-width="150" />
           <el-table-column prop="vendorName" label="供应商名称" min-width="100" />
-          <el-table-column prop="appTypeName" label="应用类型" />
+          <el-table-column prop="appTypeName" label="应用类型" min-width="120">
+            <template v-slot="scope">
+              <el-tag>{{ scope.row.appTypeName }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="operator" label="运营商" />
-          <el-table-column prop="remark" label="备注" />
+          <el-table-column prop="remark" label="备注" min-width="100" />
           <template #empty>
             <el-empty description="暂无数据" />
           </template>
@@ -141,14 +153,10 @@ const totalRecords = ref(0)
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  id: '',
-  publicIp: '',
-  innerIp: ''
+  query: ''
 })
 const filters = reactive({
-  id: '',
-  innerIp: '',
-  publicIp: '',
+  query: '',
   selectedInnerIp: '' // 用于右侧选中列表的搜索
 })
 const loading = ref(false)
@@ -185,11 +193,9 @@ const debouncedSearch = debounce(() => {
 
 // 监听搜索条件变化（左侧三个搜索框）
 watch(
-  () => [filters.id, filters.publicIp, filters.innerIp],
-  ([id, publicIp, innerIp]) => {
-    queryParams.id = id
-    queryParams.publicIp = publicIp
-    queryParams.innerIp = innerIp
+  () => [filters.query],
+  ([query]) => {
+    queryParams.query = query
     debouncedSearch()
   }
 )
@@ -203,7 +209,23 @@ const filteredSelectedHosts = computed(() => {
     host.innerIp.toLowerCase().includes(filters.selectedInnerIp.toLowerCase())
   )
 })
+// 转换标签格式
+const formatObjectValue = (obj: Record<string, any>) => {
+  if (!obj || typeof obj !== 'object') return ''
 
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      // 确保value是数字类型才进行转换
+      const formattedValue =
+        typeof value === 'number'
+          ? value
+          : typeof value === 'string' && !isNaN(Number(value))
+            ? Number(value)
+            : value
+      return `${key}:${formattedValue}`
+    })
+    .join(', ')
+}
 // 切换分页
 const handlePageChange = (page: number, pageSize: number) => {
   queryParams.page = page
@@ -239,15 +261,10 @@ watch(
       props.modelValue.forEach((host) => {
         tempSelection.value.push({ ...host })
       })
-      // tempSelection.value = props.modelValue ? [...props.modelValue] : []
       // 重置搜索条件
-      filters.id = ''
-      filters.publicIp = ''
-      filters.innerIp = ''
+      filters.query = ''
       filters.selectedInnerIp = ''
-      queryParams.id = ''
-      queryParams.publicIp = ''
-      queryParams.innerIp = ''
+      queryParams.query = ''
       queryParams.page = 1
       // 加载列表并同步选中状态
       getList()

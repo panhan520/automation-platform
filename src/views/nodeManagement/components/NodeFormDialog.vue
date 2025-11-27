@@ -102,7 +102,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="登录IP" prop="loginIp" required>
-            <el-input v-model="form.loginIp" placeholder="请输入登录IP" clearable />
+            <el-input v-model="form.loginIp" clearable disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -526,6 +526,14 @@ const rules = reactive<FormRules>({
         if (form.authMethod === 'password' && !form.credentialPassword) {
           callback(new Error('请输入密码'))
           return
+        }
+        if (form.authMethod === 'password' && form.credentialPassword) {
+          // 添加中文校验
+          const chineseRegex = /[\u4e00-\u9fa5]/
+          if (chineseRegex.test(form.credentialPassword)) {
+            callback(new Error('密码仅支持字母、数字、特殊字符'))
+            return
+          }
         }
         if (form.authMethod === 'key' && !form.credentialKey) {
           callback(new Error('请填写密钥内容'))
