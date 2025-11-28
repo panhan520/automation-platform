@@ -29,7 +29,7 @@
           <template #title>
             <div class="task-title">
               <span class="task-type">{{ task.taskName.slice(0, 2) }}详情</span>
-              <span class="task-time">{{ task.executeTime }}</span>
+              <span class="task-time">{{ formatExecuteTime(task.executeTime) }}</span>
               <span class="task-summary">
                 ({{ task.detail.success }}成功, {{ task.detail.running }}进行中,
                 {{ task.detail.failed }}失败)
@@ -145,6 +145,15 @@ const panelRef = ref<HTMLElement | null>(null)
 const highlightActive = ref(false)
 const pulseTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const pulseDuration = 4500
+
+const formatExecuteTime = (time?: string) => {
+  if (!time) return ''
+  const tIndex = time.indexOf('T')
+  if (tIndex === -1) return time
+  const dotIndex = time.indexOf('.', tIndex)
+  const endIndex = dotIndex > tIndex ? dotIndex : time.length
+  return time.slice(tIndex + 1, endIndex)
+}
 
 // 关闭单条任务详情
 const handleCloseItem = async (taskId: string) => {

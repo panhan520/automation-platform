@@ -49,10 +49,15 @@
           <el-table-column prop="variable" label="变量名" />
           <el-table-column label="操作" width="120">
             <template #default="scope">
-              <el-button type="primary" link size="small" @click="editParameter(scope.row)"
-                >编辑</el-button
+              <el-button
+                type="primary"
+                link
+                size="small"
+                @click="editParameter(scope.row, scope.$index)"
               >
-              <el-button type="danger" link size="small" @click="removeParameter(scope.row.id)">
+                编辑
+              </el-button>
+              <el-button type="danger" link size="small" @click="removeParameter(scope.$index)">
                 删除
               </el-button>
             </template>
@@ -416,7 +421,7 @@ const handleAddTemplateType = () => {
 const parameterDialogVisible = ref(false)
 const parameterFormRef = ref<FormInstance>()
 const parameterForm = reactive({
-  id: 0,
+  id: undefined as number | undefined,
   name: '',
   variable: '',
   type: 'text' as 'text' | 'password' | 'select' | 'namespace',
@@ -426,6 +431,8 @@ const parameterForm = reactive({
   default: '',
   desc: ''
 })
+
+const editingParameterIndex = ref<number | null>(null)
 
 const parameterRules: FormRules = {
   name: [{ required: true, message: '请输入参数名称', trigger: 'blur' }],
@@ -474,7 +481,8 @@ const hostAttributes = [
 ]
 // 打开参数弹框
 const openParameterDialog = () => {
-  parameterForm.id = Date.now()
+  editingParameterIndex.value = null
+  parameterForm.id = undefined
   parameterForm.name = ''
   parameterForm.variable = ''
   parameterForm.type = 'text'
@@ -486,7 +494,8 @@ const openParameterDialog = () => {
   parameterDialogVisible.value = true
 }
 // 编辑参数
-const editParameter = (row) => {
+const editParameter = (row, index: number) => {
+  editingParameterIndex.value = index
   parameterForm.id = row.id
   parameterForm.name = row.name
   parameterForm.variable = row.variable
@@ -508,9 +517,8 @@ const handleParameterConfirm = () => {
   parameterFormRef.value?.validate((valid) => {
     if (!valid) return
     const item: ParameterItem = { ...parameterForm }
-    const index = parameterList.value.findIndex((param) => param.id === item.id)
-    if (index > -1) {
-      parameterList.value.splice(index, 1, item)
+    if (editingParameterIndex.value !== null) {
+      parameterList.value.splice(editingParameterIndex.value, 1, item)
     } else {
       parameterList.value.push(item)
     }
@@ -519,8 +527,8 @@ const handleParameterConfirm = () => {
   })
 }
 
-const removeParameter = (id: number) => {
-  parameterList.value = parameterList.value.filter((item) => item.id !== id)
+const removeParameter = (index: number) => {
+  parameterList.value.splice(index, 1)
 }
 
 const hostSelectorVisible = ref(false)

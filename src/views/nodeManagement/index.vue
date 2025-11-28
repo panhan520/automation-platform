@@ -63,7 +63,14 @@
             :sortable="col.sortable"
           >
             <template v-if="col.slot" #default="scope">
-              <el-tag v-if="col.prop === 'appTypeName'">{{ scope.row.appTypeName }}</el-tag>
+              <el-tooltip
+                v-if="col.prop === 'appTypeName'"
+                effect="dark"
+                :content="scope.row.appTypeName"
+                placement="top"
+              >
+                <el-tag class="app-type-ellipsis">{{ scope.row.appTypeName || '-' }}</el-tag>
+              </el-tooltip>
               <el-tag v-else-if="col.prop === 'status'" :type="getNodeStatusType(scope.row.status)">
                 <span class="status-color" :class="getNodeStatusColor(scope.row.status)"></span
                 >{{ getNodeStatusText(scope.row.status) }}
@@ -746,5 +753,14 @@ onMounted(() => {
   &.yellow {
     background: #e6a23c;
   }
+}
+.app-type-ellipsis {
+  max-width: 120px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 20px;
 }
 </style>
