@@ -38,7 +38,13 @@
           <el-table-column prop="authMethod" label="认证方式" />
           <el-table-column prop="loginAccount" label="登录账号" />
           <el-table-column prop="loginIp" label="登录IP" min-width="100" />
-          <el-table-column prop="hostName" label="主机名称" min-width="120" />
+          <el-table-column prop="hostName" label="主机名称" min-width="120">
+            <template v-slot="scope">
+              <el-tooltip effect="dark" :content="scope.row.hostName" placement="top">
+                <span class="app-type-ellipsis">{{ scope.row.hostName || '-' }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
           <el-table-column prop="networkType" label="网络类型">
             <template v-slot="scope">
               {{
@@ -54,7 +60,9 @@
           <el-table-column prop="vendorName" label="供应商名称" min-width="100" />
           <el-table-column prop="appTypeName" label="应用类型" min-width="120">
             <template v-slot="scope">
-              <el-tag>{{ scope.row.appTypeName }}</el-tag>
+              <el-tooltip effect="dark" :content="scope.row.appTypeName" placement="top">
+                <el-tag class="app-type-ellipsis">{{ scope.row.appTypeName || '-' }}</el-tag>
+              </el-tooltip>
             </template>
           </el-table-column>
           <el-table-column prop="operator" label="运营商" />
@@ -423,5 +431,15 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.app-type-ellipsis {
+  max-width: 120px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 20px;
 }
 </style>

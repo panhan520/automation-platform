@@ -71,6 +71,14 @@
               >
                 <el-tag class="app-type-ellipsis">{{ scope.row.appTypeName || '-' }}</el-tag>
               </el-tooltip>
+              <el-tooltip
+                v-else-if="col.prop === 'hostName'"
+                effect="dark"
+                :content="scope.row.hostName"
+                placement="top"
+              >
+                <span class="app-type-ellipsis">{{ scope.row.hostName || '-' }}</span>
+              </el-tooltip>
               <el-tag v-else-if="col.prop === 'status'" :type="getNodeStatusType(scope.row.status)">
                 <span class="status-color" :class="getNodeStatusColor(scope.row.status)"></span
                 >{{ getNodeStatusText(scope.row.status) }}
@@ -276,7 +284,15 @@ const tableColumns = ref<ColumnItem[]>([
   { prop: 'id', label: '主机ID', visible: true, order: 0, isDisabled: true },
   { prop: 'innerIp', label: '内网IP', visible: true, order: 1, sortable: true, minWidth: 100 },
   { prop: 'publicIp', label: '公网IP', visible: true, order: 2, minWidth: 100 },
-  { prop: 'hostName', label: '主机名称', visible: true, order: 3, sortable: true, minWidth: 120 },
+  {
+    prop: 'hostName',
+    label: '主机名称',
+    visible: true,
+    order: 3,
+    sortable: true,
+    slot: true,
+    minWidth: 120
+  },
   { prop: 'appTypeName', label: '应用类型', visible: true, order: 4, slot: true, minWidth: 120 },
   { prop: 'region', label: '地区', visible: true, order: 5, minWidth: 150 },
   { prop: 'os', label: '操作系统', visible: true, order: 6, slot: true, minWidth: 100 },
