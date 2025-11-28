@@ -63,27 +63,12 @@
 import { ref, computed, reactive, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { QuestionFilled } from '@element-plus/icons-vue'
-
-interface TemplateParameterOption {
-  label: string
-  value: string
-}
-
-interface TemplateParameter {
-  id: number | string
-  name: string
-  variable: string
-  type: 'text' | 'password' | 'select'
-  required?: boolean
-  options?: TemplateParameterOption[]
-  hint?: string
-  defaultValue?: string
-}
+import { ParameterItem } from '@/api/template/type'
 
 const props = withDefaults(
   defineProps<{
     visible: boolean
-    parameters: TemplateParameter[]
+    parameters: ParameterItem[]
     title?: string
     confirmText?: string
     loading?: boolean
@@ -168,7 +153,7 @@ const handleConfirm = async () => {
   })
 }
 
-const validateField = (param: TemplateParameter) => {
+const validateField = (param: ParameterItem) => {
   if (!param.required || !formRef.value) return
   formRef.value.validateField(param.variable).catch(() => {})
 }

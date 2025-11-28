@@ -86,40 +86,7 @@ import {
   apiCreateTemplates,
   apiDeleteTemplate
 } from '@/api/template'
-
-type Interpreter = 'sh' | 'python'
-
-interface TemplateRecord {
-  id: number
-  name: string
-  type: string
-  body: string
-  desc: string
-  interpreter: Interpreter
-  remark?: string
-  hosts?: HostItem[]
-  parameters?: ParameterItem[]
-}
-
-interface ParameterItem {
-  id: number
-  name: string
-  variable: string
-  type: 'text' | 'password' | 'select' | 'command'
-  typeLabel: string
-  options?: Array<{ label: string; value: string }>
-  hostAttribute?: string
-  required: boolean
-  default?: string
-  desc?: string
-}
-
-interface HostItem {
-  hostId: string
-  hostName: string
-  innerIp: string
-  publicIp: string
-}
+import type { TemplateRecord } from '@/api/template/type'
 
 const title = '模版管理'
 const loading = ref(false)
