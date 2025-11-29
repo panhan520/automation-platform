@@ -2,14 +2,21 @@
   <el-table-column label="操作" :width="width" :fixed="fixed">
     <template #default="scope">
       <div class="table-actions">
-        <el-button v-if="showEdit" link size="small" type="primary" @click="handleEdit(scope.row)">
+        <el-button
+          v-if="showEdit"
+          class="table-button"
+          link
+          size="small"
+          type="primary"
+          @click="handleEdit(scope.row)"
+        >
           {{ editLabel }}
         </el-button>
         <template v-for="action in resolveMainActions(scope.row)" :key="action.key">
           <el-button
             v-if="isActionVisible(action, scope.row)"
             size="small"
-            :type="action.type || (action.danger ? 'danger' : 'primary')"
+            :type="action.type || (action.danger ? 'danger' : '')"
             :text="action.text ?? true"
             :link="action.link ?? false"
             :plain="action.plain ?? false"
@@ -138,7 +145,7 @@ const handleCommand = ({ action, row }: { action: string; row: any }) => {
 .table-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 
   .table-button {

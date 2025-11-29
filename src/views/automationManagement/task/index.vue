@@ -19,6 +19,7 @@
           :main-actions="taskRowActions"
           @edit="handleEdit"
           @action="handleRowAction"
+          width="200"
         />
         <el-table-column
           v-else
@@ -112,13 +113,18 @@ const taskRowActions: TableAction[] = [
     key: 'execute',
     label: '执行',
     type: 'success',
-    text: true
+    link: true
+  },
+  {
+    key: 'log',
+    label: '查看日志',
+    link: true
   },
   {
     key: 'delete',
     label: '删除',
     type: 'danger',
-    text: true
+    link: true
   }
 ]
 
