@@ -164,15 +164,7 @@
             </el-tooltip>
           </span>
         </template>
-        <el-segmented
-          v-model="parameterForm.type"
-          :options="
-            form.interpreter === 'python'
-              ? parameterTypeOptions.filter((item) => item.value !== 'namespace')
-              : parameterTypeOptions
-          "
-          block
-        />
+        <el-segmented v-model="parameterForm.type" :options="parameterTypeOptions" block />
       </el-form-item>
       <el-form-item v-if="parameterForm.type === 'select'" prop="options">
         <template #label>
