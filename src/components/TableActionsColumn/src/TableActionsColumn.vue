@@ -2,14 +2,7 @@
   <el-table-column label="操作" :width="width" :fixed="fixed">
     <template #default="scope">
       <div class="table-actions">
-        <el-button
-          v-if="showEdit"
-          link
-          size="small"
-          type="primary"
-          class="table-button"
-          @click="handleEdit(scope.row)"
-        >
+        <el-button v-if="showEdit" link size="small" type="primary" @click="handleEdit(scope.row)">
           {{ editLabel }}
         </el-button>
         <template v-for="action in resolveMainActions(scope.row)" :key="action.key">
@@ -35,7 +28,9 @@
           @command="handleCommand"
           trigger="click"
         >
-          <div class="table-button dropdown-trigger">{{ dropdownLabel }}</div>
+          <div class="table-button dropdown-trigger"
+            ><el-button link size="small" type="primary">{{ dropdownLabel }} </el-button></div
+          >
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item

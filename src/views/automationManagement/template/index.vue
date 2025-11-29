@@ -146,7 +146,7 @@ const templateRowActions: TableAction[] = [
     key: 'delete',
     label: '删除',
     type: 'danger',
-    text: true
+    link: true
   }
 ]
 

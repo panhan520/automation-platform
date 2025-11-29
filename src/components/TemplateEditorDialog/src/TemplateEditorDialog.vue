@@ -9,7 +9,13 @@
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
       <el-form-item v-if="mode === 'template'" label="模版类型" prop="type">
-        <el-select v-model="form.type" placeholder="请选择模版类型" style="width: 86%">
+        <el-select
+          v-model="form.type"
+          placeholder="请选择模版类型"
+          style="width: 86%"
+          clearable
+          filterable
+        >
           <el-option v-for="type in localTemplateTypes" :key="type" :label="type" :value="type" />
           <template #empty>
             <el-empty :image-size="80" description="暂无数据" />
@@ -21,7 +27,7 @@
       </el-form-item>
 
       <el-form-item v-if="mode === 'template'" label="模版名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入模版名称" />
+        <el-input v-model="form.name" placeholder="请输入模版名称" maxlength="50" clearable />
       </el-form-item>
 
       <el-form-item v-if="mode === 'task'" label="任务名称" prop="name">
@@ -104,7 +110,7 @@
   >
     <el-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-width="90px">
       <el-form-item label="模版类型" prop="type">
-        <el-input v-model="typeForm.type" placeholder="请输入模版类型" />
+        <el-input v-model="typeForm.type" placeholder="请输入模版类型" maxlength="50" clearable />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -137,7 +143,12 @@
             </el-tooltip>
           </span>
         </template>
-        <el-input v-model="parameterForm.name" placeholder="请输入参数名称" />
+        <el-input
+          v-model="parameterForm.name"
+          placeholder="请输入参数名称"
+          maxlength="50"
+          clearable
+        />
       </el-form-item>
       <el-form-item prop="variable">
         <template #label>
@@ -153,7 +164,12 @@
             </el-tooltip>
           </span>
         </template>
-        <el-input v-model="parameterForm.variable" placeholder="请输入变量名称" />
+        <el-input
+          v-model="parameterForm.variable"
+          placeholder="请输入变量名称"
+          maxlength="50"
+          clearable
+        />
       </el-form-item>
       <el-form-item prop="type">
         <template #label>
@@ -221,7 +237,12 @@
         />
       </el-form-item>
       <el-form-item label="默认值">
-        <el-input v-model="parameterForm.default" placeholder="请输入默认值" />
+        <el-input
+          v-model="parameterForm.default"
+          placeholder="请输入默认值"
+          maxlength="50"
+          clearable
+        />
       </el-form-item>
       <el-form-item>
         <template #label>
@@ -237,6 +258,8 @@
           type="textarea"
           :rows="2"
           placeholder="请输入该参数的帮助提示信息"
+          maxlength="50"
+          clearable
         />
       </el-form-item>
     </el-form>
