@@ -183,7 +183,7 @@ const handleTaskSubmit = (payload: any) => {
         target.scriptLanguage = payload.scriptLanguage
         target.remark = payload.remark
       }
-      ElMessage.success('任务更新成功')
+      ElMessage.success('编辑成功')
     } else {
       allTasks.value.unshift({
         id: Date.now(),
@@ -196,7 +196,7 @@ const handleTaskSubmit = (payload: any) => {
         templateContent: payload.templateContent,
         remark: payload.remark
       })
-      ElMessage.success('任务创建成功')
+      ElMessage.success('添加成功')
     }
     taskDialogLoading.value = false
     taskDialogVisible.value = false

@@ -381,7 +381,7 @@ const handleFormDialogConfirm = async (_formData: any, done: (success: boolean) 
     if (formDialogIsEdit.value) {
       ElMessage.success('编辑成功')
     } else {
-      ElMessage.success('创建成功')
+      ElMessage.success('添加成功')
     }
     done(true)
     getList()

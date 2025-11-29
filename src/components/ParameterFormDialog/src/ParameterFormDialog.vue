@@ -10,15 +10,14 @@
       <el-form-item v-for="param in parameters" :key="param.id" :prop="param.variable">
         <template #label>
           <span>
-            <span v-if="param.required" class="required">*</span>
             {{ param.name }}
-            <el-tooltip v-if="param.hint" :content="param.hint" placement="top">
+            <el-tooltip v-if="param.desc" :content="param.desc" placement="top">
               <el-icon class="hint-icon"><QuestionFilled /></el-icon>
             </el-tooltip>
           </span>
         </template>
         <el-input
-          v-if="param.type === 'text'"
+          v-if="param.type === 'string'"
           v-model="form[param.variable]"
           placeholder="请输入"
           clearable
@@ -31,6 +30,7 @@
           show-password
           placeholder="请输入"
           @blur="validateField(param)"
+          clearable
         />
         <el-select
           v-else
@@ -38,9 +38,10 @@
           placeholder="请选择"
           style="width: 100%"
           @change="validateField(param)"
+          clearable
         >
           <el-option
-            v-for="option in param.options || []"
+            v-for="option in getSelectOptions(param)"
             :key="option.value"
             :label="option.label"
             :value="option.value"
@@ -102,7 +103,7 @@ const initForm = () => {
     delete form[key]
   })
   props.parameters.forEach((param) => {
-    form[param.variable] = props.modelValue?.[param.variable] ?? param.defaultValue ?? ''
+    form[param.variable] = props.modelValue?.[param.variable] ?? param.default ?? ''
   })
 }
 
@@ -157,6 +158,32 @@ const validateField = (param: ParameterItem) => {
   if (!param.required || !formRef.value) return
   formRef.value.validateField(param.variable).catch(() => {})
 }
+
+// 处理options：如果是字符串（以\n分隔），转换为选项数组
+const getSelectOptions = (param: ParameterItem): Array<{ label: string; value: string }> => {
+  const options = param.options as Array<{ label: string; value: string }> | string | undefined
+  if (!options) return []
+  // 如果已经是数组，直接返回
+  if (Array.isArray(options)) {
+    return options
+  }
+  // 如果是字符串，按\n分割
+  if (typeof options === 'string') {
+    return options
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        // 支持 "value:label" 格式，如果没有冒号则value和label相同
+        const parts = line.split(':')
+        if (parts.length === 2) {
+          return { label: parts[1].trim(), value: parts[0].trim() }
+        }
+        return { label: line, value: line }
+      })
+  }
+  return []
+}
 </script>
 
 <style scoped lang="less">
@@ -170,10 +197,5 @@ const validateField = (param: ParameterItem) => {
   font-size: 14px;
   color: #a1a7b3;
   margin-left: 4px;
-}
-
-.required {
-  color: #f56c6c;
-  margin-right: 2px;
 }
 </style>

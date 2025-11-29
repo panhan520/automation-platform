@@ -28,7 +28,7 @@
         <el-collapse-item v-for="task in taskList" :key="task.id" :name="task.id">
           <template #title>
             <div class="task-title">
-              <span class="task-type">{{ task.taskName.slice(0, 2) }}详情</span>
+              <span class="task-type">{{ task.taskName }}</span>
               <span class="task-time">{{ formatExecuteTime(task.executeTime) }}</span>
               <span class="task-summary">
                 ({{ task.detail.success }}成功, {{ task.detail.running }}进行中,

@@ -292,6 +292,14 @@ const initTableColumnDrag = () => {
       }
     })
 
+    // 标记selection列不可拖拽
+    if (props.showSelection) {
+      const allCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
+      if (allCells[0]) {
+        allCells[0].classList.add('no-drag-column')
+      }
+    }
+
     // 创建 Sortable
     sortableInstance = Sortable.create(headerRow, {
       animation: 150,

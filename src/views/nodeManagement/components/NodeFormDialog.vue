@@ -463,7 +463,8 @@ let tagIdSeed = 0
 const buildNodeTagsPayload = () => {
   return nodeTagItems.value.reduce<Record<string, string>>((acc, { key, value }) => {
     if (key) {
-      acc[key] = value ?? ''
+      // 确保key和value都是字符串格式
+      acc[String(key)] = value ? String(value) : ''
     }
     return acc
   }, {})

@@ -56,13 +56,59 @@ const processProvinceData = (province: any): RegionOption => {
 }
 
 /**
+ * 获取台湾数据并翻译为中文
+ */
+const getTaiwanData = (): RegionOption | null => {
+  const taiwanCountry = Country.getCountryByCode('TW')
+  if (!taiwanCountry) return null
+
+  const states = State.getStatesOfCountry('TW')
+  if (states.length === 0) {
+    // 如果没有州/省数据，直接返回台湾作为省份
+    return {
+      value: 'TW',
+      label: '台湾',
+      leaf: false
+    }
+  }
+
+  // 台湾的州/省数据（县市）
+  const cities = states.map((state) => {
+    const cityList = City.getCitiesOfState('TW', state.isoCode)
+    return {
+      value: state.isoCode,
+      label: state.name, // 保持英文，如果需要可以添加翻译映射
+      children: cityList.map((city) => ({
+        value: city.name,
+        label: city.name, // 保持英文，如果需要可以添加翻译映射
+        leaf: true
+      })),
+      leaf: cityList.length === 0
+    }
+  })
+
+  return {
+    value: 'TW',
+    label: '台湾',
+    children: cities,
+    leaf: false
+  }
+}
+
+/**
  * 将中国的省市区数据转换为国家-省-市-区的格式
  */
 const getChinaRegionData = (): RegionOption => {
+  const provinces = regionData.map(processProvinceData)
+  // 添加台湾到省份列表
+  const taiwanData = getTaiwanData()
+  if (taiwanData) {
+    provinces.push(taiwanData)
+  }
   return {
     value: 'CN',
     label: getChinaName(),
-    children: regionData.map(processProvinceData)
+    children: provinces
   }
 }
 
@@ -96,7 +142,7 @@ export const getAllCountries = (): RegionOption[] => {
  * 懒加载：根据国家代码获取省/州数据（第二级）
  */
 export const getStatesByCountry = (countryCode: string): RegionOption[] => {
-  // 中国使用 element-china-area-data 的数据
+  // 中国使用 element-china-area-data 的数据（包含台湾）
   if (countryCode === 'CN') {
     const chinaData = getChinaRegionData()
     return chinaData.children || []
@@ -121,6 +167,35 @@ export const getStatesByCountry = (countryCode: string): RegionOption[] => {
 export const getCitiesByState = (countryCode: string, stateCode: string): RegionOption[] => {
   // 中国使用 element-china-area-data 的数据
   if (countryCode === 'CN') {
+    // 如果是台湾
+    if (stateCode === 'TW') {
+      const states = State.getStatesOfCountry('TW')
+      const state = states.find((s) => s.isoCode === stateCode)
+      if (!state) {
+        // 如果找不到对应的state，可能是直接使用TW作为省份，返回所有台湾的县市
+        const allStates = State.getStatesOfCountry('TW')
+        return allStates.map((s) => {
+          const cities = City.getCitiesOfState('TW', s.isoCode)
+          return {
+            value: s.isoCode,
+            label: s.name,
+            children: cities.map((c) => ({
+              value: c.name,
+              label: c.name,
+              leaf: true
+            })),
+            leaf: cities.length === 0
+          }
+        })
+      }
+      const cities = City.getCitiesOfState('TW', stateCode)
+      return cities.map((c) => ({
+        value: c.name,
+        label: c.name,
+        leaf: true
+      }))
+    }
+
     const province = regionData.find((p) => p.value === stateCode)
     if (!province) return []
 

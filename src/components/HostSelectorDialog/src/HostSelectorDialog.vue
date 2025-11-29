@@ -20,12 +20,7 @@
           row-key="id"
           @selection-change="handleSelectionChange"
         >
-          <el-table-column
-            type="selection"
-            width="50"
-            fixed
-            :selectable="() => !isSelectionDisabled"
-          />
+          <el-table-column type="selection" width="50" fixed />
           <el-table-column prop="id" label="主机ID" />
           <el-table-column prop="innerIp" label="内网IP" min-width="100" />
           <el-table-column prop="publicIp" label="公网IP" min-width="100" />
@@ -109,7 +104,10 @@
               ></el-button>
             </div>
           </div>
-          <div class="clear-hosts" @click="clearTempHosts"
+          <div
+            class="clear-hosts"
+            :class="tempSelection.length === 0 ? 'clear-disabled' : ''"
+            @click="clearTempHosts"
             ><el-icon><Delete /></el-icon>清空所有</div
           >
         </div>
@@ -329,11 +327,6 @@ const clearTempHosts = () => {
   syncTableSelection()
 }
 
-// 检查是否可以选择（用于禁用复选框）
-const isSelectionDisabled = computed(() => {
-  return tempSelection.value.length >= MAX_SELECTION
-})
-
 const handleCancel = () => {
   dialogVisible.value = false
 }
@@ -423,6 +416,10 @@ onMounted(() => {
         border-top: solid 1px #f0f0f0;
         color: #f56c6c;
         cursor: pointer;
+      }
+      .clear-disabled {
+        cursor: not-allowed;
+        color: #909399;
       }
     }
   }

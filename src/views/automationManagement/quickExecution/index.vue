@@ -130,6 +130,12 @@ const handleTemplateSelected = (template) => {
   selectedTemplate.value = template
   form.interpreter = template.interpreter
   form.command = template.body
+  // 合并模版的主机到已选主机列表（去重）
+  if (template.host_id_ip_map && template.host_id_ip_map.length > 0) {
+    const existingIds = new Set(selectedHosts.value.map((h) => h.id))
+    const newHosts = template.host_id_ip_map.filter((h) => !existingIds.has(h.id))
+    selectedHosts.value = [...selectedHosts.value, ...newHosts]
+  }
 }
 // 开始执行
 const handleExecute = () => {
@@ -138,7 +144,7 @@ const handleExecute = () => {
     return
   }
   if (!form.command.trim()) {
-    ElMessage.warning('请输入需要执行的脚本内容')
+    ElMessage.warning('请输入执行命令')
     return
   }
   if (selectedTemplate.value?.parameters?.length) {
@@ -157,12 +163,16 @@ const submitExecution = async (params: Record<string, any>) => {
   try {
     executing.value = true
     await apiCreateExecDo({
-      ...params,
+      params,
       ...form,
       host_ids: selectedHosts.value.map((host) => host.id),
       template_id: selectedTemplate.value?.id
     })
-    ElMessage.success('执行任务已提交')
+    ElMessage.success('执行成功')
+    selectedHosts.value = []
+    selectedTemplate.value = null
+    form.interpreter = 'sh'
+    form.command = ''
     // 设置缓存为 true，显示任务面板
     localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
     taskPanelStore.setVisible(true)

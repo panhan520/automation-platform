@@ -84,7 +84,7 @@
                 >{{ getNodeStatusText(scope.row.status) }}
               </el-tag>
               <span v-else-if="col.prop === 'os'">
-                <el-icon style="margin-right: 5px"><Monitor /></el-icon>{{ scope.row[col.prop] }}
+                <el-icon class="os-icon"><Monitor /></el-icon>{{ scope.row[col.prop] }}
               </span>
               <span v-else-if="col.prop === 'nodeTags'">
                 {{ formatObjectValue(scope.row[col.prop]) }}
@@ -662,11 +662,9 @@ const handleNodeSave = async ({
     nodeDialogLoading.value = true
     const payload = { ..._form, passwordKey: _passwordKey }
     await apiCreateNode(payload)
-    ElMessage.success('保存成功')
+    ElMessage.success(nodeDialogMode.value === 'edit' ? '编辑成功' : '添加成功')
     nodeDialogVisible.value = false
     getList()
-  } catch (error) {
-    ElMessage.error('保存失败')
   } finally {
     nodeDialogLoading.value = false
   }
@@ -780,5 +778,10 @@ onMounted(() => {
   white-space: nowrap;
   vertical-align: middle;
   line-height: 20px;
+}
+.os-icon {
+  margin-right: 5px;
+  margin-top: 5px;
+  vertical-align: top;
 }
 </style>

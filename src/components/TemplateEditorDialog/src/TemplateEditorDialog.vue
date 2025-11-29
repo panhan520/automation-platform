@@ -266,7 +266,7 @@ interface ParameterItem {
   id?: number
   name: string
   variable: string
-  type: 'text' | 'password' | 'select' | 'namespace'
+  type: 'string' | 'password' | 'select' | 'namespace'
   options?: string
   property?: string
   required: boolean
@@ -416,7 +416,7 @@ const parameterForm = reactive({
   id: undefined as number | undefined,
   name: '',
   variable: '',
-  type: 'text' as 'text' | 'password' | 'select' | 'namespace',
+  type: 'string' as 'string' | 'password' | 'select' | 'namespace',
   options: '',
   property: '',
   required: false,
@@ -459,7 +459,7 @@ const parameterRules: FormRules = {
 }
 
 const parameterTypeOptions = [
-  { label: '文本框', value: 'text' },
+  { label: '文本框', value: 'string' },
   { label: '密码框', value: 'password' },
   { label: '下拉选择', value: 'select' },
   { label: '命令空间', value: 'namespace' }
@@ -477,7 +477,7 @@ const openParameterDialog = () => {
   parameterForm.id = undefined
   parameterForm.name = ''
   parameterForm.variable = ''
-  parameterForm.type = 'text'
+  parameterForm.type = 'string'
   parameterForm.options = ''
   parameterForm.property = ''
   parameterForm.required = false
