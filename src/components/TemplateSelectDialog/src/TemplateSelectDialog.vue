@@ -40,6 +40,9 @@
       </el-table-column>
       <el-table-column prop="body" label="内容" />
       <el-table-column prop="desc" label="备注" />
+      <template #empty>
+        <el-empty description="暂无数据" />
+      </template>
     </el-table>
     <div class="host-pagination">
       <Pagination

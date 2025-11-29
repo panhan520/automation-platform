@@ -646,6 +646,8 @@ const handleNodeSingleProbe = async (row: NodeRecord) => {
     setTimeout(() => {
       ElMessage.error('连通测试失败')
     }, 10)
+  } finally {
+    getList()
   }
 }
 

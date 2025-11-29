@@ -167,9 +167,6 @@
                     :label="item.label"
                     :value="item.value"
                   />
-                  <template #empty>
-                    <el-empty :image-size="80" description="暂无数据" />
-                  </template>
                 </el-select>
                 <el-select
                   v-model="tag.value"
@@ -186,9 +183,6 @@
                     :label="item.label"
                     :value="item.value"
                   />
-                  <template #empty>
-                    <el-empty :image-size="80" description="暂无数据" />
-                  </template>
                 </el-select>
                 <el-button type="text" @click="removeNodeTag(index)">
                   <el-icon><Delete /></el-icon>

@@ -6,7 +6,7 @@
         <div class="host-search">
           <el-input
             v-model="filters.query"
-            placeholder="搜索公网IP/内网IP/主机名称"
+            placeholder="搜索公网IP/内网IP/主机ID"
             clearable
             style="width: 240px"
             :prefix-icon="Search"
@@ -14,6 +14,7 @@
         </div>
         <el-table
           ref="tableRef"
+          v-loading="loading"
           :data="allNodes"
           height="320"
           row-key="id"
