@@ -92,12 +92,13 @@
               <span v-else>{{ scope.row[col.prop] }}</span>
             </template>
           </el-table-column>
+          <TableActionsColumn
+            v-else
+            :actions="[{ key: 'test', label: '连通测试' }]"
+            @edit="handleEdit"
+            @action="handleMoreAction"
+          />
         </template>
-        <TableActionsColumn
-          :actions="[{ key: 'test', label: '连通测试' }]"
-          @edit="handleEdit"
-          @action="handleMoreAction"
-        />
       </template>
     </ManagementList>
     <!-- 新建/编辑节点的对话框 -->
@@ -307,7 +308,8 @@ const tableColumns = ref<ColumnItem[]>([
     sortable: true,
     minWidth: 150
   },
-  { prop: 'remark', label: '备注', visible: true, order: 11, minWidth: 100 }
+  { prop: 'remark', label: '备注', visible: true, order: 11, minWidth: 100 },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 12 }
 ])
 
 // 转换为 TableColumn 类型供 ManagementList 使用
@@ -542,7 +544,6 @@ const handleSelectionChange = (selection: NodeRecord[]) => {
 }
 
 const handleTableSortChange = (sorts: any) => {
-  console.log('sort:', sorts)
   queryParams.orderBy = sorts.prop
   queryParams.order = sorts.order
   queryParams.page = 1

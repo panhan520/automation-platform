@@ -45,8 +45,8 @@
             <span v-else>{{ scope.row[col.prop] }}</span>
           </template>
         </el-table-column>
+        <TableActionsColumn v-else @edit="handleEdit" />
       </template>
-      <TableActionsColumn @edit="handleEdit" />
     </template>
   </ManagementList>
 
@@ -110,7 +110,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'appType',
     type: 'select',
     placeholder: '全部应用类型',
-    width: 180,
+    width: 220,
     clearable: true,
     options: appTypeList.value.map((item) => ({ label: item, value: item }))
   }
@@ -265,7 +265,8 @@ const tableColumns = ref<ColumnItem[]>([
   },
   { prop: 'timeZone', label: '时区', visible: true, order: 2 },
   { prop: 'language', label: '语言', visible: true, order: 3, slot: true },
-  { prop: 'opsPersonNickname', label: '运维人员', visible: true, order: 4, slot: true }
+  { prop: 'opsPersonNickname', label: '运维人员', visible: true, order: 4, slot: true },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
 ])
 
 // 转换为 TableColumn 类型供 ManagementList 使用

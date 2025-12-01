@@ -104,7 +104,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'type',
     type: 'select',
     placeholder: '全部模版类型',
-    width: 200,
+    width: 220,
     clearable: true,
     options: templateTypeList.value.map((item) => ({ label: item, value: item }))
   },
@@ -112,7 +112,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'query',
     type: 'input',
     placeholder: '搜索模版名称',
-    width: 200,
+    width: 220,
     prefixIcon: Search
   },
   {
@@ -227,7 +227,7 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
   getList()
 }
-
+// 编辑
 const handleEdit = (row: TemplateRecord) => {
   openTemplateDialog(row)
 }

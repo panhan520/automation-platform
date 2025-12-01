@@ -31,7 +31,7 @@
       </el-form-item>
 
       <el-form-item v-if="mode === 'task'" label="任务名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入任务名称" />
+        <el-input v-model="form.name" placeholder="请输入任务名称" maxlength="50" clearable />
       </el-form-item>
 
       <el-form-item label="脚本语言" prop="interpreter">
