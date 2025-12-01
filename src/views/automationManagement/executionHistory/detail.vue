@@ -13,28 +13,23 @@
         <div class="search-group">
           <el-input
             v-model="filters.hostId"
-            placeholder="搜索主机ID"
-            clearable
-            prefix-icon="Search"
-          />
-          <el-input
-            v-model="filters.internalIp"
-            placeholder="搜索内网IP"
+            placeholder="搜索公网IP/内网IP/主机ID"
             clearable
             prefix-icon="Search"
           />
         </div>
 
         <div class="status-tabs">
-          <el-button
-            v-for="tab in statusTabs"
-            :key="tab.value"
-            :type="activeStatus === tab.value ? 'primary' : 'default'"
-            size="small"
-            @click="activeStatus = tab.value"
-          >
-            {{ tab.label }}({{ tab.count }})
-          </el-button>
+          <el-button-group :direction="direction">
+            <el-button
+              v-for="tab in statusTabs"
+              :key="tab.value"
+              :type="activeStatus === tab.value ? 'primary' : 'default'"
+              @click="activeStatus = tab.value"
+            >
+              {{ tab.label }}({{ tab.count }})
+            </el-button>
+          </el-button-group>
         </div>
 
         <div class="host-list">
@@ -45,11 +40,8 @@
             :class="{ active: host.hostId === selectedHostId }"
             @click="handleSelectHost(host.hostId)"
           >
-            <div class="host-id">[{{ host.hostId }}]</div>
+            <div class="host-id">[{{ host.hostId }}] [内]</div>
             <div class="host-ip">{{ host.internalIp }}</div>
-            <el-tag size="small" :type="statusTagType(host.status)">
-              {{ statusText(host.status) }}
-            </el-tag>
           </div>
 
           <el-empty
@@ -92,7 +84,7 @@ interface HostLogItem {
   status: 'running' | 'success' | 'failed'
   log: string
 }
-
+const direction = ref<'horizontal' | 'vertical'>('horizontal')
 const route = useRoute()
 const router = useRouter()
 
@@ -229,7 +221,7 @@ const handleBack = () => {
 
 .detail-content {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 340px 1fr;
   gap: 16px;
 }
 
