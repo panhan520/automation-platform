@@ -11,12 +11,13 @@
     @search="handleSearch"
     @refresh="handleRefresh"
     @page-change="handlePageChange"
+    storageKey="taskManagement_columnConfig"
   >
     <template #columns="{ displayColumns }">
       <template v-for="column in displayColumns" :key="column.prop">
         <TableActionsColumn
           v-if="column.prop === 'actions'"
-          :main-actions="taskRowActions"
+          :actions="taskRowActions"
           @edit="handleEdit"
           @action="handleRowAction"
           width="200"
@@ -100,12 +101,12 @@ const toolbarFilters: ToolbarFilter[] = [
 ]
 
 const tableColumns: TableColumn[] = [
-  { prop: 'taskName', label: '任务名称' },
-  { prop: 'templateName', label: '关联模版' },
-  { prop: 'status', label: '任务状态', slot: 'status' },
-  { prop: 'createTime', label: '创建时间', minWidth: 160 },
-  { prop: 'executeTime', label: '执行时间', minWidth: 160 },
-  { prop: 'actions', label: '操作', width: 200, slot: 'actions' }
+  { prop: 'id', label: '任务ID', order: 0 },
+  { prop: 'name', label: '任务名称', order: 1 },
+  { prop: 'number', label: '执行主机数量', order: 2 },
+  { prop: 'executeTime', label: '最新执行时间', minWidth: 160, order: 3 },
+  { prop: 'desc', label: '备注', order: 4 },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
 ]
 
 const taskRowActions: TableAction[] = [

@@ -305,57 +305,45 @@ const initTableColumnDrag = () => {
       animation: 150,
       handle: '.cell', // 只拖 div.cell 区域
       draggable: 'th.el-table__cell:not(.no-drag-column)', // 限制可拖元素
-      onEnd: ({ oldIndex, newIndex }) => {
-        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
+      onEnd: () => {
+        // 基于DOM实际顺序更新列配置
+        const allCells = Array.from(headerRow.querySelectorAll('th.el-table__cell'))
+        const orderedProps: string[] = []
 
-        // 排除 selection 列后的真实索引
-        const start = props.showSelection ? oldIndex - 1 : oldIndex
-        const end = props.showSelection ? newIndex - 1 : newIndex
-        if (start < 0 || end < 0) return
-
-        // 确保索引在有效范围内
-        if (start >= displayColumns.value.length || end >= displayColumns.value.length) return
-
-        // 获取被拖动的列
-        const movedColumn = displayColumns.value[start]
-        if (!movedColumn) return
-
-        // 从 columnConfig 中找到对应的列并更新顺序
-        const cols = columnConfig.value.map((col) => ({ ...col }))
-        const movedConfig = cols.find((c) => c.prop === movedColumn.prop)
-
-        if (movedConfig) {
-          // 移除旧位置
-          const oldConfigIndex = cols.findIndex((c) => c.prop === movedColumn.prop)
-          if (oldConfigIndex !== -1) {
-            cols.splice(oldConfigIndex, 1)
+        allCells.forEach((cell) => {
+          const prop = cell.getAttribute('data-column-prop')
+          if (prop && prop !== 'selection') {
+            orderedProps.push(prop)
           }
+        })
 
-          // 计算新位置（基于 displayColumns 的顺序）
-          const targetColumn = displayColumns.value[end]
-          if (targetColumn) {
-            const newConfigIndex = cols.findIndex((c) => c.prop === targetColumn.prop)
-            if (newConfigIndex !== -1) {
-              cols.splice(newConfigIndex, 0, movedConfig)
-            } else {
-              cols.splice(end, 0, movedConfig)
-            }
-          } else {
-            cols.splice(end, 0, movedConfig)
+        if (orderedProps.length === 0) return
+
+        // 创建当前配置的映射
+        const configMap = new Map(columnConfig.value.map((col) => [col.prop, { ...col }]))
+
+        // 按照DOM顺序重新排列列配置
+        const newColumns: TableColumn[] = []
+        orderedProps.forEach((prop, index) => {
+          const col = configMap.get(prop)
+          if (col) {
+            newColumns.push({ ...col, order: index })
           }
+        })
 
-          // 更新所有列的 order
-          cols.forEach((c, i) => {
-            c.order = i
-          })
+        // 添加未在DOM中出现的列（隐藏的列）
+        columnConfig.value.forEach((col) => {
+          if (!orderedProps.includes(col.prop)) {
+            newColumns.push({ ...col, order: newColumns.length })
+          }
+        })
 
-          columnConfig.value = cols
-          saveToStorage(cols)
-          nextTick(() => {
-            tableRef.value?.doLayout()
-            initTableColumnDrag()
-          })
-        }
+        columnConfig.value = newColumns
+        saveToStorage(newColumns)
+        nextTick(() => {
+          tableRef.value?.doLayout()
+          initTableColumnDrag()
+        })
       }
     })
   })

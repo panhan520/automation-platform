@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn, type ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -273,13 +273,49 @@ const handleRowAction = (actionKey: string, row: TemplateRecord) => {
   handleEdit(row)
 }
 
+// 预定义的颜色类型
+const tagTypes: Array<'primary' | 'success' | 'warning' | 'info' | 'danger'> = [
+  'primary',
+  'success',
+  'warning',
+  'info',
+  'danger'
+]
+
+// 类型到颜色的映射（动态分配）
+const typeColorMap = ref<Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'>>({})
+
+// 初始化类型颜色映射
+const initTypeColorMap = () => {
+  const uniqueTypes = new Set(allTemplates.value.map((t) => t.type).filter(Boolean))
+  let colorIndex = 0
+
+  uniqueTypes.forEach((type) => {
+    if (!typeColorMap.value[type]) {
+      typeColorMap.value[type] = tagTypes[colorIndex % tagTypes.length]
+      colorIndex++
+    }
+  })
+}
+
+// 监听模板列表变化，更新颜色映射
+watch(
+  () => allTemplates.value,
+  () => {
+    initTypeColorMap()
+  },
+  { deep: true, immediate: true }
+)
+
 const getTemplateTypeTagType = (type: string) => {
-  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
-    系统信息: 'primary',
-    部署模版: 'success',
-    运维脚本: 'warning'
+  if (!type) return 'info'
+  // 如果类型还没有分配颜色，分配一个
+  if (!typeColorMap.value[type]) {
+    const existingTypes = Object.keys(typeColorMap.value)
+    const colorIndex = existingTypes.length % tagTypes.length
+    typeColorMap.value[type] = tagTypes[colorIndex]
   }
-  return map[type] || 'info'
+  return typeColorMap.value[type] || 'info'
 }
 
 onMounted(() => {
