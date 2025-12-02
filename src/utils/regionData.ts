@@ -58,12 +58,85 @@ const processProvinceData = (province: any): RegionOption => {
 /**
  * 台湾县市中文映射表（使用英文名称作为key）
  */
-const taiwanStateMap: Record<string, string> = {}
+const taiwanStateMap: Record<string, string> = {
+  Changhua: '彰化县',
+  Chiayi: '嘉义县',
+  Hsinchu: '新竹县',
+  Hualien: '花莲县',
+  Kaohsiung: '高雄市',
+  Keelung: '基隆市',
+  Kinmen: '金门县',
+  Lienchiang: '连江县',
+  Miaoli: '苗栗县',
+  Nantou: '南投县',
+  'New Taipei': '新北市',
+  Penghu: '澎湖县',
+  Pingtung: '屏东县',
+  Taichung: '台中市',
+  Tainan: '台南市',
+  Taipei: '台北市',
+  Taitung: '台东县',
+  Taoyuan: '桃园市',
+  Yilan: '宜兰县',
+  Yunlin: '云林县',
+  'Chiayi City': '嘉义市',
+  'Hsinchu City': '新竹市',
+  'Chiayi County': '嘉义县',
+  'Hsinchu County': '新竹县',
+  'Kinmen County': '金门县',
+  'Penghu County': '澎湖县',
+  'Hualien City': '花莲市',
+  'Taichung City': '台中市',
+  'Taipei City': '台北市',
+  'Taitung City': '台东市',
+  'Taoyuan City': '桃园市'
+}
 
 /**
  * 台湾区/市中文映射表（使用英文名称作为key）
  */
-const taiwanCityMap: Record<string, string> = {}
+const taiwanCityMap: Record<string, string> = {
+  Changhua: '彰化',
+  Yuanlin: '员林',
+  Chiayi: '嘉义',
+  Pizitou: '朴子头',
+  'Chiayi County': '嘉义县',
+  Hsinchu: '新竹',
+  'Hsinchu County': '新竹县',
+  Hualien: '花莲',
+  'Hualien City': '花莲市',
+  Kaohsiung: '高雄',
+  Jincheng: '金城',
+  'Kinmen County': '金门县',
+  Lienchiang: '连江',
+  Nangan: '南竿',
+  Miaoli: '苗栗',
+  Lugu: '鹿谷',
+  Nantou: '南投',
+  Puli: '埔里',
+  'Zhongxing New Village': '中兴新村',
+  Magong: '马公',
+  'Penghu County': '澎湖县',
+  Donggang: '东港',
+  Hengchun: '恒春',
+  Pingtung: '屏东',
+  Taichung: '台中',
+  'Taichung City': '台中市',
+  Tainan: '台南',
+  Yujing: '玉井',
+  Banqiao: '板桥',
+  Jiufen: '九份',
+  Taipei: '台北',
+  'Taipei City': '台北市',
+  Taitung: '台东',
+  'Taitung City': '台东市',
+  Daxi: '大溪',
+  Taoyuan: '桃园',
+  'Taoyuan City': '桃园市',
+  Yilan: '宜兰',
+  Douliu: '斗六',
+  Yunlin: '云林'
+}
 
 /**
  * 获取台湾县市的中文名称
