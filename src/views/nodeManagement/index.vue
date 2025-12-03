@@ -108,7 +108,8 @@
       :is-edit="nodeDialogMode === 'edit'"
       :title="nodeDialogMode === 'edit' ? '编辑节点' : '新建节点'"
       :default-data="nodeDialogData"
-      :nodeTagOptions="nodeTagOptions.map((item) => ({ label: item, value: item }))"
+      :nodeTagOptionsKey="nodeTagOptionsKey.map((item) => ({ label: item, value: item }))"
+      :nodeTagOptionsValue="nodeTagOptionsValue.map((item) => ({ label: item, value: item }))"
       @save="handleNodeSave"
       @cancel="handleNodeCancel"
     />
@@ -175,7 +176,8 @@ const stats = ref({
 })
 // 应用类型列表
 const appTypeList = ref<string[]>([])
-const nodeTagOptions = ref<string[]>([])
+const nodeTagOptionsKey = ref<string[]>([])
+const nodeTagOptionsValue = ref<string[]>([])
 // 查询条件
 const queryParams = reactive({
   page: 1,
@@ -214,7 +216,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     placeholder: '节点标签',
     width: 150,
     clearable: true,
-    options: nodeTagOptions.value.map((item) => ({ label: item, value: item }))
+    options: nodeTagOptionsKey.value.map((item) => ({ label: item, value: item }))
   },
   {
     key: 'reset',
@@ -692,7 +694,8 @@ const getAppTypeList = async () => {
 // 获取节点标签
 const getNodeTags = async () => {
   const res = await apiGetNodeTags()
-  nodeTagOptions.value = res.data.list
+  nodeTagOptionsKey.value = res.data.keys
+  nodeTagOptionsValue.value = res.data.values
 }
 
 onMounted(() => {

@@ -184,7 +184,7 @@
                   class="tag-row__input"
                 >
                   <el-option
-                    v-for="item in nodeTagOptions"
+                    v-for="item in nodeTagOptionsKey"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value"
@@ -200,7 +200,7 @@
                   class="tag-row__input"
                 >
                   <el-option
-                    v-for="item in nodeTagOptions"
+                    v-for="item in nodeTagOptionsValue"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value"
@@ -436,7 +436,8 @@ interface Props {
   title?: string
   isEdit?: boolean
   defaultData?: NodeFormDefaultData
-  nodeTagOptions?: Array<{ label: string; value: string }>
+  nodeTagOptionsKey?: Array<{ label: string; value: string }>
+  nodeTagOptionsValue?: Array<{ label: string; value: string }>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -445,7 +446,8 @@ const props = withDefaults(defineProps<Props>(), {
   title: '新建节点',
   isEdit: false,
   defaultData: () => ({}),
-  nodeTagOptions: () => []
+  nodeTagOptionsKey: () => [],
+  nodeTagOptionsValue: () => []
 })
 
 const emit = defineEmits<{
