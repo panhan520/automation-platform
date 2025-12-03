@@ -45,7 +45,7 @@ export const apiNodeBatchProbe = (data): Promise<IPaginationResponse> => {
 }
 
 // 节点标签列表
-export const apiGetNodeTags = (): Promise<IPaginationResponse> => {
+export const apiGetNodeTags = () => {
   return request.get({ url: '/api/v1/node/nodeTags/' })
 }
 

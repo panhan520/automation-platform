@@ -244,10 +244,16 @@ const handleExpand = () => {
 
 // 收缩面板
 const handleCollapse = () => {
+  // 确保完全停止所有轮询
   stopTaskList()
   stopPolling()
-  isExpanded.value = false
+  // 清空活动任务ID，防止触发任何变化
   activeTaskId.value = ''
+  // 清空列表数据，减少内存占用
+  taskList.value = []
+  detailList.value = []
+  // 最后更新展开状态
+  isExpanded.value = false
 }
 
 // 关闭悬浮框
