@@ -147,6 +147,10 @@ const handleExecute = () => {
     ElMessage.warning('请输入执行命令')
     return
   }
+  if (!selectedTemplate.value?.id) {
+    ElMessage.warning('请选择模版')
+    return
+  }
   if (selectedTemplate.value?.parameters?.length) {
     parameterDialogVisible.value = true
     return
