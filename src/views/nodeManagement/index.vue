@@ -72,7 +72,6 @@
               </el-tooltip>
               <el-tooltip
                 v-else-if="col.prop === 'hostName'"
-                effect="dark"
                 :content="scope.row.hostName"
                 placement="top"
               >
@@ -774,7 +773,6 @@ onMounted(() => {
   }
 }
 .app-type-ellipsis {
-  max-width: 120px;
   display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;

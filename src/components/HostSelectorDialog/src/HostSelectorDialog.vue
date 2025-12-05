@@ -36,7 +36,7 @@
           <el-table-column prop="loginIp" label="登录IP" min-width="100" />
           <el-table-column prop="hostName" label="主机名称" min-width="120">
             <template v-slot="scope">
-              <el-tooltip effect="dark" :content="scope.row.hostName" placement="top">
+              <el-tooltip :content="scope.row.hostName" placement="top">
                 <span class="app-type-ellipsis">{{ scope.row.hostName || '-' }}</span>
               </el-tooltip>
             </template>
@@ -56,7 +56,7 @@
           <el-table-column prop="vendorName" label="供应商名称" min-width="100" />
           <el-table-column prop="appTypeName" label="应用类型" min-width="120">
             <template v-slot="scope">
-              <el-tooltip effect="dark" :content="scope.row.appTypeName" placement="top">
+              <el-tooltip :content="scope.row.appTypeName" placement="top">
                 <el-tag class="app-type-ellipsis">{{ scope.row.appTypeName || '-' }}</el-tag>
               </el-tooltip>
             </template>
@@ -192,20 +192,32 @@ const getList = async () => {
   }
 }
 
+// 赋值选中数组和渲染选中列表
+const syncTableSelection = () => {
+  if (!tableRef.value) return
+  // 开启锁，阻止 selection-change 更新 tempSelection
+  stopSyncSelection.value = true
+  props.modelValue.forEach((host) => {
+    tempSelection.value.push({ ...host })
+  })
+  // 同步表格选中状态
+  tableRef.value.clearSelection()
+  allNodes.value.forEach((node) => {
+    if (tempSelection.value.find((item) => item.id === node.id)) {
+      tableRef.value?.toggleRowSelection(node, true)
+    }
+  })
+  // 执行一次 nextTick，再解锁，避免中途又被触发
+  nextTick(() => {
+    stopSyncSelection.value = false
+  })
+}
+
 // 防抖搜索函数
 const debouncedSearch = debounce(() => {
   queryParams.page = 1
   getList()
 }, 300)
-
-// 监听搜索条件变化（左侧三个搜索框）
-watch(
-  () => [filters.query],
-  ([query]) => {
-    queryParams.query = query
-    debouncedSearch()
-  }
-)
 
 // 右侧选中列表的过滤（前端过滤）
 const filteredSelectedHosts = computed(() => {
@@ -240,24 +252,6 @@ const handlePageChange = (page: number, pageSize: number) => {
   getList()
 }
 
-// 同步表格选中状态
-const syncTableSelection = () => {
-  console.log('切换分页后同步状态', tempSelection.value)
-  if (!tableRef.value) return
-  // 开启锁，阻止 selection-change 更新 tempSelection
-  stopSyncSelection.value = true
-  tableRef.value.clearSelection()
-  allNodes.value.forEach((node) => {
-    if (tempSelection.value.find((item) => item.id === node.id)) {
-      tableRef.value?.toggleRowSelection(node, true)
-    }
-  })
-  // 执行一次 nextTick，再解锁，避免中途又被触发
-  nextTick(() => {
-    stopSyncSelection.value = false
-  })
-}
-
 // 监听对话框打开，初始化选中状态
 watch(
   () => props.visible,
@@ -265,32 +259,25 @@ watch(
     if (val) {
       // 对话框打开时，从 modelValue 初始化选中列表
       tempSelection.value = []
-      props.modelValue.forEach((host) => {
-        tempSelection.value.push({ ...host })
-      })
       // 重置搜索条件
       filters.query = ''
       filters.selectedInnerIp = ''
       queryParams.query = ''
       queryParams.page = 1
+      tableRef.value?.clearSelection()
       // 加载列表并同步选中状态
       getList()
     }
   }
 )
 
-// 监听 modelValue 变化（编辑时回显）
+// 监听搜索条件变化（左侧三个搜索框）
 watch(
-  () => props.modelValue,
-  (val) => {
-    if (props.visible && val) {
-      tempSelection.value = [...val]
-      nextTick(() => {
-        syncTableSelection()
-      })
-    }
-  },
-  { immediate: true }
+  () => [filters.query],
+  ([query]) => {
+    queryParams.query = query
+    debouncedSearch()
+  }
 )
 
 // 表格选中变化
@@ -308,6 +295,8 @@ const handleSelectionChange = (selection: HostItem[]) => {
       tempSelection.value.push(host)
     }
   })
+  // 同步移除未选中的
+  tempSelection.value = tempSelection.value.filter((h) => selection.some((s) => s.id === h.id))
 }
 
 // 删除选中的主机
@@ -324,7 +313,7 @@ const removeTempHost = (id: number) => {
 // 清空所有选中
 const clearTempHosts = () => {
   tempSelection.value = []
-  syncTableSelection()
+  tableRef.value?.clearSelection()
 }
 
 const handleCancel = () => {
@@ -432,7 +421,6 @@ onMounted(() => {
 }
 
 .app-type-ellipsis {
-  max-width: 120px;
   display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;

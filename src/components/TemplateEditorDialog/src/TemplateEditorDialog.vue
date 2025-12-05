@@ -162,7 +162,6 @@
               content="在脚本使用的变量名称，固定前缀_SPUG_ + 输入的变量名，例如变量名name，则最终生成环境变量为
                 _SPUG_name"
               placement="top"
-              popper-class="custom-tooltip"
             >
               <el-icon class="question-icon"><QuestionFilled /></el-icon>
             </el-tooltip>
@@ -193,7 +192,6 @@
             <el-tooltip
               content="每项单独一行，每行可以用英文冒号分割前边是值后边是显示的内容。"
               placement="top"
-              popper-class="custom-tooltip"
             >
               <el-icon class="question-icon"><QuestionFilled /></el-icon>
             </el-tooltip>
@@ -400,7 +398,7 @@ const applyInitialData = (data) => {
   form.body = data?.body || ''
   form.command = data?.command || ''
   form.desc = data?.desc || ''
-  parameterList.value = data?.parameters || []
+  parameterList.value = JSON.parse(JSON.stringify(data?.parameters || []))
   selectedHosts.value = data?.host_id_ip_map || []
 }
 

@@ -31,19 +31,19 @@
             :sortable="column.sortable"
           >
             <template #default="scope">
+              <el-tooltip v-if="column.prop === 'name'" :content="scope.row.name" placement="top">
+                <div class="app-type-ellipsis">{{ scope.row.name }} </div>
+              </el-tooltip>
               <el-tooltip v-if="column.prop === 'type'" :content="scope.row.type" placement="top">
                 <el-tag class="app-type-ellipsis" :type="getTemplateTypeTagType(scope.row.type)">
                   {{ scope.row.type }}
                 </el-tag>
               </el-tooltip>
-              <el-tooltip
-                v-if="column.prop === 'body'"
-                class="box-item"
-                effect="dark"
-                :content="scope.row.body"
-                placement="top"
-              >
-                {{ scope.row.body }}
+              <el-tooltip v-if="column.prop === 'body'" :content="scope.row.body" placement="top">
+                <div class="app-type-ellipsis">{{ scope.row.body }} </div>
+              </el-tooltip>
+              <el-tooltip v-if="column.prop === 'desc'" :content="scope.row.desc" placement="top">
+                <div class="app-type-ellipsis">{{ scope.row.desc }} </div>
               </el-tooltip>
             </template>
           </el-table-column>
@@ -137,7 +137,7 @@ const toolbarButtons: ToolbarButton[] = [
 // 表格列
 const tableColumns: TableColumn[] = [
   { prop: 'name', label: '模版名称', order: 0 },
-  { prop: 'type', label: '模版类型', slot: 'type', order: 1, minWidth: 120 },
+  { prop: 'type', label: '模版类型', slot: 'type', order: 1 },
   { prop: 'body', label: '模版内容', minWidth: 150, slot: 'body', order: 2 },
   { prop: 'desc', label: '描述信息', minWidth: 150, order: 3 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 4 }
@@ -185,6 +185,7 @@ const handleReset = () => {
 // 打开编辑保存模版的弹框
 const openTemplateDialog = (row?) => {
   if (row) {
+    console.log(row)
     currentEditingId.value = row.id
     editorInitialData.value = {
       ...row
@@ -329,7 +330,6 @@ onMounted(() => {
 
 <style scoped lang="less">
 .app-type-ellipsis {
-  max-width: 170px;
   display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;
