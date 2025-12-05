@@ -31,9 +31,11 @@
             :sortable="column.sortable"
           >
             <template #default="scope">
-              <el-tag v-if="column.prop === 'type'" :type="getTemplateTypeTagType(scope.row.type)">
-                {{ scope.row.type }}
-              </el-tag>
+              <el-tooltip v-if="column.prop === 'type'" :content="scope.row.type" placement="top">
+                <el-tag class="app-type-ellipsis" :type="getTemplateTypeTagType(scope.row.type)">
+                  {{ scope.row.type }}
+                </el-tag>
+              </el-tooltip>
               <el-tooltip
                 v-if="column.prop === 'body'"
                 class="box-item"
@@ -135,7 +137,7 @@ const toolbarButtons: ToolbarButton[] = [
 // 表格列
 const tableColumns: TableColumn[] = [
   { prop: 'name', label: '模版名称', order: 0 },
-  { prop: 'type', label: '模版类型', slot: 'type', order: 1 },
+  { prop: 'type', label: '模版类型', slot: 'type', order: 1, minWidth: 120 },
   { prop: 'body', label: '模版内容', minWidth: 150, slot: 'body', order: 2 },
   { prop: 'desc', label: '描述信息', minWidth: 150, order: 3 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 4 }
@@ -204,6 +206,7 @@ const handleTemplateSubmit = async (payload) => {
     await apiCreateTemplates(params)
     ElMessage.success(currentEditingId.value ? '编辑成功' : '添加成功')
     getList()
+    getTemplateTypeList()
     templateDialogLoading.value = false
     templateDialogVisible.value = false
   } finally {
@@ -325,7 +328,13 @@ onMounted(() => {
 </script>
 
 <style scoped lang="less">
-.template-management-page {
-  padding-bottom: 16px;
+.app-type-ellipsis {
+  max-width: 170px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 20px;
 }
 </style>

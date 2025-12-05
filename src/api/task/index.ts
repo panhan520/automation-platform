@@ -1,20 +1,20 @@
 import request from '@/axios'
-// 获取执行模板
-export const apiGetTemplatesList = (data): Promise<IPaginationResponse> => {
-  return request.get({ url: '/api/v1/exec/templates/get/', params: data })
+// 任务列表
+export const apiGetTaskList = (data): Promise<IPaginationResponse> => {
+  return request.get({ url: '/api/v1/schedule/', params: data })
 }
 
-// 新增/编辑执行模板
-export const apiCreateTemplates = (data): Promise<IPaginationResponse> => {
-  return request.post({ url: '/api/v1/exec/templates/post/', data })
+// 新增或编辑任务
+export const apiCreateTask = (data): Promise<IPaginationResponse> => {
+  return request.post({ url: '/api/v1/schedule/post/', data })
 }
 
-// 获取所有模板类型
-export const apiGetTemplatesType = (): Promise<IPaginationResponse> => {
-  return request.get({ url: '/api/v1/exec/templates/types/' })
+// 获取任务类型列表
+export const apiGetTaskType = (): Promise<IPaginationResponse> => {
+  return request.get({ url: '/api/v1/schedule/taskType/' })
 }
 
-// 删除执行模板
-export const apiDeleteTemplate = (id): Promise<IPaginationResponse> => {
-  return request.delete({ url: `/api/v1/exec/templates/delete/?id=${id}` })
+// 删除任务
+export const apiDeleteTask = (id): Promise<IPaginationResponse> => {
+  return request.delete({ url: `/api/v1/schedule/?id=${id}` })
 }

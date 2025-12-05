@@ -65,7 +65,6 @@
             <template v-if="col.slot" #default="scope">
               <el-tooltip
                 v-if="col.prop === 'appTypeName'"
-                effect="dark"
                 :content="scope.row.appTypeName"
                 placement="top"
               >

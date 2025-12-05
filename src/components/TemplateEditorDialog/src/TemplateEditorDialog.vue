@@ -38,8 +38,12 @@
         <el-segmented v-model="form.interpreter" :options="interpreterOptions" block />
       </el-form-item>
 
-      <el-form-item label="模版内容" prop="body">
+      <el-form-item v-if="mode === 'template'" label="模版内容" prop="body">
         <CodeEditor v-model="form.body" :rows="12" />
+      </el-form-item>
+
+      <el-form-item v-if="mode === 'task'" label="模版内容" prop="command">
+        <CodeEditor v-model="form.command" :rows="12" />
       </el-form-item>
 
       <el-form-item label="参数化">
@@ -307,6 +311,7 @@ interface TemplateEditorData {
   name: string
   interpreter: 'sh' | 'python'
   body: string
+  command?: string
   desc?: string
   parameters?: ParameterItem[]
   host_ids?: HostItem[]
@@ -346,6 +351,7 @@ const form = reactive({
   name: '',
   interpreter: 'sh',
   body: '',
+  command: '',
   desc: ''
 })
 const parameterList = ref<ParameterItem[]>([])
@@ -359,7 +365,8 @@ const formRules: FormRules = {
   type: [{ required: true, message: '请选择模版类型', trigger: 'change' }],
   templateName: [{ required: true, message: '请输入模版名称', trigger: 'blur' }],
   name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-  body: [{ required: true, message: '请输入模版内容', trigger: 'blur' }]
+  body: [{ required: true, message: '请输入模版内容', trigger: 'blur' }],
+  command: [{ required: true, message: '请输入模版内容', trigger: 'blur' }]
 }
 // 模版类型弹框相关
 const typeDialogVisible = ref(false)
@@ -387,11 +394,11 @@ watch(
 
 // 设置默认值
 const applyInitialData = (data) => {
-  console.log(data)
   form.type = data?.type || ''
   form.name = data?.name || ''
   form.interpreter = data?.interpreter || 'sh'
   form.body = data?.body || ''
+  form.command = data?.command || ''
   form.desc = data?.desc || ''
   parameterList.value = data?.parameters || []
   selectedHosts.value = data?.host_id_ip_map || []
@@ -564,10 +571,18 @@ const handleCancel = () => {
 const handleConfirm = () => {
   formRef.value?.validate((valid) => {
     if (!valid) return
-    const formData = {
+    const formData: any = {
       ...form,
-      host_ids: selectedHosts.value.map((host) => host.id),
       parameters: parameterList.value
+    }
+    if (props.mode === 'task') {
+      formData.targets = selectedHosts.value.map((host) => host.id)
+      delete formData.type
+      delete formData.body
+    }
+    if (props.mode === 'template') {
+      formData.host_ids = selectedHosts.value.map((host) => host.id)
+      delete formData.command
     }
     emit('submit', formData)
   })

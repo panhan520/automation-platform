@@ -29,7 +29,13 @@
           :width="column.width"
           :min-width="column.minWidth"
           :sortable="column.sortable"
-        />
+        >
+          <template #default="scope">
+            <template v-if="column.prop === 'host_id_ip_map'">
+              {{ scope.row.host_id_ip_map.length }} 台
+            </template>
+          </template>
+        </el-table-column>
       </template>
     </template>
   </ManagementList>
@@ -61,12 +67,7 @@ import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
-import {
-  apiGetTemplatesList,
-  apiGetTemplatesType,
-  apiCreateTemplates,
-  apiDeleteTemplate
-} from '@/api/task'
+import { apiGetTaskList, apiGetTaskType, apiCreateTask, apiDeleteTask } from '@/api/task'
 import { type TaskRecord } from '@/api/task/type'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 
@@ -76,7 +77,8 @@ const allTasks = ref<TaskRecord[]>([])
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  keyword: '',
+  type: '',
+  query: '',
   orderBy: '',
   order: ''
 })
@@ -93,7 +95,7 @@ const toolbarButtons: ToolbarButton[] = [
 
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
-    key: 'appType',
+    key: 'type',
     type: 'select',
     placeholder: '全部任务类型',
     width: 220,
@@ -101,7 +103,7 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     options: taskTypeList.value.map((item) => ({ label: item, value: item }))
   },
   {
-    key: 'keyword',
+    key: 'query',
     type: 'input',
     placeholder: '搜索任务名称',
     width: 220,
@@ -119,8 +121,8 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
 const tableColumns: TableColumn[] = [
   { prop: 'id', label: '任务ID', order: 0 },
   { prop: 'name', label: '任务名称', order: 1 },
-  { prop: 'number', label: '执行主机数量', order: 2 },
-  { prop: 'executeTime', label: '最新执行时间', minWidth: 160, order: 3, sortable: true },
+  { prop: 'host_id_ip_map', label: '执行主机数量', order: 2 },
+  { prop: 'updated_at', label: '最新执行时间', minWidth: 160, order: 3, sortable: true },
   { prop: 'desc', label: '备注', order: 4 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
 ]
@@ -165,7 +167,7 @@ const taskDialogTitle = computed(() => (editingTaskId.value ? '编辑任务' : '
 const getList = async () => {
   try {
     loading.value = true
-    const res = await apiGetTemplatesList(queryParams)
+    const res = await apiGetTaskList(queryParams)
     allTasks.value = res.data.list
     totalRecords.value = res.data.pagination.total
   } finally {
@@ -174,7 +176,7 @@ const getList = async () => {
 }
 // 获取任务类型列表
 const getTaskTypeList = async () => {
-  const res = await apiGetTemplatesType()
+  const res = await apiGetTaskType()
   taskTypeList.value = res.data.list
 }
 // 打开新建弹框
@@ -202,7 +204,7 @@ const handleTaskSubmit = async (payload: any) => {
     if (editingTaskId.value) {
       params.id = editingTaskId.value
     }
-    await apiCreateTemplates(params)
+    await apiCreateTask(params)
     ElMessage.success(editingTaskId.value ? '编辑成功' : '添加成功')
     getList()
     taskDialogVisible.value = false
@@ -229,7 +231,7 @@ const confirmDeleteTemplate = async () => {
   if (!deleteDialog.target) return
   try {
     deleteDialog.loading = true
-    await apiDeleteTemplate(deleteDialog.target.id)
+    await apiDeleteTask(deleteDialog.target.id)
     ElMessage.success('删除成功')
     getList()
     deleteDialog.visible = false
@@ -258,7 +260,8 @@ const handleExecute = async (row: TaskRecord) => {
 }
 // 检索
 const handleSearch = (params: Record<string, any>) => {
-  queryParams.keyword = params.keyword || ''
+  queryParams.query = params.query
+  queryParams.type = params.type
   queryParams.page = 1
   getList()
 }
@@ -268,7 +271,10 @@ const handleRefresh = () => {
 }
 // 重置
 const handleReset = () => {
-  // queryParams.query = ''
+  queryParams.query = ''
+  queryParams.type = ''
+  queryParams.orderBy = ''
+  queryParams.order = ''
   queryParams.page = 1
   getList()
 }
@@ -290,5 +296,3 @@ onMounted(() => {
   getTaskTypeList()
 })
 </script>
-
-<style scoped lang="less"></style>
