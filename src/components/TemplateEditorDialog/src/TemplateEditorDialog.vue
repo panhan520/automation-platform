@@ -159,8 +159,8 @@
           <span
             >变量名称
             <el-tooltip
-              content="在脚本使用的变量名称，固定前缀_SPUG_ + 输入的变量名，例如变量名name，则最终生成环境变量为
-                _SPUG_name"
+              content="在脚本使用的变量名称，固定前缀_AOMP_ + 输入的变量名，例如变量名name，则最终生成环境变量为
+                _AOMP_name"
               placement="top"
             >
               <el-icon class="question-icon"><QuestionFilled /></el-icon>
