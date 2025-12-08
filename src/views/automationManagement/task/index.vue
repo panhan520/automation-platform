@@ -67,9 +67,20 @@ import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
-import { apiGetTaskList, apiGetTaskType, apiCreateTask, apiDeleteTask } from '@/api/task'
+import {
+  apiGetTaskList,
+  apiGetTaskType,
+  apiCreateTask,
+  apiDeleteTask,
+  apiExecTask
+} from '@/api/task'
 import { type TaskRecord } from '@/api/task/type'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
+import { useTaskPanelStore } from '@/store/modules/taskPanel'
+// 缓存 key
+const CACHE_KEY_IS_SHOW_DETAIL = 'nodeManagement_isShowDetail'
+// 任务面板store
+const taskPanelStore = useTaskPanelStore()
 
 const title = '任务管理'
 const loading = ref(false)
@@ -246,15 +257,12 @@ const handleDeleteCancel = () => {
 // 执行
 const handleExecute = async (row: TaskRecord) => {
   try {
-    loading.value = true
-    // setTimeout(() => {
-    //   row.status = '已完成'
-    //   row.executeTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
-    //   loading.value = false
-    //   ElMessage.success(`任务 ${row.name} 执行成功`)
-    // }, 600)
+    await apiExecTask({ id: row.id })
+    // 设置缓存为 true，显示任务面板
+    localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
+    taskPanelStore.setVisible(true)
+    taskPanelStore.triggerPulse()
   } catch (error) {
-    loading.value = false
     ElMessage.error('执行失败')
   }
 }

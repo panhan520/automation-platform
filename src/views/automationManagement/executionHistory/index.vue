@@ -1,7 +1,7 @@
 <template>
   <ManagementList
     :title="title"
-    :table-data="displayTableData"
+    :table-data="allTableData"
     :loading="loading"
     :total-records="totalRecords"
     :filters="toolbarFilters"
@@ -42,12 +42,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Check, CloseBold, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
+import { apiGetHistoryTaskList } from '@/api/executionHistory'
 
 interface ExecutionRecord {
   id: number
@@ -60,43 +61,31 @@ interface ExecutionRecord {
 
 const title = '执行历史'
 const router = useRouter()
-
-const allRecords = ref<ExecutionRecord[]>([])
+const allTableData = ref<ExecutionRecord[]>([])
+const totalRecords = ref(0)
 const loading = ref(false)
 const queryParams = reactive({
   page: 1,
   pageSize: 10
 })
 
-const filtersState = reactive({
-  internalIp: '',
-  publicIp: ''
-})
-
 const toolbarFilters: ToolbarFilter[] = [
   {
-    key: 'internalIp',
+    key: 'query',
     type: 'input',
-    placeholder: '搜索内网IP',
-    width: 200,
-    prefixIcon: Search
-  },
-  {
-    key: 'publicIp',
-    type: 'input',
-    placeholder: '搜索公网IP',
-    width: 200,
+    placeholder: '搜索任务名称',
+    width: 220,
     prefixIcon: Search
   }
 ]
 
 const tableColumns: TableColumn[] = [
-  { prop: 'taskId', label: '任务ID', width: 120 },
-  { prop: 'internalIp', label: '内网IP' },
-  { prop: 'publicIp', label: '公网IP' },
-  { prop: 'executionTime', label: '执行时间', minWidth: 180 },
-  { prop: 'executionResult', label: '执行结果', width: 140, slot: 'executionResult' },
-  { prop: 'actions', label: '操作', width: 120, slot: 'actions' }
+  { prop: 'id', label: '任务ID', order: 0 },
+  { prop: 'name', label: '任务名称', order: 1 },
+  { prop: 'publicIp', label: '执行方式', order: 2 },
+  { prop: 'run_time', label: '执行时间', order: 3 },
+  { prop: 'status', label: '执行结果', slot: 'executionResult', minWidth: 160, order: 4 },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
 ]
 
 const executionRowActions: TableAction[] = [
@@ -107,23 +96,6 @@ const executionRowActions: TableAction[] = [
     text: true
   }
 ]
-
-const filteredRecords = computed(() =>
-  allRecords.value.filter((item) => {
-    const matchInternal = filtersState.internalIp
-      ? item.internalIp.includes(filtersState.internalIp)
-      : true
-    const matchPublic = filtersState.publicIp ? item.publicIp.includes(filtersState.publicIp) : true
-    return matchInternal && matchPublic
-  })
-)
-
-const displayTableData = computed(() => {
-  const start = (queryParams.page - 1) * queryParams.pageSize
-  return filteredRecords.value.slice(start, start + queryParams.pageSize)
-})
-
-const totalRecords = computed(() => filteredRecords.value.length)
 
 const statusIcon = (status: string) => {
   switch (status) {
@@ -148,41 +120,17 @@ const statusIconClass = (status: string) => {
 }
 
 const getList = async () => {
-  loading.value = true
-  setTimeout(() => {
-    allRecords.value = [
-      {
-        id: 1,
-        taskId: '1',
-        internalIp: '192.168.21.20',
-        publicIp: '192.23.21.12',
-        executionTime: '2025-10-28 13:29:09',
-        executionResult: '进行中'
-      },
-      {
-        id: 2,
-        taskId: '2',
-        internalIp: '192.12.21.23',
-        publicIp: '192.168.09.99',
-        executionTime: '2025-10-28 13:29:09',
-        executionResult: '成功'
-      },
-      {
-        id: 3,
-        taskId: '3',
-        internalIp: '192.210.212.22',
-        publicIp: '192.123.121.12',
-        executionTime: '2025-10-20 11:29:09',
-        executionResult: '失败'
-      }
-    ]
+  try {
+    loading.value = true
+    const res = await apiGetHistoryTaskList(queryParams)
+    allTableData.value = res.data.list
+    totalRecords.value = res.data.pagination.total
+  } finally {
     loading.value = false
-  }, 300)
+  }
 }
 
 const handleSearch = (params: Record<string, any>) => {
-  filtersState.internalIp = params.internalIp || ''
-  filtersState.publicIp = params.publicIp || ''
   queryParams.page = 1
 }
 
