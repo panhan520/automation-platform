@@ -16,5 +16,5 @@ export const apiGetTaskType = (): Promise<IPaginationResponse> => {
 
 // 删除任务
 export const apiDeleteTask = (id): Promise<IPaginationResponse> => {
-  return request.delete({ url: `/api/v1/schedule/?id=${id}` })
+  return request.delete({ url: `/api/v1/schedule/${id}/` })
 }

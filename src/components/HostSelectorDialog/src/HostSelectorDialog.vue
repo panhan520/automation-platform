@@ -123,16 +123,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, reactive, ref, watch, nextTick } from 'vue'
+import { computed, reactive, ref, watch, nextTick } from 'vue'
 import { ElTable, ElMessage } from 'element-plus'
 import { Search, Close, Delete } from '@element-plus/icons-vue'
 import { apiGetNodeList } from '@/api/node/index'
 import { debounce } from 'lodash-es'
-
-interface HostItem {
-  id: number
-  innerIp: string
-}
+import { HostItem } from '@/api/node/type'
 
 const props = withDefaults(
   defineProps<{
@@ -325,10 +321,6 @@ const handleConfirm = () => {
   emit('confirm', tempSelection.value)
   dialogVisible.value = false
 }
-
-onMounted(() => {
-  getList()
-})
 </script>
 
 <style scoped lang="less">

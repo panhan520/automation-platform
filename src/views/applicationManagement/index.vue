@@ -75,15 +75,7 @@ import {
   apiGetAppTypeList,
   apiCreateApplication
 } from '@/api/application'
-
-interface ApplicationRecord {
-  id: number
-  appType: string
-  lifeCycle: string
-  timeZone: string
-  language: string
-  opsPerson: string
-}
+import { ApplicationRecord, PersonItem } from '@/api/application/type'
 
 const title = '应用管理'
 const allApplications = ref<ApplicationRecord[]>([])
@@ -97,11 +89,6 @@ const queryParams = reactive({
 })
 const totalRecords = ref(0)
 // 所有的人员
-interface PersonItem {
-  id: number
-  nickname: string
-  [key: string]: any
-}
 const personList = ref<PersonItem[]>([])
 const appTypeList = ref<string[]>([])
 // 顶部筛选

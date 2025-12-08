@@ -260,19 +260,16 @@ import {
 } from '@/utils/regionData'
 import { apiGetApplicationList } from '@/api/application'
 import { apiNodeSingleProbe } from '@/api/node/index'
-
-interface CascaderOption {
-  value: string | number
-  label: string
-  children?: CascaderOption[]
-  leaf?: boolean
-  [key: string]: any
-}
-
-interface AppTypeOption {
-  label: string
-  value: string | number
-}
+import {
+  CascaderOption,
+  AppTypeOption,
+  NodeForm,
+  NodeTagItem,
+  Props,
+  ConnectivityStatus,
+  NodeFormSubmit,
+  NodeFormDefaultData
+} from '@/api/node/type'
 
 const regionOptions = ref<CascaderOption[]>([])
 const regionDisplayLabel = ref('')
@@ -389,55 +386,6 @@ const displayRegionRender = ({ labels }: { labels: string[] }) => {
 // 选中变化
 const handleChangeRegion = (val: (string | number)[]) => {
   updateRegionDisplay(val)
-}
-type ConnectivityStatus = 'idle' | 'loading' | 'success' | 'failed'
-
-type AuthMethod = 'password' | 'key'
-
-interface NodeForm {
-  innerIp: string
-  publicIp: string
-  os: 'Windows' | 'Linux'
-  loginPort: string
-  authMethod: AuthMethod
-  credentialPassword: string
-  credentialKey: string
-  loginAccount: string
-  hostName: string
-  networkType: 'public' | 'private'
-  region: (string | number)[]
-  loginIp: string
-  appType: string
-  vendorName: string
-  operator: string
-  remark: string
-  nodeTags: Record<string, string>
-}
-
-interface NodeTagItem {
-  id: number
-  key: string
-  value: string
-}
-
-type NodeFormSubmit = Omit<NodeForm, 'region'> & { region: string }
-
-type NodeFormDefaultData = Partial<NodeForm> & {
-  id?: number
-  regionCodes?: (string | number)[]
-  regionLabel?: string
-  tags?: Array<{ key: string; value: string }>
-  passwordKey?: string
-}
-
-interface Props {
-  visible: boolean
-  loading?: boolean
-  title?: string
-  isEdit?: boolean
-  defaultData?: NodeFormDefaultData
-  nodeTagOptionsKey?: Array<{ label: string; value: string }>
-  nodeTagOptionsValue?: Array<{ label: string; value: string }>
 }
 
 const props = withDefaults(defineProps<Props>(), {

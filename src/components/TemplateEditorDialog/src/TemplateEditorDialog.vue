@@ -286,34 +286,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { HostSelectorDialog } from '@/components/HostSelectorDialog'
 import { CodeEditor } from '@/components/CodeEditor'
 import { ElMessage } from 'element-plus'
-
-interface ParameterItem {
-  id?: number
-  name: string
-  variable: string
-  type: 'string' | 'password' | 'select' | 'namespace'
-  options?: string
-  property?: string
-  required: boolean
-  default?: string
-  desc?: string
-}
-
-interface HostItem {
-  id: number
-  innerIp: string
-}
-
-interface TemplateEditorData {
-  type: string
-  name: string
-  interpreter: 'sh' | 'python'
-  body: string
-  command?: string
-  desc?: string
-  parameters?: ParameterItem[]
-  host_ids?: HostItem[]
-}
+import { ParameterItem, TemplateEditorData, HostItem } from '@/api/node/type'
 
 const props = withDefaults(
   defineProps<{
