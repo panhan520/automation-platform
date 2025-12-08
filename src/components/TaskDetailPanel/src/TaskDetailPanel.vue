@@ -53,7 +53,7 @@
                 <template #default="scope">
                   <div class="task-actions">
                     <el-button
-                      v-if="scope.row.status === 'FAILED'"
+                      v-if="task.taskType === 'NODE_PROBE' && scope.row.status === 'FAILED'"
                       link
                       type="primary"
                       size="small"
@@ -63,7 +63,7 @@
                       {{ task.taskName }}
                     </el-button>
                     <el-button
-                      v-if="task.taskType !== 'NODE_PROBE'"
+                      v-if="task.taskType !== 'NODE_PROBE' && scope.row.status !== 'RUNNING'"
                       link
                       type="primary"
                       size="small"
@@ -206,6 +206,7 @@ const handleTaskChange = async (taskId: string) => {
 // 获取任务详情列表
 const fetchTaskDetail = async (taskId: string) => {
   try {
+    detailList.value = []
     const res = await getExecTaskDetail(taskId)
     detailList.value = res.data
     // 判断list中是否有status为RUNNING的任务
