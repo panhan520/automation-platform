@@ -118,11 +118,14 @@ const logLoading = ref(false)
 // 筛选
 const filteredHosts = computed(() => {
   return hostList.value.filter((host) => {
+    const query = filters.query?.toString() ?? ''
+
     const queryMatch = filters.query
-      ? host.id.includes(filters.query) ||
-        host.innerIp.includes(filters.query) ||
-        host.publicIp.includes(filters.query)
+      ? host.id?.toString().includes(query) ||
+        host.innerIp?.toString().includes(query) ||
+        host.publicIp?.toString().includes(query)
       : true
+
     const matchStatus = host.status === activeStatus.value
     return queryMatch && matchStatus
   })
@@ -168,6 +171,9 @@ const getDetail = async () => {
     loading.value = true
     const res = await apiGetHistoryTaskDetail(taskId)
     hostList.value = res.data.list
+    if (!res.data.list.some((item) => item.status === 2)) {
+      activeStatus.value = 1
+    }
   } finally {
     loading.value = false
   }
