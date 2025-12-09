@@ -11,6 +11,9 @@
     @search="handleSearch"
     @refresh="getList"
     @page-change="handlePageChange"
+    @filter-change="handleTableFilterChange"
+    @sort-change="handleTableSortChange"
+    storageKey="historyManagement_columnConfig"
   >
     <template #columns="{ displayColumns }">
       <template v-for="column in displayColumns" :key="column.prop">
@@ -27,14 +30,20 @@
           :width="column.width"
           :min-width="column.minWidth"
           :sortable="column.sortable"
+          :filters="column.filters"
+          :filter-multiple="column.filterMultiple"
+          :column-key="column.prop"
         >
-          <template v-if="column.prop === 'status'" #default="scope">
-            <el-tag :type="getStatusTagType(scope.row.status)">
+          <template #default="scope">
+            <el-tag v-if="column.prop === 'status'" :type="getStatusTagType(scope.row.status)">
               <el-icon :class="['status-icon', statusIconClass(scope.row.status)]">
                 <component :is="statusIcon(scope.row.status)" />
               </el-icon>
               {{ getStatusText(scope.row.status) }}
             </el-tag>
+            <div v-if="column.prop === 'interpreter'">{{
+              getInterpreterText(scope.row.interpreter)
+            }}</div>
           </template>
         </el-table-column>
       </template>
@@ -50,15 +59,7 @@ import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import { apiGetHistoryTaskList } from '@/api/executionHistory'
-
-interface ExecutionRecord {
-  id: number
-  task_id: string
-  internalIp: string
-  publicIp: string
-  executionTime: string
-  status: 0 | 1 | 2
-}
+import { ExecutionRecord } from '@/api/executionHistory/type'
 
 const title = '执行历史'
 const recordText = '条记录'
@@ -68,9 +69,13 @@ const totalRecords = ref(0)
 const loading = ref(false)
 const queryParams = reactive({
   page: 1,
-  pageSize: 10
+  pageSize: 10,
+  query: '',
+  status: '',
+  interpreter: '',
+  order: '',
+  orderBy: ''
 })
-
 const toolbarFilters: ToolbarFilter[] = [
   {
     key: 'query',
@@ -80,16 +85,6 @@ const toolbarFilters: ToolbarFilter[] = [
     prefixIcon: Search
   }
 ]
-
-const tableColumns: TableColumn[] = [
-  { prop: 'task_id', label: '任务ID', order: 0 },
-  { prop: 'name', label: '任务名称', order: 1 },
-  { prop: 'publicIp', label: '执行方式', order: 2 },
-  { prop: 'run_time', label: '执行时间', minWidth: 160, order: 3 },
-  { prop: 'status', label: '执行结果', slot: 'status', order: 4 },
-  { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
-]
-
 const executionRowActions: TableAction[] = [
   {
     key: 'detail',
@@ -98,7 +93,34 @@ const executionRowActions: TableAction[] = [
     text: true
   }
 ]
-
+const tableColumns: TableColumn[] = [
+  { prop: 'task_id', label: '任务ID', order: 0 },
+  { prop: 'name', label: '任务名称', order: 1 },
+  {
+    prop: 'interpreter',
+    label: '执行方式',
+    order: 2,
+    filters: [
+      { text: 'Shell', value: 'sh' },
+      { text: 'Python', value: 'python' }
+    ],
+    filterMultiple: false
+  },
+  { prop: 'run_time', label: '执行时间', minWidth: 160, order: 3, sortable: true },
+  {
+    prop: 'status',
+    label: '执行结果',
+    slot: 'status',
+    order: 4,
+    filters: [
+      { text: '成功', value: 1 },
+      { text: '失败', value: 2 },
+      { text: '进行中', value: 0 }
+    ],
+    filterMultiple: false
+  },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
+]
 const statusIcon = (status: number) => {
   switch (status) {
     case 1:
@@ -109,7 +131,6 @@ const statusIcon = (status: number) => {
       return RefreshRight
   }
 }
-
 const statusIconClass = (status: number) => {
   switch (status) {
     case 1:
@@ -138,7 +159,9 @@ const getStatusText = (status: number) => {
       return '进行中'
   }
 }
-
+const getInterpreterText = (interpreter: string) => {
+  return interpreter === 'sh' ? 'Shell' : 'Python'
+}
 const getList = async () => {
   try {
     loading.value = true
@@ -149,9 +172,32 @@ const getList = async () => {
     loading.value = false
   }
 }
-
-const handleSearch = (params: Record<string, any>) => {
+// 过滤执行方式和执行结果
+const handleTableFilterChange = (filters: any) => {
+  if (filters.interpreter && filters.interpreter.length > 0) {
+    queryParams.interpreter = filters.interpreter[0] // 单选
+  } else {
+    queryParams.interpreter = ''
+  }
+  if (filters.status && filters.status.length > 0) {
+    queryParams.status = filters.status[0] // 单选
+  } else {
+    queryParams.status = ''
+  }
   queryParams.page = 1
+  getList()
+}
+// 排序
+const handleTableSortChange = (sorts: any) => {
+  queryParams.orderBy = sorts.prop
+  queryParams.order = sorts.order
+  queryParams.page = 1
+  getList()
+}
+const handleSearch = (params: Record<string, any>) => {
+  queryParams.query = params.query
+  queryParams.page = 1
+  getList()
 }
 
 const handlePageChange = (page: number, pageSize: number) => {

@@ -88,7 +88,7 @@ export interface TableColumn {
   slot?: string
   visible?: boolean
   order?: number
-  filters?: Array<{ text: string; value: string }>
+  filters?: Array<{ text: string; value: any }>
   filterMultiple?: boolean
 }
 

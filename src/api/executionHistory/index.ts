@@ -5,6 +5,6 @@ export const apiGetHistoryTaskList = (data): Promise<IPaginationResponse> => {
 }
 
 // 获取执行任务详情
-export const apiGetHistoryTaskDetail = (id): Promise<IPaginationResponse> => {
+export const apiGetHistoryTaskDetail = (id) => {
   return request.get({ url: `/api/v1/schedule/history/get/?id=${id}` })
 }

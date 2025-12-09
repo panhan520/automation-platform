@@ -5,13 +5,15 @@
         <el-icon><ArrowLeft /></el-icon>
         返回
       </el-button>
-      <div class="detail-title"> 执行历史：【{{ taskId }}】 {{ taskInfo.executionTime }} </div>
+      <div class="detail-title">
+        执行历史：【{{ selectedHost?.name }}】 {{ selectedHost?.run_time }}
+      </div>
     </div>
     <div class="detail-content">
       <div class="left-panel">
         <div class="search-group">
           <el-input
-            v-model="filters.hostId"
+            v-model="filters.query"
             placeholder="搜索公网IP/内网IP/主机ID"
             clearable
             prefix-icon="Search"
@@ -34,13 +36,13 @@
         <div class="host-list">
           <div
             v-for="host in filteredHosts"
-            :key="host.hostId"
+            :key="host.id"
             class="host-item"
-            :class="{ active: host.hostId === selectedHostId }"
-            @click="handleSelectHost(host.hostId)"
+            :class="{ active: host.id === selectedHostId }"
+            @click="handleSelectHost(host.id)"
           >
-            <div class="host-id">[{{ host.hostId }}] [内]</div>
-            <div class="host-ip">{{ host.internalIp }}</div>
+            <div class="host-id">[{{ host.id }}] [内]</div>
+            <div class="host-ip">{{ host.innerIp }}</div>
           </div>
 
           <el-empty
@@ -53,7 +55,7 @@
 
       <div class="log-panel" v-loading="logLoading">
         <div class="log-viewer">
-          <pre>{{ selectedHost?.log || '暂无日志' }}</pre>
+          <pre>{{ selectedHost?.output || '暂无日志' }}</pre>
         </div>
       </div>
     </div>
@@ -65,79 +67,81 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { apiGetHistoryTaskDetail } from '@/api/executionHistory'
 interface HostLogItem {
-  hostId: string
-  internalIp: string
+  id: string
+  name: string
+  run_time: string
+  innerIp: string
   publicIp: string
-  status: 'running' | 'success' | 'failed'
-  log: string
+  status: 0 | 1 | 2
+  output: string
 }
 const direction = ref<'horizontal' | 'vertical'>('horizontal')
 const route = useRoute()
 const router = useRouter()
-
 const taskId = route.params.taskId as string
-
-const taskInfo = reactive({
-  executionTime: '2025-10-28 10:29:09',
-  hosts: [
-    {
-      hostId: '3',
-      internalIp: '172.21.0.10',
-      publicIp: '192.168.21.20',
-      status: 'running',
-      log: '### Waiting for scheduling ...\n### Executing ...\n执行结果：进行中\n总耗时：0.5秒'
-    },
-    {
-      hostId: '6',
-      internalIp: '172.21.0.11',
-      publicIp: '192.168.21.21',
-      status: 'success',
-      log: '### Waiting for scheduling ...\n### Executing ...\n执行结果：成功\n总耗时：0.3秒'
-    },
-    {
-      hostId: '9',
-      internalIp: '172.21.0.12',
-      publicIp: '192.168.21.22',
-      status: 'failed',
-      log: '### Waiting for scheduling ...\n### Executing ...\n-bash: xxx: command not found\n执行结果：失败'
-    }
-  ] as HostLogItem[]
-})
+const hostList = ref<HostLogItem[]>([])
+const loading = ref(false)
+// const taskInfo = reactive({
+//   executionTime: '2025-10-28 10:29:09',
+//   hosts: [
+//     {
+//       id: '3',
+//       innerIp: '172.21.0.10',
+//       publicIp: '192.168.21.20',
+//       status: 'running',
+//       output: '### Waiting for scheduling ...\n### Executing ...\n执行结果：进行中\n总耗时：0.5秒'
+//     },
+//     {
+//       id: '6',
+//       innerIp: '172.21.0.11',
+//       publicIp: '192.168.21.21',
+//       status: 'success',
+//       output: '### Waiting for scheduling ...\n### Executing ...\n执行结果：成功\n总耗时：0.3秒'
+//     },
+//     {
+//       id: '9',
+//       innerIp: '172.21.0.12',
+//       publicIp: '192.168.21.22',
+//       status: 'failed',
+//       output: '### Waiting for scheduling ...\n### Executing ...\n-bash: xxx: command not found\n执行结果：失败'
+//     }
+//   ] as HostLogItem[]
+// })
 
 const filters = reactive({
-  hostId: (route.query.hostId as string) || '',
-  internalIp: (route.query.internalIp as string) || ''
+  query: ''
 })
 
-const activeStatus = ref('success')
-const selectedHostId = ref<string>((route.query.hostId as string) || '')
+const activeStatus = ref(2)
+const selectedHostId = ref<string>((route.query.id as string) || '')
 const logLoading = ref(false)
-
+// 筛选
 const filteredHosts = computed(() => {
-  return taskInfo.hosts.filter((host) => {
-    const matchHostId = filters.hostId ? host.hostId.includes(filters.hostId) : true
-    const matchInternal = filters.internalIp ? host.internalIp.includes(filters.internalIp) : true
-    const matchStatus = activeStatus.value === 'all' ? true : host.status === activeStatus.value
-    return matchHostId && matchInternal && matchStatus
+  return hostList.value.filter((host) => {
+    const queryMatch = filters.query
+      ? host.id.includes(filters.query) ||
+        host.innerIp.includes(filters.query) ||
+        host.publicIp.includes(filters.query)
+      : true
+    const matchStatus = host.status === activeStatus.value
+    return queryMatch && matchStatus
   })
 })
-
+// 状态标签
 const statusTabs = computed(() => [
   {
     label: '成功',
-    value: 'success',
-    count: taskInfo.hosts.filter((h) => h.status === 'success').length
+    value: 1,
+    count: hostList.value.filter((h) => h.status === 1).length
   },
   {
     label: '失败',
-    value: 'failed',
-    count: taskInfo.hosts.filter((h) => h.status === 'failed').length
+    value: 2,
+    count: hostList.value.filter((h) => h.status === 2).length
   }
 ])
 
-const selectedHost = computed(() =>
-  taskInfo.hosts.find((host) => host.hostId === selectedHostId.value)
-)
+const selectedHost = computed(() => hostList.value.find((host) => host.id === selectedHostId.value))
 
 watch(
   filteredHosts,
@@ -146,21 +150,27 @@ watch(
       selectedHostId.value = ''
       return
     }
-    if (!hosts.find((host) => host.hostId === selectedHostId.value)) {
-      selectedHostId.value = hosts[0].hostId
+    if (!hosts.find((host) => host.id === selectedHostId.value)) {
+      selectedHostId.value = hosts[0].id
     }
   },
   { immediate: true }
 )
 
-const handleSelectHost = (hostId: string) => {
-  selectedHostId.value = hostId
+const handleSelectHost = (id: string) => {
+  selectedHostId.value = id
 }
 const handleBack = () => {
   router.back()
 }
 const getDetail = async () => {
-  await apiGetHistoryTaskDetail({ id: taskId })
+  try {
+    loading.value = true
+    const res = await apiGetHistoryTaskDetail(taskId)
+    hostList.value = res.data.list
+  } finally {
+    loading.value = false
+  }
 }
 onMounted(() => {
   getDetail()

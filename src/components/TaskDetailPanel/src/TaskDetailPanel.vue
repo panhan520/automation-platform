@@ -45,7 +45,7 @@
               <el-table-column prop="appTypeName" label="应用类型" align="center" />
               <el-table-column prop="status" label="状态" align="center">
                 <template #default="scope">
-                  <div class="task-status" :class="scope.row.status"></div
+                  <div class="task-status" :class="getStatusClass(scope.row.status)"></div
                   ><div class="task-status-text">{{ getStatusType(scope.row.status) }}</div>
                 </template>
               </el-table-column>
@@ -53,7 +53,7 @@
                 <template #default="scope">
                   <div class="task-actions">
                     <el-button
-                      v-if="task.taskType === 'NODE_PROBE' && scope.row.status === 'FAILED'"
+                      v-if="task.taskType === 'NODE_PROBE' && scope.row.status === 2"
                       link
                       type="primary"
                       size="small"
@@ -63,11 +63,11 @@
                       {{ task.taskName }}
                     </el-button>
                     <el-button
-                      v-if="task.taskType !== 'NODE_PROBE' && scope.row.status !== 'RUNNING'"
+                      v-if="task.taskType !== 'NODE_PROBE' && scope.row.status !== 0"
                       link
                       type="primary"
                       size="small"
-                      @click="handleViewLog(scope.row, task)"
+                      @click="handleViewLog(task)"
                       class="log-button"
                     >
                       查看日志
@@ -89,18 +89,14 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import {
-  getExecTaskList,
-  getExecTaskDetail,
-  apiUpdateExecTask,
-  apiNodeSingleProbe
-} from '@/api/node'
+import { getExecTaskList, apiUpdateExecTask, apiNodeSingleProbe } from '@/api/node'
+import { apiGetHistoryTaskDetail } from '@/api/executionHistory'
 
 export interface TaskDetailItem {
   innerIp: string
   publicIp: string
   appTypeName: string
-  status: string
+  status: number
   task: number
   [key: string]: any
 }
@@ -207,10 +203,10 @@ const handleTaskChange = async (taskId: string) => {
 const fetchTaskDetail = async (taskId: string) => {
   try {
     detailList.value = []
-    const res = await getExecTaskDetail(taskId)
-    detailList.value = res.data
-    // 判断list中是否有status为RUNNING的任务
-    const hasRunningTask = res.data.some((item) => item.status === 'RUNNING')
+    const res = await apiGetHistoryTaskDetail(taskId)
+    detailList.value = res.data.list
+    // 判断list中是否有status为进行中（0）的任务
+    const hasRunningTask = res.data.list.some((item) => item.status === 0)
     if (hasRunningTask) {
       startPolling(taskId)
     } else {
@@ -274,19 +270,26 @@ const handleGlobalClick = (event: MouseEvent) => {
 }
 
 // 任务状态转译
-const getStatusType = (status: string) => {
+const getStatusType = (status: number) => {
   const map = {
-    SUCCESS: '成功',
-    RUNNING: '进行中',
-    FAILED: '失败'
+    1: '成功',
+    0: '进行中',
+    2: '失败'
   }
   return map[status] || '进行中'
 }
-
+// 任务状态颜色
+const getStatusClass = (status: number) => {
+  const map = {
+    1: 'SUCCESS',
+    0: 'RUNNING',
+    2: 'FAILED'
+  }
+  return map[status] || 'RUNNING'
+}
 // 重试操作
 const handleRetry = (row: TaskDetailItem, type: string) => {
   // 触发重试操作
-  console.log('重试操作:', row, type)
   switch (type) {
     case 'NODE_PROBE':
       handleNodeSingleProbe(row)
@@ -300,7 +303,7 @@ const handleRetry = (row: TaskDetailItem, type: string) => {
 const handleNodeSingleProbe = async (row) => {
   try {
     row.loading = true
-    await apiNodeSingleProbe({ ...row, task_id: row.task, host_id: row.host })
+    await apiNodeSingleProbe({ ...row, task_id: row.task, id: row.host })
     fetchTaskDetail(row.task)
   } catch (error) {
     ElMessage.closeAll()
@@ -310,14 +313,11 @@ const handleNodeSingleProbe = async (row) => {
   }
 }
 // 查看日志
-const handleViewLog = (row: TaskDetailItem, task: Task) => {
+const handleViewLog = (task: Task) => {
+  handleClose()
   router.push({
-    name: 'NodeExecutionHistoryDetail',
-    params: { taskId: task.id },
-    query: {
-      hostId: row.hostId || '',
-      innerIp: row.innerIp
-    }
+    name: 'AutomationExecutionHistoryDetail',
+    params: { taskId: task.id }
   })
 }
 
