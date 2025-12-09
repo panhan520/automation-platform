@@ -59,7 +59,7 @@ export const getExecTaskDetail = (id: string) => {
   return request.get({ url: `/api/v1/node/exec/${id}/` })
 }
 
-// 更新任务显示状态
+// 更新任务显示状态（关闭）
 export const apiUpdateExecTask = (data): Promise<IPaginationResponse> => {
   return request.post({ url: '/api/v1/node/exec/updateTask/', data })
 }

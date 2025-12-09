@@ -7,7 +7,6 @@
       </el-button>
       <div class="detail-title"> 执行历史：【{{ taskId }}】 {{ taskInfo.executionTime }} </div>
     </div>
-
     <div class="detail-content">
       <div class="left-panel">
         <div class="search-group">
@@ -53,17 +52,6 @@
       </div>
 
       <div class="log-panel" v-loading="logLoading">
-        <div v-if="selectedHost" class="log-header">
-          <div>
-            <span class="log-host-id">主机ID：{{ selectedHost.hostId }}</span>
-            <span class="log-host-ip">内网IP：{{ selectedHost.internalIp }}</span>
-          </div>
-          <el-tag :type="statusTagType(selectedHost.status)" size="small">
-            {{ statusText(selectedHost.status) }}
-          </el-tag>
-        </div>
-        <div v-else class="log-header">请选择左侧主机查看日志</div>
-
         <div class="log-viewer">
           <pre>{{ selectedHost?.log || '暂无日志' }}</pre>
         </div>
@@ -71,12 +59,11 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { onMounted, computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-
+import { apiGetHistoryTaskDetail } from '@/api/executionHistory'
 interface HostLogItem {
   hostId: string
   internalIp: string
@@ -122,15 +109,9 @@ const filters = reactive({
   internalIp: (route.query.internalIp as string) || ''
 })
 
-const activeStatus = ref('all')
+const activeStatus = ref('success')
 const selectedHostId = ref<string>((route.query.hostId as string) || '')
 const logLoading = ref(false)
-
-const statusOptions: Record<string, string> = {
-  running: '进行中',
-  success: '成功',
-  failed: '失败'
-}
 
 const filteredHosts = computed(() => {
   return taskInfo.hosts.filter((host) => {
@@ -142,12 +123,6 @@ const filteredHosts = computed(() => {
 })
 
 const statusTabs = computed(() => [
-  { label: '所有', value: 'all', count: taskInfo.hosts.length },
-  {
-    label: '进行中',
-    value: 'running',
-    count: taskInfo.hosts.filter((h) => h.status === 'running').length
-  },
   {
     label: '成功',
     value: 'success',
@@ -181,137 +156,107 @@ watch(
 const handleSelectHost = (hostId: string) => {
   selectedHostId.value = hostId
 }
-
-const statusTagType = (status: string) => {
-  const map: Record<string, 'success' | 'warning' | 'danger'> = {
-    success: 'success',
-    running: 'warning',
-    failed: 'danger'
-  }
-  return map[status] || 'info'
-}
-
-const statusText = (status: string) => statusOptions[status] || status
-
 const handleBack = () => {
   router.back()
 }
+const getDetail = async () => {
+  await apiGetHistoryTaskDetail({ id: taskId })
+}
+onMounted(() => {
+  getDetail()
+})
 </script>
-
 <style scoped lang="less">
 .execution-detail-page {
   padding: 20px;
   background: #f5f6f8;
   min-height: calc(100vh - 40px);
   box-sizing: border-box;
-}
-
-.detail-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-
-  .detail-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2329;
-  }
-}
-
-.detail-content {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 16px;
-}
-
-.left-panel {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  .search-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .status-tabs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .host-list {
-    flex: 1;
-    overflow: auto;
-    max-height: calc(100vh - 260px);
-
-    .host-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border: 1px solid #f0f0f0;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      .host-id {
-        color: #909399;
-        margin-right: 6px;
-      }
-
-      .host-ip {
-        flex: 1;
-        color: #303133;
-      }
-
-      &.active {
-        border-color: #409eff;
-        background: #f0f7ff;
-      }
-    }
-  }
-}
-
-.log-panel {
-  background: #1f2329;
-  border-radius: 12px;
-  padding: 16px;
-  color: #e5eaf3;
-  min-height: 560px;
-  display: flex;
-  flex-direction: column;
-
-  .log-header {
+  .detail-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    color: #e5eaf3;
+    gap: 16px;
+    margin-bottom: 16px;
 
-    .log-host-ip,
-    .log-host-id {
-      margin-right: 16px;
-      font-size: 14px;
+    .detail-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2329;
     }
   }
+  .detail-content {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 16px;
+    .left-panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      .search-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .status-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .host-list {
+        flex: 1;
+        overflow: auto;
+        max-height: calc(100vh - 260px);
 
-  .log-viewer {
-    flex: 1;
-    background: #111318;
-    border-radius: 10px;
-    padding: 16px;
-    overflow: auto;
-    font-family: 'Fira Code', monospace;
-    font-size: 13px;
-    line-height: 1.6;
-    color: #38ef7d;
+        .host-item {
+          display: inline-flex;
+          align-items: center;
+          padding: 10px 12px;
+          border: 1px solid #f0f0f0;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          width: 48%;
+          margin: 0 1% 8px;
+
+          .host-id {
+            color: #909399;
+            margin-right: 6px;
+          }
+
+          .host-ip {
+            flex: 1;
+            color: #303133;
+          }
+
+          &.active {
+            border-color: #409eff;
+            background: #f0f7ff;
+          }
+        }
+      }
+    }
+    .log-panel {
+      background: #1f2329;
+      border-radius: 12px;
+      padding: 16px;
+      color: #e5eaf3;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      .log-viewer {
+        flex: 1;
+        background: #111318;
+        border-radius: 10px;
+        padding: 16px;
+        overflow: auto;
+        font-family: 'Fira Code', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+    }
   }
 }
 </style>

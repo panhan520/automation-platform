@@ -1,6 +1,7 @@
 <template>
   <ManagementList
     :title="title"
+    :recordText="recordText"
     :table-data="allTableData"
     :loading="loading"
     :total-records="totalRecords"
@@ -27,13 +28,13 @@
           :min-width="column.minWidth"
           :sortable="column.sortable"
         >
-          <template v-if="column.prop === 'executionResult'" #default="scope">
-            <div class="status-cell">
-              <el-icon :class="['status-icon', statusIconClass(scope.row.executionResult)]">
-                <component :is="statusIcon(scope.row.executionResult)" />
+          <template v-if="column.prop === 'status'" #default="scope">
+            <el-tag :type="getStatusTagType(scope.row.status)">
+              <el-icon :class="['status-icon', statusIconClass(scope.row.status)]">
+                <component :is="statusIcon(scope.row.status)" />
               </el-icon>
-              <span>{{ scope.row.executionResult }}</span>
-            </div>
+              {{ getStatusText(scope.row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
       </template>
@@ -52,14 +53,15 @@ import { apiGetHistoryTaskList } from '@/api/executionHistory'
 
 interface ExecutionRecord {
   id: number
-  taskId: string
+  task_id: string
   internalIp: string
   publicIp: string
   executionTime: string
-  executionResult: '进行中' | '成功' | '失败'
+  status: 0 | 1 | 2
 }
 
 const title = '执行历史'
+const recordText = '条记录'
 const router = useRouter()
 const allTableData = ref<ExecutionRecord[]>([])
 const totalRecords = ref(0)
@@ -80,11 +82,11 @@ const toolbarFilters: ToolbarFilter[] = [
 ]
 
 const tableColumns: TableColumn[] = [
-  { prop: 'id', label: '任务ID', order: 0 },
+  { prop: 'task_id', label: '任务ID', order: 0 },
   { prop: 'name', label: '任务名称', order: 1 },
   { prop: 'publicIp', label: '执行方式', order: 2 },
-  { prop: 'run_time', label: '执行时间', order: 3 },
-  { prop: 'status', label: '执行结果', slot: 'executionResult', minWidth: 160, order: 4 },
+  { prop: 'run_time', label: '执行时间', minWidth: 160, order: 3 },
+  { prop: 'status', label: '执行结果', slot: 'status', order: 4 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
 ]
 
@@ -97,25 +99,43 @@ const executionRowActions: TableAction[] = [
   }
 ]
 
-const statusIcon = (status: string) => {
+const statusIcon = (status: number) => {
   switch (status) {
-    case '成功':
+    case 1:
       return Check
-    case '失败':
+    case 2:
       return CloseBold
     default:
       return RefreshRight
   }
 }
 
-const statusIconClass = (status: string) => {
+const statusIconClass = (status: number) => {
   switch (status) {
-    case '成功':
+    case 1:
       return 'success'
-    case '失败':
+    case 2:
       return 'danger'
     default:
       return 'warning'
+  }
+}
+const getStatusTagType = (status: number) => {
+  const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+    1: 'success',
+    0: 'warning',
+    2: 'danger'
+  }
+  return map[status] || 'info'
+}
+const getStatusText = (status: number) => {
+  switch (status) {
+    case 1:
+      return '成功'
+    case 2:
+      return '失败'
+    default:
+      return '进行中'
   }
 }
 
@@ -142,7 +162,7 @@ const handlePageChange = (page: number, pageSize: number) => {
 const handleViewDetails = (record: ExecutionRecord) => {
   router.push({
     name: 'AutomationExecutionHistoryDetail',
-    params: { taskId: record.taskId }
+    params: { taskId: record.task_id }
   })
 }
 

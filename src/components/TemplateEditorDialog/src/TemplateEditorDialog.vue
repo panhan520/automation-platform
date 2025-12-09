@@ -76,7 +76,7 @@
         <el-button type="primary" @click="openParameterDialog" link>添加参数</el-button>
       </el-form-item>
 
-      <el-form-item label="目标主机">
+      <el-form-item label="目标主机" :class="{ 'required-item': mode === 'task' }">
         <div class="host-row">
           <span v-if="selectedHosts.length" class="selected-count">
             已选择 {{ selectedHosts.length }} 台
@@ -542,6 +542,10 @@ const handleCancel = () => {
 const handleConfirm = () => {
   formRef.value?.validate((valid) => {
     if (!valid) return
+    if (props.mode === 'task' && selectedHosts.value.length === 0) {
+      ElMessage.warning('请选择目标主机')
+      return
+    }
     const formData: any = {
       ...form,
       parameters: parameterList.value
@@ -585,7 +589,15 @@ const handleConfirm = () => {
   justify-content: flex-end;
   gap: 12px;
 }
-
+.required-item {
+  :deep(.el-form-item__label) {
+    &::before {
+      color: #f56c6c;
+      content: '*';
+      margin-right: 4px;
+    }
+  }
+}
 .host-row {
   display: flex;
   align-items: center;
