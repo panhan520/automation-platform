@@ -45,17 +45,18 @@
             <div class="host-ip">{{ host.innerIp }}</div>
           </div>
 
-          <el-empty
-            v-if="filteredHosts.length === 0"
-            description="暂无匹配的主机"
-            :image-size="80"
-          />
+          <el-empty v-if="filteredHosts.length === 0" description="暂无数据" :image-size="80" />
         </div>
       </div>
 
       <div class="log-panel" v-loading="logLoading">
-        <div class="log-viewer">
-          <pre>{{ selectedHost?.output || '暂无日志' }}</pre>
+        <div
+          class="log-viewer"
+          :class="
+            !formattedLog.logHtml ? 'no-log' : activeStatus === 2 ? 'failed-log' : 'success-log'
+          "
+        >
+          <pre v-html="formattedLog.logHtml || '暂无日志'"></pre>
         </div>
       </div>
     </div>
@@ -146,6 +147,50 @@ const statusTabs = computed(() => [
 
 const selectedHost = computed(() => hostList.value.find((host) => host.id === selectedHostId.value))
 
+const formattedLog = computed(() => {
+  const raw = selectedHost.value?.output
+  if (!raw) return { logHtml: '' }
+
+  const parseArrayOutput = () => {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length >= 3) {
+        const [status, duration, content] = parsed
+        const statusText = String(status ?? '')
+        const durationText =
+          typeof duration === 'number' ? `${duration.toFixed(3)}s` : String(duration ?? '')
+        const body = typeof content === 'string' ? content : ''
+        const bodyHtml = escapeHtml(body).replace(/\n/g, '<br>')
+        const statusClass = statusText === 'success' ? 'log-status-success' : 'log-status-failed'
+        const statusHtml = `<span class="log-status ${statusClass}">${statusText}${
+          durationText ? ` (${durationText})` : ''
+        }</span>`
+        return `${statusHtml}<br>${bodyHtml}`
+      }
+    } catch (e) {
+      // ignore parse errors and fallback
+    }
+    return ''
+  }
+
+  const arrayHtml = parseArrayOutput()
+  if (arrayHtml) {
+    return { logHtml: arrayHtml }
+  }
+
+  const bodyHtml = escapeHtml(String(raw)).replace(/\n/g, '<br>')
+  return { logHtml: bodyHtml }
+})
+
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 watch(
   filteredHosts,
   (hosts) => {
@@ -184,10 +229,11 @@ onMounted(() => {
 </script>
 <style scoped lang="less">
 .execution-detail-page {
-  padding: 20px;
-  background: #f5f6f8;
+  padding: 10px;
   min-height: calc(100vh - 40px);
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   .detail-header {
     display: flex;
     align-items: center;
@@ -203,14 +249,16 @@ onMounted(() => {
   .detail-content {
     display: grid;
     grid-template-columns: 340px 1fr;
-    gap: 16px;
+    gap: 10px;
+    flex: 1;
     .left-panel {
-      background: #fff;
       border-radius: 12px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 16px;
+      border: solid 1px #e5eaf3;
+      max-height: calc(100vh - 80px);
       .search-group {
         display: flex;
         flex-direction: column;
@@ -259,9 +307,9 @@ onMounted(() => {
       border-radius: 12px;
       padding: 16px;
       color: #e5eaf3;
-      min-height: 560px;
       display: flex;
       flex-direction: column;
+      max-height: calc(100vh - 80px);
       .log-viewer {
         flex: 1;
         background: #111318;
@@ -271,6 +319,24 @@ onMounted(() => {
         font-family: 'Fira Code', monospace;
         font-size: 13px;
         line-height: 1.6;
+        .log-status {
+          font-weight: 600;
+          &.log-status-success {
+            color: #52c41a;
+          }
+          &.log-status-failed {
+            color: #ff4d4f;
+          }
+        }
+      }
+      .success-log {
+        color: #52c41a;
+      }
+      .failed-log {
+        color: #ff4d4f;
+      }
+      .no-log {
+        color: #ffffff;
       }
     }
   }

@@ -185,7 +185,6 @@ const handleReset = () => {
 // 打开编辑保存模版的弹框
 const openTemplateDialog = (row?) => {
   if (row) {
-    console.log(row)
     currentEditingId.value = row.id
     editorInitialData.value = {
       ...row

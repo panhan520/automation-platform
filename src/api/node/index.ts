@@ -54,6 +54,11 @@ export const getExecTaskList = (): Promise<IPaginationResponse> => {
   return request.get({ url: '/api/v1/node/exec/' })
 }
 
+// 获取最近24小时内的作业记录(获取任务详情)
+export const getExecTaskDetail = (id: string) => {
+  return request.get({ url: `/api/v1/node/exec/${id}/` })
+}
+
 // 更新任务显示状态（关闭）
 export const apiUpdateExecTask = (data): Promise<IPaginationResponse> => {
   return request.post({ url: '/api/v1/node/exec/updateTask/', data })

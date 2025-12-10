@@ -176,6 +176,8 @@ const getList = async () => {
   try {
     loading.value = true
     const res = await apiGetNodeList(queryParams)
+    // 开启锁，阻止 selection-change 更新 tempSelection
+    stopSyncSelection.value = true
     allNodes.value = res.data.list
     totalRecords.value = res.data.pagination.total
     // 加载完数据后同步选中状态
@@ -191,11 +193,6 @@ const getList = async () => {
 // 赋值选中数组和渲染选中列表
 const syncTableSelection = () => {
   if (!tableRef.value) return
-  // 开启锁，阻止 selection-change 更新 tempSelection
-  stopSyncSelection.value = true
-  props.modelValue.forEach((host) => {
-    tempSelection.value.push({ ...host })
-  })
   // 同步表格选中状态
   tableRef.value.clearSelection()
   allNodes.value.forEach((node) => {
@@ -247,14 +244,15 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
   getList()
 }
-
 // 监听对话框打开，初始化选中状态
 watch(
   () => props.visible,
   (val) => {
     if (val) {
+      // 开启锁，阻止 selection-change 更新 tempSelection
+      stopSyncSelection.value = true
       // 对话框打开时，从 modelValue 初始化选中列表
-      tempSelection.value = []
+      tempSelection.value = props.modelValue ? [...props.modelValue] : []
       // 重置搜索条件
       filters.query = ''
       filters.selectedInnerIp = ''
@@ -266,7 +264,6 @@ watch(
     }
   }
 )
-
 // 监听搜索条件变化（左侧三个搜索框）
 watch(
   () => [filters.query],
@@ -275,7 +272,6 @@ watch(
     debouncedSearch()
   }
 )
-
 // 表格选中变化
 const handleSelectionChange = (selection: HostItem[]) => {
   if (stopSyncSelection.value) return
@@ -291,8 +287,12 @@ const handleSelectionChange = (selection: HostItem[]) => {
       tempSelection.value.push(host)
     }
   })
-  // 同步移除未选中的
-  tempSelection.value = tempSelection.value.filter((h) => selection.some((s) => s.id === h.id))
+  // 同步移除未选中的（仅移除当前页中被取消勾选的项，避免跨页误删）
+  const currentPageIds = allNodes.value.map((n) => n.id)
+  tempSelection.value = tempSelection.value.filter((h) => {
+    if (!currentPageIds.includes(h.id)) return true
+    return selection.some((s) => s.id === h.id)
+  })
 }
 
 // 删除选中的主机
