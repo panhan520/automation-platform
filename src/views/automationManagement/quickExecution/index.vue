@@ -147,11 +147,10 @@ const handleExecute = () => {
     ElMessage.warning('请输入执行命令')
     return
   }
-  if (!selectedTemplate.value?.id) {
-    ElMessage.warning('请选择模版')
-    return
-  }
-  if (selectedTemplate.value?.parameters?.length) {
+  if (
+    selectedTemplate.value?.parameters?.length &&
+    selectedTemplate.value.parameters.some((p) => p.type !== 'namespace')
+  ) {
     parameterDialogVisible.value = true
     return
   }
@@ -167,12 +166,11 @@ const submitExecution = async (params: Record<string, any>) => {
   try {
     executing.value = true
     await apiCreateExecDo({
-      params,
+      parameters: params,
       ...form,
       host_ids: selectedHosts.value.map((host) => host.id),
       template_id: selectedTemplate.value?.id
     })
-    ElMessage.success('执行成功')
     selectedHosts.value = []
     selectedTemplate.value = null
     form.interpreter = 'sh'

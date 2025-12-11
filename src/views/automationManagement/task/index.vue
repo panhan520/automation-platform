@@ -57,6 +57,13 @@
     @confirm="confirmDeleteTemplate"
     @cancel="handleDeleteCancel"
   />
+  <ParameterFormDialog
+    v-model:visible="parameterDialogVisible"
+    :parameters="selectedTask?.parameters || []"
+    title="执行任务"
+    confirm-text="立即执行"
+    @confirm="handleParameterConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -77,6 +84,7 @@ import {
 import { type TaskRecord } from '@/api/task/type'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
+import { ParameterFormDialog } from '@/components/ParameterFormDialog'
 // 缓存 key
 const CACHE_KEY_IS_SHOW_DETAIL = 'nodeManagement_isShowDetail'
 // 任务面板store
@@ -94,7 +102,8 @@ const queryParams = reactive({
   order: ''
 })
 const taskTypeList = ref<string[]>([])
-
+const parameterDialogVisible = ref(false)
+const selectedTask = ref<TaskRecord | null>(null)
 const toolbarButtons: ToolbarButton[] = [
   {
     key: 'create',
@@ -254,10 +263,26 @@ const confirmDeleteTemplate = async () => {
 const handleDeleteCancel = () => {
   deleteDialog.target = null
 }
+const handleParameterConfirm = (values: Record<string, any>) => {
+  parameterDialogVisible.value = false
+  submitExecution(values)
+}
 // 执行
 const handleExecute = async (row: TaskRecord) => {
+  selectedTask.value = row
+  if (
+    selectedTask.value?.parameters?.length &&
+    selectedTask.value.parameters.some((p) => p.type !== 'namespace')
+  ) {
+    parameterDialogVisible.value = true
+    return
+  }
+  submitExecution({})
+}
+// 提交执行
+const submitExecution = async (params: Record<string, any>) => {
   try {
-    await apiExecTask({ id: row.id })
+    await apiExecTask({ id: selectedTask.value?.id, parameters: params })
     // 设置缓存为 true，显示任务面板
     localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
     taskPanelStore.setVisible(true)

@@ -5,9 +5,7 @@
         <el-icon><ArrowLeft /></el-icon>
         返回
       </el-button>
-      <div class="detail-title">
-        执行历史：【{{ selectedHost?.name }}】 {{ selectedHost?.run_time }}
-      </div>
+      <div class="detail-title"> 执行历史：【{{ taskInfo?.name }}】 {{ taskInfo?.run_time }} </div>
     </div>
     <div class="detail-content">
       <div class="left-panel">
@@ -53,7 +51,7 @@
         <div
           class="log-viewer"
           :class="
-            !formattedLog.logHtml ? 'no-log' : activeStatus === 2 ? 'failed-log' : 'success-log'
+            !formattedLog.logHtml ? 'no-log' : activeStatus === 1 ? 'failed-log' : 'success-log'
           "
         >
           <pre v-html="formattedLog.logHtml || '暂无日志'"></pre>
@@ -69,51 +67,30 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import { apiGetHistoryTaskDetail } from '@/api/executionHistory'
 interface HostLogItem {
   id: string
-  name: string
-  run_time: string
   innerIp: string
   publicIp: string
-  status: 0 | 1 | 2
+  status: 0 | 1
   output: string
+  duration: string
+  appTypeName: string
+  hostName: string
 }
+type HostOutputData = [number, string, string, string, string, string, string]
 const direction = ref<'horizontal' | 'vertical'>('horizontal')
 const route = useRoute()
 const router = useRouter()
 const taskId = route.params.taskId as string
 const hostList = ref<HostLogItem[]>([])
 const loading = ref(false)
-// const taskInfo = reactive({
-//   executionTime: '2025-10-28 10:29:09',
-//   hosts: [
-//     {
-//       id: '3',
-//       innerIp: '172.21.0.10',
-//       publicIp: '192.168.21.20',
-//       status: 'running',
-//       output: '### Waiting for scheduling ...\n### Executing ...\n执行结果：进行中\n总耗时：0.5秒'
-//     },
-//     {
-//       id: '6',
-//       innerIp: '172.21.0.11',
-//       publicIp: '192.168.21.21',
-//       status: 'success',
-//       output: '### Waiting for scheduling ...\n### Executing ...\n执行结果：成功\n总耗时：0.3秒'
-//     },
-//     {
-//       id: '9',
-//       innerIp: '172.21.0.12',
-//       publicIp: '192.168.21.22',
-//       status: 'failed',
-//       output: '### Waiting for scheduling ...\n### Executing ...\n-bash: xxx: command not found\n执行结果：失败'
-//     }
-//   ] as HostLogItem[]
-// })
-
+const taskInfo = reactive({
+  name: '',
+  run_time: ''
+})
 const filters = reactive({
   query: ''
 })
 
-const activeStatus = ref(2)
+const activeStatus = ref(1)
 const selectedHostId = ref<string>((route.query.id as string) || '')
 const logLoading = ref(false)
 // 筛选
@@ -135,13 +112,13 @@ const filteredHosts = computed(() => {
 const statusTabs = computed(() => [
   {
     label: '成功',
-    value: 1,
-    count: hostList.value.filter((h) => h.status === 1).length
+    value: 0,
+    count: hostList.value.filter((h) => h.status === 0).length
   },
   {
     label: '失败',
-    value: 2,
-    count: hostList.value.filter((h) => h.status === 2).length
+    value: 1,
+    count: hostList.value.filter((h) => h.status === 1).length
   }
 ])
 
@@ -215,9 +192,29 @@ const getDetail = async () => {
   try {
     loading.value = true
     const res = await apiGetHistoryTaskDetail(taskId)
-    hostList.value = res.data.list
-    if (!res.data.list.some((item) => item.status === 2)) {
-      activeStatus.value = 1
+    taskInfo.name = res.data.list[0].name
+    taskInfo.run_time = res.data.list[0].run_time
+    // 解析 output 数据
+    const outputData = JSON.parse(res.data.list[0].output)
+    // 转换数据格式
+    const transformedList = Object.entries(outputData).map(([id, dataArray]) => {
+      const [status, duration, output, publicIp, innerIp, appTypeName, hostName] =
+        dataArray as HostOutputData
+      return {
+        id,
+        status: status as 0 | 1, // 类型转换,
+        duration,
+        output,
+        publicIp,
+        innerIp,
+        appTypeName,
+        hostName
+      }
+    })
+    hostList.value = transformedList
+    // 设置 activeStatus
+    if (!transformedList.some((item) => item.status === 1)) {
+      activeStatus.value = 0
     }
   } finally {
     loading.value = false
@@ -248,7 +245,7 @@ onMounted(() => {
   }
   .detail-content {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 400px 1fr;
     gap: 10px;
     flex: 1;
     .left-panel {

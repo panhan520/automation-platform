@@ -7,7 +7,7 @@
     @close="handleCancel"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="110px">
-      <el-form-item v-for="param in parameters" :key="param.id" :prop="param.variable">
+      <el-form-item v-for="param in filteredParameters" :key="param.id" :prop="param.variable">
         <template #label>
           <span>
             {{ param.name }}
@@ -106,7 +106,11 @@ const initForm = () => {
     form[param.variable] = props.modelValue?.[param.variable] ?? param.default ?? ''
   })
 }
-
+const filteredParameters = computed(() => {
+  if (!props.parameters) return []
+  // 过滤掉 type 为 namespace 的参数
+  return props.parameters.filter((param) => param.type !== 'namespace')
+})
 const formRules = computed<FormRules>(() => {
   const rules: FormRules = {}
   props.parameters.forEach((param) => {
@@ -149,7 +153,10 @@ const handleConfirm = async () => {
   if (!formRef.value) return
   await formRef.value.validate((valid) => {
     if (valid) {
-      emit('confirm', { ...form })
+      props.parameters.forEach((param) => {
+        param.default = form[param.variable]
+      })
+      emit('confirm', props.parameters)
     }
   })
 }
@@ -174,11 +181,6 @@ const getSelectOptions = (param: ParameterItem): Array<{ label: string; value: s
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
       .map((line) => {
-        // 支持 "value:label" 格式，如果没有冒号则value和label相同
-        const parts = line.split(':')
-        if (parts.length === 2) {
-          return { label: parts[1].trim(), value: parts[0].trim() }
-        }
         return { label: line, value: line }
       })
   }

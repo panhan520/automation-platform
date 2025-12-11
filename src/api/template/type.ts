@@ -16,7 +16,7 @@ export interface ParameterItem {
   id: number
   name: string
   variable: string
-  type: 'string' | 'password' | 'select' | 'command'
+  type: 'string' | 'password' | 'select' | 'namespace'
   typeLabel: string
   options?: Array<{ label: string; value: string }>
   hostAttribute?: string
