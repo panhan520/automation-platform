@@ -154,7 +154,7 @@ const handleExecute = () => {
     parameterDialogVisible.value = true
     return
   }
-  submitExecution({})
+  submitExecution([])
 }
 
 const handleParameterConfirm = (values: Record<string, any>) => {
@@ -166,7 +166,7 @@ const submitExecution = async (params: Record<string, any>) => {
   try {
     executing.value = true
     await apiCreateExecDo({
-      parameters: params,
+      params,
       ...form,
       host_ids: selectedHosts.value.map((host) => host.id),
       template_id: selectedTemplate.value?.id

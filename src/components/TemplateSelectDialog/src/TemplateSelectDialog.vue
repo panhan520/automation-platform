@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch, onMounted } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { RefreshRight, Search } from '@element-plus/icons-vue'
 import { apiGetTemplatesList, apiGetTemplatesType } from '@/api/template'
 import type { TemplateRecord } from '@/api/template/type'
@@ -160,21 +160,20 @@ const handleRefresh = () => {
 
 watch(
   () => props.visible,
-  (val) => {
+  async (val) => {
     if (!val) {
       queryParams.query = ''
       queryParams.type = ''
       currentId.value = ''
-    } else if (props.selectedTemplate) {
-      currentId.value = props.selectedTemplate.id
+    } else {
+      getTemplateTypeList()
+      await getList()
+      if (props.selectedTemplate) {
+        currentId.value = props.selectedTemplate.id
+      }
     }
   }
 )
-
-onMounted(() => {
-  getList()
-  getTemplateTypeList()
-})
 </script>
 
 <style scoped lang="less">

@@ -243,7 +243,7 @@ const toolbarButtons = computed<ToolbarButton[]>(() => [
     key: 'bulk',
     label: '连通测试',
     loading: connectTestLoading.value,
-    disabled: connectTestLoading.value,
+    disabled: !selectedRows.value.length,
     onClick: () => handleConnectTest()
   },
   {
@@ -404,10 +404,6 @@ const getList = async () => {
 // 批量连通测试
 const handleConnectTest = async () => {
   if (connectTestLoading.value) return
-  if (!selectedRows.value.length) {
-    ElMessage.warning('请先选择节点')
-    return
-  }
   connectTestLoading.value = true
   try {
     await apiNodeBatchProbe(selectedRows.value)

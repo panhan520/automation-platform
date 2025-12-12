@@ -127,34 +127,23 @@ const selectedHost = computed(() => hostList.value.find((host) => host.id === se
 const formattedLog = computed(() => {
   const raw = selectedHost.value?.output
   if (!raw) return { logHtml: '' }
-
   const parseArrayOutput = () => {
     try {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length >= 3) {
-        const [status, duration, content] = parsed
-        const statusText = String(status ?? '')
-        const durationText =
-          typeof duration === 'number' ? `${duration.toFixed(3)}s` : String(duration ?? '')
-        const body = typeof content === 'string' ? content : ''
-        const bodyHtml = escapeHtml(body).replace(/\n/g, '<br>')
-        const statusClass = statusText === 'success' ? 'log-status-success' : 'log-status-failed'
-        const statusHtml = `<span class="log-status ${statusClass}">${statusText}${
-          durationText ? ` (${durationText})` : ''
-        }</span>`
-        return `${statusHtml}<br>${bodyHtml}`
-      }
+      const preText = `<span style="color: #3aa17e;">### Waiting for scheduling ...<br>### Executing ...</span>`
+      const body = typeof raw === 'string' ? raw : ''
+      const bodyHtml = escapeHtml(body).replace(/\n/g, '<br>')
+      const duration = selectedHost.value?.duration
+      const durationText = `<span style="color: #3aa17e;">** 执行结束，总耗时：${duration ?? ''}秒 **</span>`
+      return `${preText}<br>${bodyHtml}<br>${durationText}`
     } catch (e) {
       // ignore parse errors and fallback
     }
     return ''
   }
-
   const arrayHtml = parseArrayOutput()
   if (arrayHtml) {
     return { logHtml: arrayHtml }
   }
-
   const bodyHtml = escapeHtml(String(raw)).replace(/\n/g, '<br>')
   return { logHtml: bodyHtml }
 })
@@ -316,15 +305,6 @@ onMounted(() => {
         font-family: 'Fira Code', monospace;
         font-size: 13px;
         line-height: 1.6;
-        .log-status {
-          font-weight: 600;
-          &.log-status-success {
-            color: #52c41a;
-          }
-          &.log-status-failed {
-            color: #ff4d4f;
-          }
-        }
       }
       .success-log {
         color: #52c41a;

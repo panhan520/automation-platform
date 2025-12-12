@@ -317,7 +317,7 @@ const handleNodeSingleProbe = async (row) => {
 }
 // 查看日志
 const handleViewLog = (task: Task) => {
-  handleClose()
+  handleCollapse()
   router.push({
     name: 'AutomationExecutionHistoryDetail',
     params: { taskId: task.id }

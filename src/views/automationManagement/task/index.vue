@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn, type ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -85,6 +86,7 @@ import { type TaskRecord } from '@/api/task/type'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
 import { ParameterFormDialog } from '@/components/ParameterFormDialog'
+const router = useRouter()
 // 缓存 key
 const CACHE_KEY_IS_SHOW_DETAIL = 'nodeManagement_isShowDetail'
 // 任务面板store
@@ -238,9 +240,19 @@ const handleRowAction = (actionKey: string, row: TaskRecord) => {
     handleExecute(row)
     return
   }
+  if (actionKey === 'log') {
+    handleViewLog(row)
+    return
+  }
   if (actionKey === 'delete') {
     openDeleteDialog(row)
   }
+}
+const handleViewLog = (row: TaskRecord) => {
+  router.push({
+    name: 'AutomationExecutionHistoryDetail',
+    params: { taskId: row.id }
+  })
 }
 const openDeleteDialog = (row: TaskRecord) => {
   deleteDialog.target = row
@@ -277,12 +289,12 @@ const handleExecute = async (row: TaskRecord) => {
     parameterDialogVisible.value = true
     return
   }
-  submitExecution({})
+  submitExecution([])
 }
 // 提交执行
 const submitExecution = async (params: Record<string, any>) => {
   try {
-    await apiExecTask({ id: selectedTask.value?.id, parameters: params })
+    await apiExecTask({ id: selectedTask.value?.id, params })
     // 设置缓存为 true，显示任务面板
     localStorage.setItem(CACHE_KEY_IS_SHOW_DETAIL, 'true')
     taskPanelStore.setVisible(true)

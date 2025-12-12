@@ -35,8 +35,12 @@
           :column-key="column.prop"
         >
           <template #default="scope">
-            <el-tag v-if="column.prop === 'status'" :type="getStatusTagType(scope.row.status)">
-              <el-icon :class="['status-icon', statusIconClass(scope.row.status)]">
+            <el-tag
+              v-if="column.prop === 'status'"
+              :type="getStatusTagType(scope.row.status)"
+              class="status-tag"
+            >
+              <el-icon>
                 <component :is="statusIcon(scope.row.status)" />
               </el-icon>
               {{ getStatusText(scope.row.status) }}
@@ -131,16 +135,6 @@ const statusIcon = (status: number) => {
       return RefreshRight
   }
 }
-const statusIconClass = (status: number) => {
-  switch (status) {
-    case 1:
-      return 'success'
-    case 2:
-      return 'danger'
-    default:
-      return 'warning'
-  }
-}
 const getStatusTagType = (status: number) => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
     1: 'success',
@@ -224,25 +218,10 @@ onMounted(() => {
 </script>
 
 <style scoped lang="less">
-.status-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  .status-icon {
-    font-size: 14px;
-
-    &.success {
-      color: #67c23a;
-    }
-
-    &.danger {
-      color: #f56c6c;
-    }
-
-    &.warning {
-      color: #e6a23c;
-    }
+.status-tag {
+  .el-icon {
+    vertical-align: middle;
+    margin-top: -2px;
   }
 }
 </style>
