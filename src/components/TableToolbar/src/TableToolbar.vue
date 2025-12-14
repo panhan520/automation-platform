@@ -41,6 +41,14 @@
             </template>
             <span>{{ filter.placeholder }}</span>
           </el-button>
+          <!-- 新建按钮等 -->
+          <el-button
+            v-else-if="filter.type === 'button'"
+            type="primary"
+            @click="() => handleButtonClick(filter)"
+          >
+            <span>{{ filter.label }}</span>
+          </el-button>
           <component
             :is="filter.render"
             v-else
@@ -66,7 +74,7 @@
     <!-- 右侧按钮 -->
     <div class="toolbar-right">
       <!-- 刷新按钮 -->
-      <el-tooltip v-if="showRefresh" content="刷新" placement="top" effect="light">
+      <el-tooltip v-if="showRefresh" content="刷新" placement="top">
         <el-button @click="handleRefresh" class="refresh-btn" circle>
           <el-icon :size="16"><RefreshRight /></el-icon>
         </el-button>
@@ -78,7 +86,7 @@
           trigger="click"
           @command="(command: string) => handleDropdownCommand(btn, command)"
         >
-          <el-tooltip v-if="btn.tooltip" :content="btn.tooltip" placement="top" effect="light">
+          <el-tooltip v-if="btn.tooltip" :content="btn.tooltip" placement="top">
             <el-button
               v-bind="getButtonProps(btn)"
               :type="btn.type"
@@ -116,7 +124,7 @@
           </template>
         </el-dropdown>
         <template v-else>
-          <el-tooltip v-if="btn.tooltip" :content="btn.tooltip" placement="top" effect="light">
+          <el-tooltip v-if="btn.tooltip" :content="btn.tooltip" placement="top">
             <el-button
               v-bind="getButtonProps(btn)"
               :icon="btn.icon"
@@ -171,7 +179,7 @@ export interface ToolbarFilterOption {
 
 export interface ToolbarFilter {
   key: string
-  type?: 'input' | 'select' | 'text'
+  type?: 'input' | 'select' | 'text' | 'button'
   placeholder?: string
   width?: number | string
   clearable?: boolean
@@ -180,6 +188,7 @@ export interface ToolbarFilter {
   prefixIcon?: Component
   render?: Component
   icon?: Component
+  label?: string
 }
 
 interface ButtonItem {

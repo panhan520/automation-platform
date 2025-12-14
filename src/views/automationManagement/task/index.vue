@@ -4,7 +4,6 @@
     :table-data="allTasks"
     :loading="loading"
     :total-records="totalRecords"
-    :toolbar-buttons="toolbarButtons"
     :filters="toolbarFilters"
     :columns="tableColumns"
     :query-params="queryParams"
@@ -70,18 +69,12 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ManagementList, type TableColumn, type ToolbarButton } from '@/components/ManagementList'
+import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
-import {
-  apiGetTaskList,
-  apiGetTaskType,
-  apiCreateTask,
-  apiDeleteTask,
-  apiExecTask
-} from '@/api/task'
+import { apiGetTaskList, apiCreateTask, apiDeleteTask, apiExecTask } from '@/api/task'
 import { type TaskRecord } from '@/api/task/type'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
@@ -98,31 +91,38 @@ const allTasks = ref<TaskRecord[]>([])
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  type: '',
+  interpreter: '',
   query: '',
   orderBy: '',
   order: ''
 })
-const taskTypeList = ref<string[]>([])
+const interpreterList = ref([
+  {
+    label: 'Shell',
+    value: 'sh'
+  },
+  {
+    label: 'Python',
+    value: 'python'
+  }
+])
 const parameterDialogVisible = ref(false)
 const selectedTask = ref<TaskRecord | null>(null)
-const toolbarButtons: ToolbarButton[] = [
-  {
-    key: 'create',
-    label: '新建任务',
-    type: 'primary',
-    onClick: () => openTaskDialog()
-  }
-]
 
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
-    key: 'type',
+    key: 'create',
+    label: '新建任务',
+    type: 'button',
+    onClick: () => openTaskDialog()
+  },
+  {
+    key: 'interpreter',
     type: 'select',
-    placeholder: '全部任务类型',
+    placeholder: '全部执行方式',
     width: 220,
     clearable: true,
-    options: taskTypeList.value.map((item) => ({ label: item, value: item }))
+    options: interpreterList.value
   },
   {
     key: 'query',
@@ -195,11 +195,6 @@ const getList = async () => {
   } finally {
     loading.value = false
   }
-}
-// 获取任务类型列表
-const getTaskTypeList = async () => {
-  const res = await apiGetTaskType()
-  taskTypeList.value = res.data.list
 }
 // 打开新建弹框
 const openTaskDialog = (row?: TaskRecord) => {
@@ -306,7 +301,7 @@ const submitExecution = async (params: Record<string, any>) => {
 // 检索
 const handleSearch = (params: Record<string, any>) => {
   queryParams.query = params.query
-  queryParams.type = params.type
+  queryParams.interpreter = params.interpreter
   queryParams.page = 1
   getList()
 }
@@ -317,7 +312,7 @@ const handleRefresh = () => {
 // 重置
 const handleReset = () => {
   queryParams.query = ''
-  queryParams.type = ''
+  queryParams.interpreter = ''
   queryParams.orderBy = ''
   queryParams.order = ''
   queryParams.page = 1
@@ -338,6 +333,5 @@ const handleTableSortChange = (sorts: any) => {
 }
 onMounted(() => {
   getList()
-  getTaskTypeList()
 })
 </script>

@@ -4,7 +4,6 @@
     :table-data="allApplications"
     :loading="loading"
     :total-records="totalRecords"
-    :toolbar-buttons="toolbarButtons"
     :filters="toolbarFilters"
     :query-params="queryParams"
     :columns="tableColumnsForList"
@@ -65,7 +64,6 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import { type ColumnItem } from '@/components/ColumnCustomDialog'
-import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { FormDialog, type FormField } from '@/components/FormDialog'
 import { TableActionsColumn } from '@/components/TableActionsColumn'
@@ -94,6 +92,12 @@ const appTypeList = ref<string[]>([])
 // 顶部筛选
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
+    key: 'create',
+    type: 'button',
+    label: '新建应用',
+    onClick: () => openCreateEditDialog(false, {})
+  },
+  {
     key: 'appType',
     type: 'select',
     placeholder: '全部应用类型',
@@ -102,15 +106,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     options: appTypeList.value.map((item) => ({ label: item, value: item }))
   }
 ])
-// 顶部操作
-const toolbarButtons: ToolbarButton[] = [
-  {
-    key: 'create',
-    label: '新建应用',
-    type: 'primary',
-    onClick: () => openCreateEditDialog(false, {})
-  }
-]
 
 // 弹框相关
 const formDialogVisible = ref(false)

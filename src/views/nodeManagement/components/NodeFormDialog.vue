@@ -158,18 +158,6 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="备注" prop="remark">
-            <el-input
-              v-model="form.remark"
-              type="textarea"
-              :maxlength="100"
-              show-word-limit
-              placeholder="请输入备注"
-              :rows="3"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
           <div class="tag-section">
             <div class="tag-section__label">节点标签</div>
             <div class="tag-section__content">
@@ -225,6 +213,18 @@
               </div>
             </div>
           </div>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="备注" prop="remark">
+            <el-input
+              v-model="form.remark"
+              type="textarea"
+              :maxlength="100"
+              show-word-limit
+              placeholder="请输入备注"
+              :rows="3"
+            />
+          </el-form-item>
         </el-col>
       </el-row>
     </el-form>

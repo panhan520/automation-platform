@@ -1,7 +1,6 @@
 <template>
   <ManagementList
     :title="title"
-    :recordText="recordText"
     :table-data="allTableData"
     :loading="loading"
     :total-records="totalRecords"
@@ -66,7 +65,6 @@ import { apiGetHistoryTaskList } from '@/api/executionHistory'
 import { ExecutionRecord } from '@/api/executionHistory/type'
 
 const title = '执行历史'
-const recordText = '条记录'
 const router = useRouter()
 const allTableData = ref<ExecutionRecord[]>([])
 const totalRecords = ref(0)

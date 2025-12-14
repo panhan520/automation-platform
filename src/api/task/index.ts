@@ -9,11 +9,6 @@ export const apiCreateTask = (data): Promise<IPaginationResponse> => {
   return request.post({ url: '/api/v1/schedule/post/', data })
 }
 
-// 获取任务类型列表
-export const apiGetTaskType = (): Promise<IPaginationResponse> => {
-  return request.get({ url: '/api/v1/schedule/taskType/' })
-}
-
 // 删除任务
 export const apiDeleteTask = (id): Promise<IPaginationResponse> => {
   return request.delete({ url: `/api/v1/schedule/${id}/` })

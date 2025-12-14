@@ -5,7 +5,6 @@
       :table-data="allTemplates"
       :loading="loading"
       :total-records="totalRecords"
-      :toolbar-buttons="toolbarButtons"
       :filters="toolbarFilters"
       :columns="tableColumns"
       :query-params="queryParams"
@@ -76,7 +75,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ManagementList, type TableColumn, type ToolbarButton } from '@/components/ManagementList'
+import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
@@ -103,6 +102,12 @@ const templateTypeList = ref<string[]>([])
 // 表格筛选项（左侧）
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
   {
+    key: 'create',
+    label: '新建模版',
+    type: 'button',
+    onClick: () => openTemplateDialog()
+  },
+  {
     key: 'type',
     type: 'select',
     placeholder: '全部模版类型',
@@ -125,15 +130,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     onClick: () => handleReset()
   }
 ])
-// 表格操作项（右侧）
-const toolbarButtons: ToolbarButton[] = [
-  {
-    key: 'create',
-    label: '新建模版',
-    type: 'primary',
-    onClick: () => openTemplateDialog()
-  }
-]
 // 表格列
 const tableColumns: TableColumn[] = [
   { prop: 'name', label: '模版名称', order: 0 },

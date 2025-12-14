@@ -9,8 +9,6 @@
       @search="handleSearch"
       @refresh="handleRefresh"
     />
-    <div v-if="recordText" class="total-records">共 {{ totalRecords }} {{ recordText }}</div>
-    <div v-else class="total-records">共 {{ totalRecords }} 个{{ title.slice(0, 2) }}</div>
     <el-table
       ref="tableRef"
       :data="tableData"
@@ -122,7 +120,6 @@ interface Props {
   columns?: TableColumn[]
   loading?: boolean
   totalRecords?: number | string
-  recordText?: string
   showSelection?: boolean
   toolbarButtons?: ToolbarButton[]
   filters?: ToolbarFilter[]
@@ -140,7 +137,6 @@ const props = withDefaults(defineProps<Props>(), {
   columns: () => [],
   loading: false,
   totalRecords: 0,
-  recordText: '',
   showSelection: false,
   toolbarButtons: () => [],
   filters: () => [],
@@ -464,8 +460,5 @@ onUnmounted(() => {
 }
 .only-pagination {
   justify-content: flex-end;
-}
-.total-records {
-  font-size: 14px;
 }
 </style>

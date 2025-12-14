@@ -92,7 +92,7 @@
           </el-table-column>
           <TableActionsColumn
             v-else
-            :actions="[{ key: 'test', label: '连通测试' }]"
+            :main-actions="executionRowActions"
             @edit="handleEdit"
             @action="handleMoreAction"
           />
@@ -144,7 +144,7 @@ import { Search, Setting, Refresh, Monitor } from '@element-plus/icons-vue'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
-import { TableActionsColumn } from '@/components/TableActionsColumn'
+import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import NodeFormDialog from './components/NodeFormDialog.vue'
 import {
   apiGetNodeList,
@@ -193,6 +193,12 @@ const connectTestLoading = ref(false)
 // const bulkDropdownOptions = [{ label: '连通测试', command: 'test' }]
 // 顶部筛选栏
 const toolbarFilters = computed<ToolbarFilter[]>(() => [
+  {
+    key: 'create',
+    label: '新建节点',
+    type: 'button',
+    onClick: () => handleCreate()
+  },
   {
     key: 'query',
     type: 'input',
@@ -250,14 +256,16 @@ const toolbarButtons = computed<ToolbarButton[]>(() => [
     key: 'import',
     label: '导入Excel',
     onClick: () => handleImportExcel()
-  },
-  {
-    key: 'create',
-    label: '新建节点',
-    type: 'primary',
-    onClick: () => handleCreate()
   }
 ])
+const executionRowActions: TableAction[] = [
+  {
+    key: 'test',
+    label: '连通测试',
+    type: 'primary',
+    text: true
+  }
+]
 // 新建编辑相关字段
 const nodeDialogVisible = ref(false)
 const nodeDialogLoading = ref(false)
