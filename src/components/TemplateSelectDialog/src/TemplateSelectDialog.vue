@@ -51,6 +51,7 @@
         :total="totalRecords"
         :page-sizes="[10, 20, 50, 100]"
         @change="handlePageChange"
+        @changePageSize="handlePageSizeChange"
       />
     </div>
 
@@ -124,7 +125,11 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
   getList()
 }
-
+const handlePageSizeChange = (pageSize: number) => {
+  queryParams.page = 1
+  queryParams.pageSize = pageSize
+  getList()
+}
 watch(
   () => [queryParams.query, queryParams.type],
   ([query, type]) => {

@@ -64,6 +64,7 @@
         :total="totalRecords"
         :page-sizes="[10, 20, 50, 100]"
         @change="handlePageChange"
+        @changePageSize="handlePageSizeChange"
       />
     </div>
   </ContentWrap>
@@ -397,6 +398,11 @@ const handlePageChange = (page: number, pageSize: number) => {
   localPage.value = page
   localPageSize.value = pageSize
   emit('page-change', page, pageSize)
+}
+const handlePageSizeChange = (pageSize: number) => {
+  localPage.value = 1
+  localPageSize.value = pageSize
+  emit('page-change', 1, pageSize)
 }
 
 const handleSelectionChange = (selection: any[]) => {

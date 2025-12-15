@@ -34,6 +34,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: number): void
   (e: 'update:pageSize', value: number): void
   (e: 'change', currentPage: number, pageSize: number): void
+  (e: 'changePageSize', value: number): void
 }>()
 
 // 计算属性绑定当前页码
@@ -61,7 +62,7 @@ watch(
 const handleSizeChange = (size: number) => {
   localPageSize.value = size
   emit('update:pageSize', size)
-  emit('change', currentPage.value, size)
+  emit('changePageSize', size)
 }
 
 // 处理当前页码变化

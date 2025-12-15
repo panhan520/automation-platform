@@ -33,6 +33,9 @@
             <template v-if="column.prop === 'host_id_ip_map'">
               {{ scope.row.host_id_ip_map.length }} 台
             </template>
+            <div v-if="column.prop === 'interpreter'">{{
+              getInterpreterText(scope.row.interpreter)
+            }}</div>
           </template>
         </el-table-column>
       </template>
@@ -144,9 +147,10 @@ const tableColumns: TableColumn[] = [
   { prop: 'id', label: '任务ID', order: 0 },
   { prop: 'name', label: '任务名称', order: 1 },
   { prop: 'host_id_ip_map', label: '执行主机数量', order: 2 },
-  { prop: 'updated_at', label: '最新执行时间', minWidth: 160, order: 3, sortable: true },
-  { prop: 'desc', label: '备注', order: 4 },
-  { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
+  { prop: 'interpreter', label: '执行方式', order: 3 },
+  { prop: 'updated_at', label: '最新执行时间', minWidth: 160, order: 4, sortable: true },
+  { prop: 'desc', label: '备注', order: 5 },
+  { prop: 'actions', label: '操作', slot: 'actions', order: 6 }
 ]
 
 const taskRowActions: TableAction[] = [
@@ -330,6 +334,9 @@ const handleTableSortChange = (sorts: any) => {
   queryParams.order = sorts.order
   queryParams.page = 1
   getList()
+}
+const getInterpreterText = (interpreter: string) => {
+  return interpreter === 'sh' ? 'Shell' : 'Python'
 }
 onMounted(() => {
   getList()

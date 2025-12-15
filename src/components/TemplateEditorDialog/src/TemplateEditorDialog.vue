@@ -26,12 +26,13 @@
         >
       </el-form-item>
 
-      <el-form-item v-if="mode === 'template'" label="模版名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入模版名称" maxlength="50" clearable />
-      </el-form-item>
-
-      <el-form-item v-if="mode === 'task'" label="任务名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入任务名称" maxlength="50" clearable />
+      <el-form-item :label="mode === 'template' ? '模版名称' : '任务名称'" prop="name">
+        <el-input
+          v-model="form.name"
+          :placeholder="mode === 'template' ? '请输入模版名称' : '请输入任务名称'"
+          maxlength="50"
+          clearable
+        />
       </el-form-item>
 
       <el-form-item label="脚本语言" prop="interpreter">
@@ -334,8 +335,14 @@ const interpreterOptions = [
 ]
 const formRules: FormRules = {
   type: [{ required: true, message: '请选择模版类型', trigger: 'change' }],
-  templateName: [{ required: true, message: '请输入模版名称', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
+  name: [
+    {
+      required: true,
+      message: props.mode === 'template' ? '请输入模版名称' : '请输入任务名称',
+      trigger: 'blur'
+    }
+  ],
+  interpreter: [{ required: true, message: '请选择脚本语言', trigger: 'change' }],
   body: [{ required: true, message: '请输入模版内容', trigger: 'blur' }],
   command: [{ required: true, message: '请输入模版内容', trigger: 'blur' }]
 }

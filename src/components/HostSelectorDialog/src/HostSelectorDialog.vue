@@ -74,6 +74,7 @@
             :total="totalRecords"
             :page-sizes="[10, 20, 50, 100]"
             @change="handlePageChange"
+            @changePageSize="handlePageSizeChange"
             :pager-count="5"
             layout="total, sizes, prev, pager, next"
           />
@@ -244,6 +245,11 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
   getList()
 }
+const handlePageSizeChange = (pageSize: number) => {
+  queryParams.page = 1
+  queryParams.pageSize = pageSize
+  getList()
+}
 // 监听对话框打开，初始化选中状态
 watch(
   () => props.visible,
@@ -333,7 +339,7 @@ const handleConfirm = () => {
 
   .host-table {
     flex: 1;
-    max-width: 500px;
+    max-width: 470px;
 
     .host-search {
       display: flex;
