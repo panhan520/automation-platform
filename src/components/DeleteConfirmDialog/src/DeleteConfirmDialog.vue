@@ -129,7 +129,7 @@ const handleConfirm = () => {
 
   .content {
     flex: 1;
-    margin-left: 45px;
+    margin-left: 27px;
 
     .description {
       color: #4e5969;

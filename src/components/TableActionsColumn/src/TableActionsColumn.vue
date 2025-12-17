@@ -36,8 +36,9 @@
           trigger="click"
         >
           <div class="table-button dropdown-trigger"
-            ><el-button link size="small" type="primary">{{ dropdownLabel }} </el-button></div
-          >
+            ><el-button link size="small" type="primary"
+              ><el-icon><MoreFilled /></el-icon> </el-button
+          ></div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
@@ -60,7 +61,7 @@
 
 <script setup lang="ts">
 import type { Component } from 'vue'
-
+import { MoreFilled } from '@element-plus/icons-vue'
 export interface TableAction {
   key: string
   label: string
@@ -84,7 +85,6 @@ interface Props {
   mainActions?: ActionConfig
   showEdit?: boolean
   editLabel?: string
-  dropdownLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -93,8 +93,7 @@ const props = withDefaults(defineProps<Props>(), {
   actions: () => [],
   mainActions: () => [],
   showEdit: true,
-  editLabel: '编辑',
-  dropdownLabel: '更多'
+  editLabel: '编辑'
 })
 
 const emit = defineEmits<{

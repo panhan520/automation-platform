@@ -17,6 +17,7 @@
       <template v-for="column in displayColumns" :key="column.prop">
         <TableActionsColumn
           v-if="column.prop === 'actions'"
+          :main-actions="mainRowActions"
           :actions="taskRowActions"
           @edit="handleEdit"
           @action="handleRowAction"
@@ -145,14 +146,15 @@ const tableColumns: TableColumn[] = [
   { prop: 'desc', label: '备注', order: 5 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 6 }
 ]
-
-const taskRowActions: TableAction[] = [
+const mainRowActions: TableAction[] = [
   {
     key: 'execute',
     label: '执行',
-    type: 'success',
+    type: 'primary',
     link: true
-  },
+  }
+]
+const taskRowActions: TableAction[] = [
   {
     key: 'log',
     label: '查看日志',
@@ -161,7 +163,7 @@ const taskRowActions: TableAction[] = [
   {
     key: 'delete',
     label: '删除',
-    type: 'danger',
+    danger: true,
     link: true
   }
 ]
