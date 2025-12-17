@@ -221,12 +221,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     width: 150,
     clearable: true,
     options: nodeTagOptionsKey.value.map((item) => ({ label: item, value: item }))
-  },
-  {
-    key: 'reset',
-    type: 'text',
-    placeholder: '重置',
-    onClick: () => handleReset()
   }
 ])
 // 顶部操作栏
@@ -529,13 +523,6 @@ const handleRefresh = (params?: Record<string, any>) => {
   getList()
 }
 
-const handleReset = () => {
-  queryParams.query = ''
-  queryParams.appTypeName = ''
-  queryParams.nodeTags = ''
-  queryParams.page = 1
-  getList()
-}
 const handlePageChange = (page: number, pageSize: number) => {
   queryParams.page = page
   queryParams.pageSize = pageSize

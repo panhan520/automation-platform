@@ -121,12 +121,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     placeholder: '搜索模版名称',
     width: 220,
     prefixIcon: Search
-  },
-  {
-    key: 'reset',
-    type: 'text',
-    placeholder: '重置',
-    onClick: () => handleReset()
   }
 ])
 // 表格列
@@ -169,13 +163,6 @@ const getList = async () => {
 const getTemplateTypeList = async () => {
   const res = await apiGetTemplatesType()
   templateTypeList.value = res.data.list
-}
-// 重置按钮
-const handleReset = () => {
-  queryParams.query = ''
-  queryParams.type = ''
-  queryParams.page = 1
-  getList()
 }
 // 打开编辑保存模版的弹框
 const openTemplateDialog = (row?) => {

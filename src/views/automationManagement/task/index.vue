@@ -133,12 +133,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     placeholder: '搜索任务名称',
     width: 220,
     prefixIcon: Search
-  },
-  {
-    key: 'reset',
-    type: 'text',
-    placeholder: '重置',
-    onClick: () => handleReset()
   }
 ])
 
@@ -310,15 +304,6 @@ const handleSearch = (params: Record<string, any>) => {
 }
 // 刷新
 const handleRefresh = () => {
-  getList()
-}
-// 重置
-const handleReset = () => {
-  queryParams.query = ''
-  queryParams.interpreter = ''
-  queryParams.orderBy = ''
-  queryParams.order = ''
-  queryParams.page = 1
   getList()
 }
 // 分页
