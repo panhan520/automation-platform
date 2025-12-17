@@ -614,7 +614,6 @@ const nextTickInit = () => {
 
 const applyDefaultData = (data: NodeFormDefaultData) => {
   if (!data) return
-  connectivityStatus.value = 'success'
   const {
     region,
     regionCodes,
