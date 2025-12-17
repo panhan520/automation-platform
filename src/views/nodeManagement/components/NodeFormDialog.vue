@@ -11,12 +11,12 @@
       <el-row :gutter="24">
         <el-col :span="12">
           <el-form-item label="内网IP" prop="innerIp" required>
-            <el-input v-model="form.innerIp" placeholder="请输入内网IP" clearable maxLength="50" />
+            <el-input v-model="form.innerIp" placeholder="请输入内网IP" maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="公网IP" prop="publicIp" required>
-            <el-input v-model="form.publicIp" placeholder="请输入公网IP" clearable maxLength="50" />
+            <el-input v-model="form.publicIp" placeholder="请输入公网IP" maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -29,12 +29,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="登录端口" prop="loginPort" required>
-            <el-input
-              v-model="form.loginPort"
-              placeholder="请输入登录端口"
-              clearable
-              maxLength="50"
-            />
+            <el-input v-model="form.loginPort" placeholder="请输入登录端口" maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -57,7 +52,6 @@
                 v-model="form.credentialPassword"
                 placeholder="请输入密码"
                 show-password
-                clearable
                 maxLength="50"
               />
             </template>
@@ -67,7 +61,6 @@
                 type="password"
                 placeholder="请输入密钥"
                 show-password
-                clearable
                 maxLength="50"
               />
             </template>
@@ -75,22 +68,12 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="登录账号" prop="loginAccount" required>
-            <el-input
-              v-model="form.loginAccount"
-              placeholder="请输入登录账号"
-              clearable
-              maxLength="50"
-            />
+            <el-input v-model="form.loginAccount" placeholder="请输入登录账号" maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="主机名称" prop="hostName" required>
-            <el-input
-              v-model="form.hostName"
-              placeholder="请输入主机名称"
-              clearable
-              maxLength="50"
-            />
+            <el-input v-model="form.hostName" placeholder="请输入主机名称" maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -119,7 +102,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="登录IP" prop="loginIp" required>
-            <el-input v-model="form.loginIp" clearable disabled maxLength="50" />
+            <el-input v-model="form.loginIp" disabled maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -139,12 +122,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="供应商名称" prop="vendorName" required>
-            <el-input
-              v-model="form.vendorName"
-              placeholder="请输入供应商名称"
-              clearable
-              maxLength="50"
-            />
+            <el-input v-model="form.vendorName" placeholder="请输入供应商名称" maxLength="50" />
           </el-form-item>
         </el-col>
         <el-col :span="12">

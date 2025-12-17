@@ -74,7 +74,6 @@ declare module 'vue' {
     TaskDetailPanel: typeof import('./src/components/TaskDetailPanel/src/TaskDetailPanel.vue')['default']
     TemplateEditorDialog: typeof import('./src/components/TemplateEditorDialog/src/TemplateEditorDialog.vue')['default']
     TemplateSelectDialog: typeof import('./src/components/TemplateSelectDialog/src/TemplateSelectDialog.vue')['default']
-    UniversalFormDialog: typeof import('./src/components/UniversalFormDialog/src/UniversalFormDialog.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']
@@ -145,5 +144,4 @@ declare global {
   const TaskDetailPanel: typeof import('./src/components/TaskDetailPanel/src/TaskDetailPanel.vue')['default']
   const TemplateEditorDialog: typeof import('./src/components/TemplateEditorDialog/src/TemplateEditorDialog.vue')['default']
   const TemplateSelectDialog: typeof import('./src/components/TemplateSelectDialog/src/TemplateSelectDialog.vue')['default']
-  const UniversalFormDialog: typeof import('./src/components/UniversalFormDialog/src/UniversalFormDialog.vue')['default']
 }

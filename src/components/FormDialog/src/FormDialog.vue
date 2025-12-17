@@ -32,7 +32,6 @@
           :show-word-limit="field.showWordLimit"
           :readonly="field.readonly"
           :disabled="field.disabled"
-          clearable
         />
         <!-- 邮箱输入框 -->
         <el-input
@@ -41,7 +40,6 @@
           :placeholder="field.placeholder || '请输入邮箱地址'"
           :readonly="field.readonly"
           :disabled="field.disabled"
-          clearable
         />
         <!-- 密码输入框 -->
         <template v-else-if="field.type === 'password'">
@@ -61,7 +59,6 @@
               :placeholder="field.placeholder"
               :maxlength="field.maxlength"
               show-password
-              clearable
             />
           </div>
         </template>

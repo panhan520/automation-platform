@@ -11,18 +11,8 @@
     <div class="detail-content">
       <div class="left-panel">
         <div class="search-group">
-          <el-input
-            v-model="filters.hostId"
-            placeholder="搜索主机ID"
-            clearable
-            prefix-icon="Search"
-          />
-          <el-input
-            v-model="filters.internalIp"
-            placeholder="搜索内网IP"
-            clearable
-            prefix-icon="Search"
-          />
+          <el-input v-model="filters.hostId" placeholder="搜索主机ID" prefix-icon="Search" />
+          <el-input v-model="filters.internalIp" placeholder="搜索内网IP" prefix-icon="Search" />
         </div>
 
         <div class="status-tabs">

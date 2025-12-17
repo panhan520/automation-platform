@@ -7,7 +7,6 @@
           <el-input
             v-model="filters.query"
             placeholder="搜索公网IP/内网IP/主机ID"
-            clearable
             style="width: 240px"
             :prefix-icon="Search"
           />
@@ -86,7 +85,6 @@
           <el-input
             v-model="filters.selectedInnerIp"
             placeholder="搜索内网IP"
-            clearable
             :prefix-icon="Search"
             style="width: 50%"
           />

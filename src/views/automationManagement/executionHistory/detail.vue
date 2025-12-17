@@ -13,7 +13,6 @@
           <el-input
             v-model="filters.query"
             placeholder="搜索公网IP/内网IP/主机ID"
-            clearable
             prefix-icon="Search"
           />
         </div>

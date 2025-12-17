@@ -31,7 +31,6 @@
           v-model="form.name"
           :placeholder="mode === 'template' ? '请输入模版名称' : '请输入任务名称'"
           maxlength="50"
-          clearable
         />
       </el-form-item>
 
@@ -115,7 +114,7 @@
   >
     <el-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-width="90px">
       <el-form-item label="模版类型" prop="type">
-        <el-input v-model="typeForm.type" placeholder="请输入模版类型" maxlength="50" clearable />
+        <el-input v-model="typeForm.type" placeholder="请输入模版类型" maxlength="50" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -148,12 +147,7 @@
             </el-tooltip>
           </span>
         </template>
-        <el-input
-          v-model="parameterForm.name"
-          placeholder="请输入参数名称"
-          maxlength="50"
-          clearable
-        />
+        <el-input v-model="parameterForm.name" placeholder="请输入参数名称" maxlength="50" />
       </el-form-item>
       <el-form-item prop="variable">
         <template #label>
@@ -168,12 +162,7 @@
             </el-tooltip>
           </span>
         </template>
-        <el-input
-          v-model="parameterForm.variable"
-          placeholder="请输入变量名称"
-          maxlength="50"
-          clearable
-        />
+        <el-input v-model="parameterForm.variable" placeholder="请输入变量名称" maxlength="50" />
       </el-form-item>
       <el-form-item prop="type">
         <template #label>
@@ -240,12 +229,7 @@
         />
       </el-form-item>
       <el-form-item label="默认值">
-        <el-input
-          v-model="parameterForm.default"
-          placeholder="请输入默认值"
-          maxlength="50"
-          clearable
-        />
+        <el-input v-model="parameterForm.default" placeholder="请输入默认值" maxlength="50" />
       </el-form-item>
       <el-form-item>
         <template #label>
@@ -262,7 +246,6 @@
           :rows="2"
           placeholder="请输入该参数的帮助提示信息"
           maxlength="50"
-          clearable
         />
       </el-form-item>
     </el-form>

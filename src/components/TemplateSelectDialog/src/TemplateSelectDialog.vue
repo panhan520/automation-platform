@@ -12,7 +12,6 @@
       <el-input
         v-model="queryParams.query"
         placeholder="搜索模版名称"
-        clearable
         :prefix-icon="Search"
         style="width: 240px"
       />

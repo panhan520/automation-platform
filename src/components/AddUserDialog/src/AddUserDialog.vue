@@ -18,12 +18,7 @@
         </div>
 
         <div class="search-bar">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="搜索用户名称"
-            clearable
-            @input="handleSearch"
-          >
+          <el-input v-model="searchKeyword" placeholder="搜索用户名称" @input="handleSearch">
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>

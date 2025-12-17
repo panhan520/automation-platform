@@ -21,14 +21,12 @@
           :placeholder="field.placeholder"
           :maxlength="field.maxlength"
           :show-word-limit="field.showWordLimit"
-          clearable
         />
         <!-- 邮箱输入框 -->
         <el-input
           v-else-if="field.type === 'email'"
           v-model="formData[field.prop]"
           placeholder="请输入邮箱地址"
-          clearable
         />
         <!-- 密码输入框 -->
         <template v-else-if="field.type === 'password'">
@@ -55,7 +53,6 @@
                     :placeholder="field.placeholder"
                     :maxlength="field.maxlength"
                     show-password
-                    clearable
                   />
                 </template>
                 <!-- 校验提示 -->

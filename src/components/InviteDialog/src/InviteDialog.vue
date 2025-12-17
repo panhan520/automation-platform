@@ -19,7 +19,6 @@
           v-if="field.type === 'email'"
           v-model="formData[field.prop]"
           placeholder="请输入邮箱地址"
-          clearable
         />
         <!-- 选择器 -->
         <el-select

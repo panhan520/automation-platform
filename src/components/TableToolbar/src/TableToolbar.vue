@@ -9,7 +9,6 @@
             v-if="filter.type === 'input' || !filter.type"
             v-model="filterValuesState[filter.key]"
             :placeholder="filter.placeholder"
-            :clearable="filter.clearable ?? true"
             :prefix-icon="filter.prefixIcon"
             :style="getFilterStyle(filter)"
             @input="handleFilterInput"
@@ -63,7 +62,6 @@
           v-model="searchParams[selectValue]"
           :placeholder="selectLabel"
           @input="handleInput"
-          clearable
           @keyup.enter="handleSearch"
           style="width: 300px"
           :prefix-icon="Search"
@@ -286,7 +284,7 @@ watch(
 /** 防抖搜索函数（输入类） */
 const debounceSearch = debounce(() => {
   emit('search', { ...filterValuesState })
-}, 300)
+}, 500)
 
 const handleFilterInput = () => {
   debounceSearch()
@@ -302,7 +300,7 @@ const handleRefresh = () => {
 
 const handleInput = debounce(() => {
   emit('search', { ...searchParams })
-}, 300)
+}, 500)
 
 const handleSearch = () => {
   emit('search', { ...searchParams })

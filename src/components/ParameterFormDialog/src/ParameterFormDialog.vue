@@ -20,7 +20,6 @@
           v-if="param.type === 'string'"
           v-model="form[param.variable]"
           placeholder="请输入"
-          clearable
           @blur="validateField(param)"
         />
         <el-input
@@ -30,7 +29,6 @@
           show-password
           placeholder="请输入"
           @blur="validateField(param)"
-          clearable
         />
         <el-select
           v-else
