@@ -406,6 +406,10 @@ const handleAddTemplateTypeCancel = () => {
 const handleAddTemplateType = () => {
   typeFormRef.value?.validate((valid) => {
     if (!valid) return
+    if (!typeForm.type.trim()) {
+      ElMessage.warning('请输入模版类型')
+      return
+    }
     if (!localTemplateTypes.value.includes(typeForm.type)) {
       localTemplateTypes.value.push(typeForm.type)
       form.type = typeForm.type
@@ -578,10 +582,6 @@ const handleConfirm = () => {
 :deep(.el-dialog) {
   max-height: 85vh;
   top: -90px;
-}
-.question-icon {
-  vertical-align: middle;
-  margin-top: -2px;
 }
 .inline-link {
   margin-left: 12px;

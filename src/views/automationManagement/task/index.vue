@@ -74,7 +74,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import { apiGetTaskList, apiCreateTask, apiDeleteTask, apiExecTask } from '@/api/task'
@@ -138,7 +138,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'reset',
     type: 'text',
     placeholder: '重置',
-    icon: Refresh,
     onClick: () => handleReset()
   }
 ])

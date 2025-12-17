@@ -77,7 +77,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 import { TemplateEditorDialog } from '@/components/TemplateEditorDialog'
 import { TableActionsColumn, type TableAction } from '@/components/TableActionsColumn'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
@@ -126,7 +126,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'reset',
     type: 'text',
     placeholder: '重置',
-    icon: Refresh,
     onClick: () => handleReset()
   }
 ])

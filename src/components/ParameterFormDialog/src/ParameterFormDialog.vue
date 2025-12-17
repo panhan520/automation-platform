@@ -12,7 +12,7 @@
           <span>
             {{ param.name }}
             <el-tooltip v-if="param.desc" :content="param.desc" placement="top">
-              <el-icon class="hint-icon"><QuestionFilled /></el-icon>
+              <el-icon class="question-icon"><QuestionFilled /></el-icon>
             </el-tooltip>
           </span>
         </template>
@@ -194,10 +194,8 @@ const getSelectOptions = (param: ParameterItem): Array<{ label: string; value: s
   justify-content: flex-end;
   gap: 12px;
 }
-
-.hint-icon {
-  font-size: 14px;
-  color: #a1a7b3;
-  margin-left: 4px;
+:deep(.el-form-item__label) {
+  height: auto;
+  word-break: break-all;
 }
 </style>

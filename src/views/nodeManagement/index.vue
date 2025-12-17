@@ -140,7 +140,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Setting, Refresh, Monitor } from '@element-plus/icons-vue'
+import { Search, Setting, Monitor } from '@element-plus/icons-vue'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
 import type { ToolbarButton } from '@/components/ManagementList'
 import type { ToolbarFilter } from '@/components/TableToolbar'
@@ -226,7 +226,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     key: 'reset',
     type: 'text',
     placeholder: '重置',
-    icon: Refresh,
     onClick: () => handleReset()
   }
 ])
