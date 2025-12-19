@@ -54,8 +54,7 @@
   <DeleteConfirmDialog
     v-model:visible="deleteDialog.visible"
     title="删除任务"
-    :target-name="deleteDialog.target?.name || ''"
-    description="删除后，该任务将无法再次被执行且不在任务列表中展示，请谨慎操作。"
+    :description="`将删除【${deleteDialog.target?.name}】,删除后，该任务将无法再次被执行且不在任务列表中展示，请谨慎操作。`"
     :loading="deleteDialog.loading"
     @confirm="confirmDeleteTemplate"
     @cancel="handleDeleteCancel"

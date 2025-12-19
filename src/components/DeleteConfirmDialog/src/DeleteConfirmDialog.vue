@@ -4,30 +4,15 @@
     :width="440"
     :close-on-click-modal="false"
     class="delete-confirm-dialog"
-    :show-close="false"
+    :title="title"
   >
-    <template #header="{ close, titleId, titleClass }">
-      <div class="my-header">
-        <div class="title">
-          <div class="icon-wrapper" :id="titleId" :class="titleClass">
-            <el-icon><WarningFilled /></el-icon> </div
-          >{{ title }}</div
-        >
-        <el-icon class="close-btn" @click="close"><Close /></el-icon>
-      </div>
-    </template>
-    <!-- <template #header="{ close, titleId, titleClass }">
-      <div class="title">
-        <div class="icon-wrapper">
-          <el-icon><WarningFilled /></el-icon> </div
-        >{{ title }}</div
-      >
-      <el-icon class="close-btn" @click="handleCancel"><Close /></el-icon>
-    </template> -->
     <div class="dialog-body">
       <div class="content">
+        <div class="icon-wrapper">
+          <el-icon><WarningFilled /></el-icon>
+        </div>
         <div class="description">
-          <slot name="description"> 将删除【{{ targetName }}】，{{ description }} </slot>
+          <slot name="description"> {{ description }} </slot>
         </div>
       </div>
     </div>
@@ -35,7 +20,7 @@
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
         <el-button type="danger" :loading="loading" @click="handleConfirm">
-          {{ confirmButtonText }}
+          {{ title.slice(0, 2) }}
         </el-button>
       </div>
     </template>
@@ -44,20 +29,18 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Close, WarningFilled } from '@element-plus/icons-vue'
+import { WarningFilled } from '@element-plus/icons-vue'
 
 const props = withDefaults(
   defineProps<{
     visible: boolean
     title?: string
-    targetName?: string
     description?: string
     confirmButtonText?: string
     loading?: boolean
   }>(),
   {
     title: '删除确认',
-    targetName: '',
     description: '删除后将无法恢复，请谨慎操作。',
     confirmButtonText: '删除',
     loading: false
@@ -91,18 +74,14 @@ const handleConfirm = () => {
     padding: 24px 24px 12px;
   }
 }
-.my-header {
+.dialog-body {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
   gap: 16px;
-  .title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #1d2129;
+  align-items: flex-start;
+  position: relative;
+  .content {
     display: flex;
-    align-items: center;
+    margin-bottom: 20px;
     .icon-wrapper {
       width: 36px;
       height: 36px;
@@ -114,27 +93,15 @@ const handleConfirm = () => {
       color: #ff9f43;
       margin-right: 10px;
       border-radius: 50%;
-
       :deep(.el-icon) {
         font-size: 20px;
       }
     }
-  }
-}
-.dialog-body {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  position: relative;
-
-  .content {
-    flex: 1;
-    margin-left: 27px;
-
     .description {
       color: #4e5969;
       line-height: 22px;
       font-size: 14px;
+      flex: 1;
     }
   }
 

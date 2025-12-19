@@ -63,8 +63,7 @@
     <DeleteConfirmDialog
       v-model:visible="deleteDialog.visible"
       title="删除模版"
-      :target-name="deleteDialog.target?.name || ''"
-      description="删除后该模版将被清除且无法被引用，请谨慎操作。"
+      :description="`将删除【${deleteDialog.target?.name}】,删除后该模版将被清除且无法被引用，请谨慎操作。`"
       :loading="deleteDialog.loading"
       @confirm="confirmDeleteTemplate"
       @cancel="handleDeleteCancel"

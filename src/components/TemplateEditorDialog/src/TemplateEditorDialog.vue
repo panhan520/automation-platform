@@ -100,7 +100,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleConfirm">保存</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleConfirm">确定</el-button>
       </div>
     </template>
   </el-dialog>

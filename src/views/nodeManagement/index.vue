@@ -10,7 +10,7 @@
       :toolbar-buttons="toolbarButtons"
       :filters="toolbarFilters"
       :query-params="queryParams"
-      :columns="tableColumnsForList"
+      :columns="tableColumns"
       @search="handleSearch"
       @refresh="handleRefresh"
       @page-change="handlePageChange"
@@ -33,21 +33,21 @@
               <div class="stat-label">在线节点</div>
               <div class="stat-value green">{{ stats.online }}</div>
             </div>
-            <div class="stat-icon online">🟢</div>
+            <div class="stat-icon">🟢</div>
           </div>
           <div class="stat-card">
             <div class="stat-content">
               <div class="stat-label">离线节点</div>
               <div class="stat-value yellow">{{ stats.offline }}</div>
             </div>
-            <div class="stat-icon offline">🟠</div>
+            <div class="stat-icon">🟠</div>
           </div>
           <div class="stat-card">
             <div class="stat-content">
-              <div class="stat-label">异常节点</div>
-              <div class="stat-value red">{{ stats.abnormal }}</div>
+              <div class="stat-label">下线节点</div>
+              <div class="stat-value red">{{ stats.deleted }}</div>
             </div>
-            <div class="stat-icon abnormal">🔴</div>
+            <div class="stat-icon">🔴</div>
           </div>
         </div>
       </template>
@@ -91,8 +91,14 @@
             </template>
           </el-table-column>
           <TableActionsColumn
-            v-else
-            :main-actions="executionRowActions"
+            v-if="col.prop === 'actions'"
+            :main-actions="
+              (row: NodeRecord) =>
+                row.status === 'deleted'
+                  ? executionRowActions.filter((item) => item.key !== 'deleted')
+                  : executionRowActions
+            "
+            :width="col.width"
             @edit="handleEdit"
             @action="handleMoreAction"
           />
@@ -134,6 +140,15 @@
 
     <!-- 导入Excel对话框 -->
     <ImportExcelDialog v-model:visible="importDialogVisible" @success="handleImportSuccess" />
+    <!-- 下线确认框 -->
+    <DeleteConfirmDialog
+      v-model:visible="offlineDialog.visible"
+      title="下线节点"
+      :description="`将对【${offlineDialog.target?.hostName}】执行下线操作。下线后该节点将不再继续使用，请谨慎操作`"
+      :loading="offlineDialog.loading"
+      @confirm="confirmOfflineNode"
+      @cancel="handleOfflineCancel"
+    />
   </div>
 </template>
 
@@ -152,7 +167,8 @@ import {
   apiGetNodeTags,
   apiNodeSingleProbe,
   apiNodeBatchProbe,
-  apiCreateNode
+  apiCreateNode,
+  apiNodeOffline
 } from '@/api/node/index'
 import { apiGetAppTypeList } from '@/api/application'
 import { NodeRecord } from '@/api/node/type'
@@ -160,6 +176,7 @@ import { ColumnCustomDialog, type ColumnItem } from '@/components/ColumnCustomDi
 // import { OperationConfirmDialog } from '@/components/OperationConfirmDialog'
 import { ImportExcelDialog } from '@/components/ImportExcelDialog'
 import { useTaskPanelStore } from '@/store/modules/taskPanel'
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
 
 const title = '节点管理'
 const loading = ref(false)
@@ -170,7 +187,7 @@ const stats = ref({
   total: 0,
   online: 0,
   offline: 0,
-  abnormal: 0
+  deleted: 0
 })
 // 应用类型列表
 const appTypeList = ref<string[]>([])
@@ -257,6 +274,12 @@ const executionRowActions: TableAction[] = [
     label: '连通测试',
     type: 'primary',
     text: true
+  },
+  {
+    key: 'deleted',
+    label: '下线',
+    type: 'primary',
+    text: true
   }
 ]
 // 新建编辑相关字段
@@ -264,6 +287,16 @@ const nodeDialogVisible = ref(false)
 const nodeDialogLoading = ref(false)
 const nodeDialogMode = ref<'create' | 'edit'>('create')
 const nodeDialogData = ref<Record<string, any>>({})
+// 下线相关字段
+const offlineDialog = reactive<{
+  visible: boolean
+  target: NodeRecord | null
+  loading: boolean
+}>({
+  visible: false,
+  target: null,
+  loading: false
+})
 const normalizeNodeTags = (tags?: any): Record<string, string> => {
   if (!tags) return {}
   if (Array.isArray(tags)) {
@@ -310,22 +343,8 @@ const tableColumns = ref<ColumnItem[]>([
     minWidth: 150
   },
   { prop: 'remark', label: '备注', visible: true, order: 11, minWidth: 100 },
-  { prop: 'actions', label: '操作', slot: 'actions', order: 12 }
+  { prop: 'actions', label: '操作', slot: 'actions', order: 12, width: 150 }
 ])
-
-// 转换为 TableColumn 类型供 ManagementList 使用
-const tableColumnsForList = computed<TableColumn[]>(() => {
-  return tableColumns.value.map((col) => ({
-    prop: col.prop,
-    label: col.label,
-    width: col.width,
-    minWidth: col.minWidth,
-    sortable: col.sortable,
-    visible: col.visible,
-    order: col.order,
-    slot: typeof col.slot === 'string' ? col.slot : col.slot ? col.prop : undefined
-  }))
-})
 
 // 操作确认对话框相关
 // const operationDialogVisible = ref(false)
@@ -353,7 +372,7 @@ const getNodeStatusType = (status: string) => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
     online: 'success',
     offline: 'info',
-    abnormal: 'danger'
+    deleted: 'danger'
   }
   return map[status] || 'warning'
 }
@@ -361,7 +380,7 @@ const getNodeStatusText = (status: string) => {
   const map = {
     online: '在线',
     offline: '离线',
-    abnormal: '异常'
+    deleted: '下线'
   }
   return map[status] || '未知'
 }
@@ -369,7 +388,7 @@ const getNodeStatusColor = (status: string) => {
   const map = {
     online: 'green',
     offline: 'gray',
-    abnormal: 'red'
+    deleted: 'red'
   }
   return map[status] || 'yellow'
 }
@@ -614,6 +633,9 @@ const handleMoreAction = (action: string, row: NodeRecord) => {
       // showOperationDialog(action, false, [row])
       handleNodeSingleProbe(row)
       break
+    case 'deleted':
+      handleOfflineNode(row)
+      break
     default:
       ElMessage.info('功能待实现')
   }
@@ -641,7 +663,27 @@ const handleNodeSingleProbe = async (row: NodeRecord) => {
     getList()
   }
 }
-
+// 节点下线
+const handleOfflineNode = async (row: NodeRecord) => {
+  offlineDialog.target = row
+  offlineDialog.visible = true
+}
+const confirmOfflineNode = async () => {
+  if (!offlineDialog.target) return
+  try {
+    offlineDialog.loading = true
+    await apiNodeOffline({ id: offlineDialog.target.id })
+    ElMessage.success('下线成功')
+    getList()
+    offlineDialog.visible = false
+    offlineDialog.target = null
+  } finally {
+    offlineDialog.loading = false
+  }
+}
+const handleOfflineCancel = () => {
+  offlineDialog.target = null
+}
 const handleNodeSave = async ({
   form: _form,
   passwordKey: _passwordKey

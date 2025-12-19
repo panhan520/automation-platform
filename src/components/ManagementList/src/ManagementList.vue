@@ -1,7 +1,10 @@
 <template>
   <ContentWrap>
+    <!-- 标题 -->
     <div class="page-title">{{ title }}</div>
+    <!-- 统计栏 -->
     <slot name="extra-toolbar"> </slot>
+    <!-- 操作栏 -->
     <TableToolbar
       :buttons="toolbarButtons"
       :filters="filters"
@@ -9,6 +12,7 @@
       @search="handleSearch"
       @refresh="handleRefresh"
     />
+    <!-- 表格 -->
     <el-table
       ref="tableRef"
       :data="tableData"
@@ -44,8 +48,7 @@
         <el-empty description="暂无数据" />
       </template>
     </el-table>
-
-    <!-- 批量操作栏 -->
+    <!-- 分页栏 -->
     <div :class="showSelection ? 'bulk-action-bar' : 'bulk-action-bar only-pagination'">
       <div v-if="showSelection" class="bulk-actions">
         <span class="selected-info">已选{{ selectedRows.length }}/{{ totalRecords }}条</span>
@@ -84,11 +87,12 @@ export interface TableColumn {
   width?: string | number
   minWidth?: string | number
   sortable?: boolean | string
-  slot?: string
+  slot?: boolean | string
   visible?: boolean
   order?: number
   filters?: Array<{ text: string; value: any }>
   filterMultiple?: boolean
+  isDisabled?: boolean
 }
 
 export interface ToolbarButton {
@@ -148,7 +152,6 @@ const props = withDefaults(defineProps<Props>(), {
   }),
   storageKey: ''
 })
-
 const emit = defineEmits<{
   (e: 'search', params: any): void
   (e: 'refresh', params: any): void
@@ -158,7 +161,7 @@ const emit = defineEmits<{
   (e: 'filter-change', filters: ToolbarFilter[]): void
   (e: 'sort-change', sort: { prop: string; order: string }): void
 }>()
-
+// 选中项
 const selectedRows = ref<any[]>([])
 const columnConfig = ref<TableColumn[]>([])
 const tableRef = ref<InstanceType<typeof import('element-plus').ElTable>>()
@@ -247,7 +250,6 @@ const getHeaderRow = () => {
   if (!tableRef.value) return null
   const tableEl = tableRef.value.$el
   if (!tableEl) return null
-
   return tableEl.querySelector(
     '.el-table__header-wrapper table thead tr'
   ) as HTMLTableRowElement | null
@@ -377,14 +379,12 @@ watch(
 const handleSearch = (params: any) => {
   emit('search', params)
 }
-
 const handleRefresh = (params: any) => {
   emit('refresh', params)
 }
 const onFilterChange = (filters: ToolbarFilter[]) => {
   emit('filter-change', filters)
 }
-
 const onSortChange = (sorts) => {
   if (sorts.order === 'ascending') {
     sorts.order = 'asc'
@@ -393,7 +393,7 @@ const onSortChange = (sorts) => {
   }
   emit('sort-change', sorts)
 }
-
+// 分页切换
 const handlePageChange = (page: number, pageSize: number) => {
   localPage.value = page
   localPageSize.value = pageSize
@@ -404,7 +404,7 @@ const handlePageSizeChange = (pageSize: number) => {
   localPageSize.value = pageSize
   emit('page-change', 1, pageSize)
 }
-
+// 选中行变化
 const handleSelectionChange = (selection: any[]) => {
   selectedRows.value = selection
   emit('selection-change', selection)

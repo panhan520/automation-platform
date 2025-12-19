@@ -58,7 +58,7 @@ export interface AppTypeOption {
 export interface NodeForm {
   innerIp: string
   publicIp: string
-  os: 'Windows' | 'Linux'
+  os: 'Windows' | 'Linux(ubuntu 22.04)'
   loginPort: string
   authMethod: AuthMethod
   credentialPassword: string

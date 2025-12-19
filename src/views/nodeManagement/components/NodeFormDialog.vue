@@ -23,7 +23,7 @@
           <el-form-item label="操作系统" prop="os" required>
             <el-select v-model="form.os" placeholder="请选择操作系统">
               <el-option label="Windows" value="Windows" />
-              <el-option label="Linux" value="Linux" />
+              <el-option label="Linux(ubuntu 22.04)" value="Linux(ubuntu 22.04)" />
             </el-select>
           </el-form-item>
         </el-col>
@@ -53,6 +53,7 @@
                 placeholder="请输入密码"
                 show-password
                 maxLength="50"
+                :disabled="isEdit"
               />
             </template>
             <template v-else>
@@ -62,6 +63,7 @@
                 placeholder="请输入密钥"
                 show-password
                 maxLength="50"
+                :disabled="isEdit"
               />
             </template>
           </el-form-item>
@@ -217,7 +219,7 @@
         <div class="footer-actions">
           <el-button @click="handleCancel" :disabled="loading">取消</el-button>
           <el-button type="primary" :loading="loading" :disabled="!canSave" @click="handleSave">
-            保存
+            确定
           </el-button>
         </div>
       </div>
@@ -226,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch, onMounted } from 'vue'
+import { computed, reactive, ref, watch, onMounted, nextTick } from 'vue'
 import type { FormInstance, FormRules, CascaderProps } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Delete, CirclePlus } from '@element-plus/icons-vue'
@@ -386,7 +388,7 @@ const formRef = ref<FormInstance>()
 const createDefaultForm = (): NodeForm => ({
   innerIp: '',
   publicIp: '',
-  os: 'Windows',
+  os: 'Linux(ubuntu 22.04)',
   loginPort: '22',
   authMethod: 'password',
   credentialPassword: '',
@@ -511,12 +513,12 @@ const computedTitle = computed(() =>
   props.title ? props.title : props.isEdit ? '编辑节点' : '新建节点'
 )
 
-const canSave = computed(() => connectivityStatus.value === 'success' && !props.loading)
+const canSave = computed(() => connectivityStatus.value === 'success')
 
-// const resetConnectivityStatus = () => {
-//   if (connectivityStatus.value === 'idle') return
-//   connectivityStatus.value = 'idle'
-// }
+const resetConnectivityStatus = () => {
+  if (connectivityStatus.value === 'idle') return
+  connectivityStatus.value = 'idle'
+}
 
 const convertTagsToList = (source?: any): NodeTagItem[] => {
   const list: NodeTagItem[] = []
@@ -653,6 +655,9 @@ const applyDefaultData = (data: NodeFormDefaultData) => {
       form.credentialPassword = ''
     }
   }
+  nextTick(() => {
+    connectivityStatus.value = 'success'
+  })
 }
 
 watch(
@@ -663,16 +668,36 @@ watch(
     } else {
       form.loginIp = form.innerIp
     }
-    // resetConnectivityStatus()
+    resetConnectivityStatus()
   }
 )
-
-// watch(
-//   () => [form.innerIp, form.publicIp, form.loginAccount, form.loginPort],
-//   () => {
-//     resetConnectivityStatus()
-//   }
-// )
+watch(
+  () => [
+    form.os,
+    form.loginAccount,
+    form.loginPort,
+    form.authMethod,
+    form.credentialPassword,
+    form.credentialKey,
+    form.hostName,
+    form.region,
+    form.loginIp,
+    form.appType,
+    form.vendorName,
+    form.operator,
+    form.remark
+  ],
+  () => {
+    resetConnectivityStatus()
+  }
+)
+watch(
+  () => nodeTagItems.value,
+  () => {
+    resetConnectivityStatus()
+  },
+  { deep: true }
+)
 
 const addNodeTag = () => {
   if (nodeTagItems.value.length >= maxTags) return
@@ -681,7 +706,6 @@ const addNodeTag = () => {
 
 const removeNodeTag = (index: number) => {
   nodeTagItems.value.splice(index, 1)
-  // resetConnectivityStatus()
 }
 
 const handleConnectivityTest = async () => {

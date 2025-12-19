@@ -6,7 +6,7 @@
     :total-records="totalRecords"
     :filters="toolbarFilters"
     :query-params="queryParams"
-    :columns="tableColumnsForList"
+    :columns="tableColumns"
     @search="handleSearch"
     @refresh="handleRefresh"
     @page-change="handlePageChange"
@@ -22,7 +22,6 @@
           :label="col.label"
           :width="col.width"
           :min-width="col.minWidth"
-          :sortable="col.sortable"
           :filters="col.filters"
           :filter-multiple="col.filterMultiple"
           :column-key="col.prop"
@@ -41,14 +40,13 @@
                   ? '英语'
                   : '其他'
             }}</template>
-            <span v-else>{{ scope.row[col.prop] }}</span>
           </template>
         </el-table-column>
         <TableActionsColumn v-else @edit="handleEdit" />
       </template>
     </template>
   </ManagementList>
-
+  <!-- 新建/编辑表单弹框 -->
   <FormDialog
     v-model:visible="formDialogVisible"
     :title="formDialogTitle"
@@ -63,7 +61,6 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ManagementList, type TableColumn } from '@/components/ManagementList'
-import { type ColumnItem } from '@/components/ColumnCustomDialog'
 import type { ToolbarFilter } from '@/components/TableToolbar'
 import { FormDialog, type FormField } from '@/components/FormDialog'
 import { TableActionsColumn } from '@/components/TableActionsColumn'
@@ -230,7 +227,7 @@ const formDialogFields = computed<FormField[]>(() => [
     rows: 3
   }
 ])
-const tableColumns = ref<ColumnItem[]>([
+const tableColumns = ref<TableColumn[]>([
   { prop: 'appType', label: '应用类型', visible: true, order: 0 },
   {
     prop: 'lifeCycle',
@@ -250,23 +247,6 @@ const tableColumns = ref<ColumnItem[]>([
   { prop: 'opsPersonNickname', label: '运维人员', visible: true, order: 4, slot: true },
   { prop: 'actions', label: '操作', slot: 'actions', order: 5 }
 ])
-
-// 转换为 TableColumn 类型供 ManagementList 使用
-const tableColumnsForList = computed<TableColumn[]>(() => {
-  return tableColumns.value.map((col) => ({
-    prop: col.prop,
-    label: col.label,
-    width: col.width,
-    minWidth: col.minWidth,
-    sortable: col.sortable,
-    visible: col.visible,
-    order: col.order,
-    isDisabled: col.isDisabled,
-    filters: col.filters,
-    filterMultiple: col.filterMultiple,
-    slot: typeof col.slot === 'string' ? col.slot : col.slot ? col.prop : undefined
-  }))
-})
 // 获取列表数据
 const getList = async () => {
   try {

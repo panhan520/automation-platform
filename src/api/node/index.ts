@@ -63,3 +63,8 @@ export const getExecTaskDetail = (id: string) => {
 export const apiUpdateExecTask = (data): Promise<IPaginationResponse> => {
   return request.post({ url: '/api/v1/node/exec/updateTask/', data })
 }
+
+// 节点下线
+export const apiNodeOffline = (data): Promise<IPaginationResponse> => {
+  return request.post({ url: '/api/v1/node/offline/', data })
+}
