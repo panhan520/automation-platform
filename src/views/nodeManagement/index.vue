@@ -540,6 +540,7 @@ const handleRefresh = (params?: Record<string, any>) => {
     queryParams.page = 1
   }
   getList()
+  getNodeStatistics()
 }
 
 const handlePageChange = (page: number, pageSize: number) => {
@@ -566,6 +567,7 @@ const handleImportExcel = () => {
 const handleImportSuccess = () => {
   // 导入成功后刷新列表
   getList()
+  getNodeStatistics()
 }
 
 const handleSettings = () => {
@@ -661,6 +663,7 @@ const handleNodeSingleProbe = async (row: NodeRecord) => {
     }, 10)
   } finally {
     getList()
+    getNodeStatistics()
   }
 }
 // 节点下线
@@ -675,6 +678,7 @@ const confirmOfflineNode = async () => {
     await apiNodeOffline({ id: offlineDialog.target.id })
     ElMessage.success('下线成功')
     getList()
+    getNodeStatistics()
     offlineDialog.visible = false
     offlineDialog.target = null
   } finally {
@@ -698,6 +702,7 @@ const handleNodeSave = async ({
     ElMessage.success(nodeDialogMode.value === 'edit' ? '编辑成功' : '添加成功')
     nodeDialogVisible.value = false
     getList()
+    getNodeStatistics()
   } finally {
     nodeDialogLoading.value = false
   }
