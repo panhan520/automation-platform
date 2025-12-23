@@ -4,7 +4,7 @@ import qs from 'qs'
 import { SUCCESS_CODE, TRANSFORM_REQUEST_DATA } from '@/constants'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { objToFormData } from '@/utils'
-import { getToken } from '@/utils/auth'
+// import { getToken } from '@/utils/auth'
 
 const defaultRequestInterceptors = (config: InternalAxiosRequestConfig) => {
   if (
@@ -20,8 +20,10 @@ const defaultRequestInterceptors = (config: InternalAxiosRequestConfig) => {
   ) {
     config.data = objToFormData(config.data)
   }
-  if (getToken()) {
-    config.headers['Authorization'] = `Bearer ${getToken()}`
+  const userStore = useUserStoreWithOut()
+  const token = userStore.userInfo?.token
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
   }
   if (config.method === 'get' && config.params) {
     let url = config.url as string

@@ -94,9 +94,9 @@
             v-if="col.prop === 'actions'"
             :main-actions="
               (row: NodeRecord) =>
-                row.status === 'deleted'
-                  ? executionRowActions.filter((item) => item.key !== 'deleted')
-                  : executionRowActions
+                row.status === 'offline'
+                  ? executionRowActions
+                  : executionRowActions.filter((item) => item.key !== 'deleted')
             "
             :width="col.width"
             @edit="handleEdit"

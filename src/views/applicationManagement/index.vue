@@ -165,7 +165,6 @@ const formDialogFields = computed<FormField[]>(() => [
     prop: 'opsPerson',
     label: '运维人员',
     type: 'select',
-    required: true,
     placeholder: '请选择人员',
     options: personList.value.map((item) => ({
       label: item.nickname,
