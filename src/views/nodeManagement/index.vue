@@ -96,10 +96,13 @@
               (row: NodeRecord) =>
                 row.status === 'offline'
                   ? executionRowActions
-                  : executionRowActions.filter((item) => item.key !== 'deleted')
+                  : row.status === 'deleted'
+                    ? []
+                    : executionRowActions.filter((item) => item.key !== 'deleted')
             "
             :width="col.width"
             @edit="handleEdit"
+            :showEdit="(row: NodeRecord) => row.status !== 'deleted'"
             @action="handleMoreAction"
           />
         </template>
@@ -330,7 +333,7 @@ const tableColumns = ref<ColumnItem[]>([
   },
   { prop: 'appTypeName', label: '应用类型', visible: true, order: 4, slot: true, minWidth: 120 },
   { prop: 'region', label: '地区', visible: true, order: 5, minWidth: 150 },
-  { prop: 'os', label: '操作系统', visible: true, order: 6, slot: true, minWidth: 100 },
+  { prop: 'os', label: '操作系统', visible: true, order: 6, slot: true, minWidth: 180 },
   { prop: 'vendorName', label: '供应商名称', visible: true, order: 7, minWidth: 100 },
   { prop: 'status', label: '节点状态', visible: true, order: 8, slot: true },
   { prop: 'nodeTags', label: '节点标签', visible: true, order: 9, slot: true },

@@ -3,7 +3,7 @@
     <template #default="scope">
       <div class="table-actions">
         <el-button
-          v-if="showEdit"
+          v-if="shouldShowEdit(scope.row)"
           class="table-button"
           link
           size="small"
@@ -83,7 +83,7 @@ interface Props {
   fixed?: boolean | 'left' | 'right'
   actions?: ActionConfig
   mainActions?: ActionConfig
-  showEdit?: boolean
+  showEdit?: boolean | ((row: any) => boolean)
   editLabel?: string
 }
 
@@ -125,6 +125,13 @@ const isActionDisabled = (action: TableAction, row: any) => {
     return action.disabled(row)
   }
   return Boolean(action.disabled)
+}
+
+const shouldShowEdit = (row: any) => {
+  if (typeof props.showEdit === 'function') {
+    return props.showEdit(row)
+  }
+  return Boolean(props.showEdit)
 }
 
 const handleEdit = (row: any) => {

@@ -166,15 +166,17 @@ export default defineComponent({
     // 设置子菜单悬停的高亮和背景色
     .@{elNamespace}-sub-menu__title,
     .@{elNamespace}-menu-item {
+      color: #0c0d0e !important;
+      background-color: transparent !important;
       &:hover {
-        color: var(--left-menu-text-active-color) !important;
-        background-color: var(--left-menu-bg-color) !important;
+        color: #0c0d0e !important;
+        background-color: transparent !important;
       }
     }
 
     // 设置选中时的高亮背景和高亮颜色
     .@{elNamespace}-menu-item.is-active {
-      color: var(--left-menu-text-active-color) !important;
+      color: #0c0d0e !important;
       background-color: var(--left-menu-bg-active-color) !important;
 
       &:hover {
@@ -190,7 +192,8 @@ export default defineComponent({
     .@{elNamespace}-menu {
       .@{elNamespace}-sub-menu__title,
       .@{elNamespace}-menu-item:not(.is-active) {
-        background-color: var(--left-menu-bg-light-color) !important;
+        background-color: transparent !important;
+        color: #0c0d0e;
       }
     }
   }
@@ -268,16 +271,18 @@ export default defineComponent({
   // 设置选中时子标题的颜色
   .is-active {
     & > .el-sub-menu__title {
-      color: var(--left-menu-text-active-color) !important;
+      color: #0c0d0e !important;
     }
   }
 
   // 设置子菜单悬停的高亮和背景色
   .el-sub-menu__title,
   .el-menu-item {
+    color: #0c0d0e !important;
+    background-color: transparent !important;
     &:hover {
-      color: var(--left-menu-text-active-color) !important;
-      background-color: var(--left-menu-bg-color) !important;
+      color: #0c0d0e !important;
+      background-color: transparent !important;
     }
   }
 
