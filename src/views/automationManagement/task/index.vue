@@ -8,8 +8,9 @@
     :columns="tableColumns"
     :query-params="queryParams"
     @search="handleSearch"
-    @refresh="handleRefresh"
+    @refresh="getList"
     @page-change="handlePageChange"
+    @filter-change="handleTableFilterChange"
     @sort-change="handleTableSortChange"
     storageKey="taskManagement_columnConfig"
   >
@@ -29,6 +30,9 @@
           :width="column.width"
           :min-width="column.minWidth"
           :sortable="column.sortable"
+          :filters="column.filters"
+          :filter-multiple="column.filterMultiple"
+          :column-key="column.prop"
         >
           <template #default="scope">
             <template v-if="column.prop === 'host_id_ip_map'">
@@ -120,14 +124,6 @@ const toolbarFilters = computed<ToolbarFilter[]>(() => [
     onClick: () => openTaskDialog()
   },
   {
-    key: 'interpreter',
-    type: 'select',
-    placeholder: '全部执行方式',
-    width: 220,
-    clearable: true,
-    options: interpreterList.value
-  },
-  {
     key: 'query',
     type: 'input',
     placeholder: '搜索任务名称',
@@ -140,7 +136,16 @@ const tableColumns: TableColumn[] = [
   { prop: 'id', label: '任务ID', order: 0 },
   { prop: 'name', label: '任务名称', order: 1 },
   { prop: 'host_id_ip_map', label: '执行主机数量', order: 2 },
-  { prop: 'interpreter', label: '执行方式', order: 3 },
+  {
+    prop: 'interpreter',
+    label: '执行方式',
+    order: 3,
+    filters: [
+      { text: 'Shell', value: 'sh' },
+      { text: 'Python', value: 'python' }
+    ],
+    filterMultiple: false
+  },
   { prop: 'updated_at', label: '最新执行时间', minWidth: 160, order: 4, sortable: true },
   { prop: 'desc', label: '备注', order: 5 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 6 }
@@ -299,12 +304,7 @@ const submitExecution = async (params: Record<string, any>) => {
 // 检索
 const handleSearch = (params: Record<string, any>) => {
   queryParams.query = params.query
-  queryParams.interpreter = params.interpreter
   queryParams.page = 1
-  getList()
-}
-// 刷新
-const handleRefresh = () => {
   getList()
 }
 // 分页
@@ -317,6 +317,16 @@ const handlePageChange = (page: number, pageSize: number) => {
 const handleTableSortChange = (sorts: any) => {
   queryParams.orderBy = sorts.prop
   queryParams.order = sorts.order
+  queryParams.page = 1
+  getList()
+}
+// 过滤执行方式
+const handleTableFilterChange = (filters: any) => {
+  if (filters.interpreter && filters.interpreter.length > 0) {
+    queryParams.interpreter = filters.interpreter[0] // 单选
+  } else {
+    queryParams.interpreter = ''
+  }
   queryParams.page = 1
   getList()
 }

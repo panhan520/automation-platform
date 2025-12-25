@@ -202,6 +202,7 @@ const submitExecution = async (params: Record<string, any>) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding-bottom: 30px;
   .page-title {
     font-size: 18px;
     line-height: 26px;

@@ -136,7 +136,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive, nextTick } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import emptyDataImg from '@/assets/imgs/empty_data.png'
 import { Props } from './type'
 
 const props = withDefaults(defineProps<Props>(), {
