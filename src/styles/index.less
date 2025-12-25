@@ -28,18 +28,20 @@ body {
   margin-bottom: 4px !important;
   font-size: 13px !important;
   color: #0c0d0e !important;
+  background-color: transparent !important;
   &:hover {
-    background-color: transparent;
+    background-color: transparent !important;
     color: #0c0d0e !important;
   }
 }
-.el-menu .el-menu-item {
-  &:hover {
-    background-color: transparent;
-    color: #0c0d0e !important;
-  }
+.el-menu-item.is-active {
+  background-color: transparent !important;
+}
+.el-menu-item:hover {
+  background-color: transparent !important;
 }
 .el-menu .el-menu-item.is-active {
+  background-color: transparent !important;
   font-weight: bold;
   &:hover {
     background-color: transparent;

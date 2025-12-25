@@ -89,7 +89,7 @@ export default defineComponent({
           uniqueOpened={unref(layout) === 'top' ? false : unref(uniqueOpened)}
           backgroundColor="var(--left-menu-bg-color)"
           textColor="var(--left-menu-text-color)"
-          activeTextColor="var(--left-menu-text-active-color)"
+          activeTextColor="#0c0d0e"
           popperClass={
             unref(menuMode) === 'vertical'
               ? `${prefixCls}-popper--vertical`
@@ -136,7 +136,7 @@ export default defineComponent({
                 ? 'vi-ant-design:menu-unfold-outlined'
                 : 'vi-ant-design:menu-fold-outlined'
             }
-            color="var(--left-menu-text-color)"
+            color="#0c0d0e"
           />
         </div>
       </div>
@@ -159,7 +159,7 @@ export default defineComponent({
     // 设置选中时子标题的颜色
     .is-active {
       & > .@{elNamespace}-sub-menu__title {
-        color: var(--left-menu-text-active-color) !important;
+        color: #0c0d0e !important;
       }
     }
 
@@ -205,7 +205,9 @@ export default defineComponent({
     & > .is-active,
     & > .is-active > .@{elNamespace}-sub-menu__title {
       position: relative;
-      background-color: var(--left-menu-collapse-bg-active-color) !important;
+      color: #0c0d0e;
+      background-color: var(--left-menu-bg-active-color) !important;
+      border-radius: 4px;
     }
 
     // 折叠时图标居中
