@@ -67,7 +67,7 @@
                       link
                       type="primary"
                       size="small"
-                      @click="handleViewLog(task)"
+                      @click="handleViewLog(scope.row)"
                       class="log-button"
                     >
                       查看日志
@@ -102,6 +102,7 @@ export interface TaskDetailItem {
   appTypeName: string
   status: string
   task: number
+  taskManageId: string
   [key: string]: any
 }
 
@@ -316,11 +317,11 @@ const handleNodeSingleProbe = async (row) => {
   }
 }
 // 查看日志
-const handleViewLog = (task: Task) => {
+const handleViewLog = (row: TaskDetailItem) => {
   handleCollapse()
   router.push({
     name: 'AutomationExecutionHistoryDetail',
-    params: { taskId: task.id }
+    params: { taskId: +row.taskManageId || row.task }
   })
 }
 

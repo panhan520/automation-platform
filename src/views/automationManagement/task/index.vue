@@ -146,7 +146,7 @@ const tableColumns: TableColumn[] = [
     ],
     filterMultiple: false
   },
-  { prop: 'updated_at', label: '最新执行时间', minWidth: 160, order: 4, sortable: true },
+  { prop: 'latest_run_time', label: '最新执行时间', minWidth: 160, order: 4, sortable: true },
   { prop: 'desc', label: '备注', order: 5 },
   { prop: 'actions', label: '操作', slot: 'actions', order: 6 }
 ]

@@ -5,6 +5,11 @@ export const apiGetHistoryTaskList = (data): Promise<IPaginationResponse> => {
 }
 
 // 获取执行任务详情
-export const apiGetHistoryTaskDetail = (id) => {
-  return request.get({ url: `/api/v1/schedule/history/get/?id=${id}` })
+export const apiGetHistoryTaskDetail = (data) => {
+  const { id, pageType } = data
+  let url = `/api/v1/schedule/history/get/?id=${id}`
+  if (pageType) {
+    url += `&pageType=${pageType}`
+  }
+  return request.get({ url })
 }

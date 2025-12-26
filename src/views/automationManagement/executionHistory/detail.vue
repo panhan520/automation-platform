@@ -79,6 +79,7 @@ const direction = ref<'horizontal' | 'vertical'>('horizontal')
 const route = useRoute()
 const router = useRouter()
 const taskId = route.params.taskId as string
+const pageType = route.query.pageType as string
 const hostList = ref<HostLogItem[]>([])
 const loading = ref(false)
 const taskInfo = reactive({
@@ -179,11 +180,11 @@ const handleBack = () => {
 const getDetail = async () => {
   try {
     loading.value = true
-    const res = await apiGetHistoryTaskDetail(taskId)
-    taskInfo.name = res.data.list[0].name
-    taskInfo.run_time = res.data.list[0].run_time
+    const res = await apiGetHistoryTaskDetail({ id: taskId, pageType })
+    taskInfo.name = res.data.list[0]?.name
+    taskInfo.run_time = res.data.list[0]?.run_time
     // 解析 output 数据
-    const outputData = JSON.parse(res.data.list[0].output)
+    const outputData = JSON.parse(res.data.list[0]?.output)
     // 转换数据格式
     const transformedList = Object.entries(outputData).map(([id, dataArray]) => {
       const [status, duration, output, publicIp, innerIp, appTypeName, hostName] =

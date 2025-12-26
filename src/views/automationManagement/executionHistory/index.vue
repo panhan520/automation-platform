@@ -200,7 +200,8 @@ const handlePageChange = (page: number, pageSize: number) => {
 const handleViewDetails = (record: ExecutionRecord) => {
   router.push({
     name: 'AutomationExecutionHistoryDetail',
-    params: { taskId: record.task_id }
+    params: { taskId: record.id },
+    query: { pageType: 'execHistory' }
   })
 }
 
