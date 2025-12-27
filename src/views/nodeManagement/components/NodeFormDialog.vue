@@ -332,19 +332,31 @@ const getRegionLabelsByPath = (path: (string | number)[] = []): string[] => {
     }
   }
 
+  // 对于香港和澳门，cityCode 实际上是区代码
   if (cityCode && stateCode) {
-    const cities = getCitiesByState(countryCode, stateCode)
-    const city = cities.find((item) => String(item.value) === cityCode)
-    if (city) {
-      labels.push(city.label)
-    }
-  }
+    // 如果是香港或澳门，cityCode 就是区
+    if (stateCode === 'HK' || stateCode === 'MO') {
+      const cities = getCitiesByState(countryCode, stateCode)
+      const city = cities.find((item) => String(item.value) === cityCode)
+      if (city) {
+        labels.push(city.label)
+      }
+    } else {
+      // 普通省份，cityCode 是城市
+      const cities = getCitiesByState(countryCode, stateCode)
+      const city = cities.find((item) => String(item.value) === cityCode)
+      if (city) {
+        labels.push(city.label)
+      }
 
-  if (districtCode && stateCode && cityCode) {
-    const districts = getDistrictsByCity(countryCode, stateCode, cityCode)
-    const district = districts.find((item) => String(item.value) === districtCode)
-    if (district) {
-      labels.push(district.label)
+      // 如果有区代码，添加区标签
+      if (districtCode) {
+        const districts = getDistrictsByCity(countryCode, stateCode, cityCode)
+        const district = districts.find((item) => String(item.value) === districtCode)
+        if (district) {
+          labels.push(district.label)
+        }
+      }
     }
   }
 

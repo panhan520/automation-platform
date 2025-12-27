@@ -164,6 +164,36 @@ const getTaiwanCityName = (name: string): string => {
 }
 
 /**
+ * 香港区中文映射表（使用英文名称作为key）
+ */
+const hongKongDistrictMap: Record<string, string> = {
+  'Central and Western District': '中西区',
+  Eastern: '东区',
+  'Islands District': '离岛区',
+  'Kowloon City': '九龙城区',
+  'Kwai Tsing': '葵青区',
+  'Kwun Tong': '观塘区',
+  North: '北区',
+  'Sai Kung District': '西贡区',
+  'Sha Tin': '沙田区',
+  'Sham Shui Po': '深水埗区',
+  Southern: '南区',
+  'Tsuen Wan District': '荃湾区',
+  'Tuen Mun': '屯门区',
+  'Wan Chai': '湾仔区',
+  'Wong Tai Sin': '黄大仙区',
+  'Yau Tsim Mong': '油尖旺区',
+  'Yuen Long District': '元朗区'
+}
+
+/**
+ * 获取香港区的中文名称
+ */
+const getHongKongDistrictName = (name: string): string => {
+  return hongKongDistrictMap[name] || name
+}
+
+/**
  * 获取台湾数据并翻译为中文
  */
 const getTaiwanData = (): RegionOption | null => {
@@ -204,6 +234,126 @@ const getTaiwanData = (): RegionOption | null => {
 }
 
 /**
+ * 获取香港数据
+ */
+const getHongKongData = (): RegionOption | null => {
+  const states = State.getStatesOfCountry('HK')
+  // 如果 country-state-city 没有香港的州/省数据，使用手动定义的数据
+  if (states.length === 0) {
+    // 香港的17个区（按用户提供的顺序）
+    const hongKongDistricts = [
+      'Central and Western District',
+      'Eastern',
+      'Islands District',
+      'Kowloon City',
+      'Kwai Tsing',
+      'Kwun Tong',
+      'North',
+      'Sai Kung District',
+      'Sha Tin',
+      'Sham Shui Po',
+      'Southern',
+      'Tsuen Wan District',
+      'Tuen Mun',
+      'Wan Chai',
+      'Wong Tai Sin',
+      'Yau Tsim Mong',
+      'Yuen Long District'
+    ]
+    return {
+      value: 'HK',
+      label: '香港特别行政区',
+      children: hongKongDistricts.map((district, index) => ({
+        value: `HK-${index + 1}`,
+        label: getHongKongDistrictName(district),
+        leaf: true
+      })),
+      leaf: false
+    }
+  }
+
+  // 如果有州/省数据，使用库提供的数据，并翻译为中文
+  const districts = states.map((state) => {
+    const cityList = City.getCitiesOfState('HK', state.isoCode)
+    return {
+      value: state.isoCode,
+      label: getHongKongDistrictName(state.name),
+      children:
+        cityList.length > 0
+          ? cityList.map((city) => ({
+              value: city.name,
+              label: getHongKongDistrictName(city.name),
+              leaf: true
+            }))
+          : undefined,
+      leaf: cityList.length === 0
+    }
+  })
+
+  return {
+    value: 'HK',
+    label: '香港特别行政区',
+    children: districts,
+    leaf: false
+  }
+}
+
+/**
+ * 获取澳门数据
+ */
+const getMacauData = (): RegionOption | null => {
+  const states = State.getStatesOfCountry('MO')
+  // 如果 country-state-city 没有澳门的州/省数据，使用手动定义的数据
+  if (states.length === 0) {
+    // 澳门的7个堂区
+    const macauDistricts = [
+      '花地玛堂区',
+      '圣安多尼堂区',
+      '望德堂区',
+      '大堂区',
+      '风顺堂区',
+      '嘉模堂区',
+      '圣方济各堂区'
+    ]
+    return {
+      value: 'MO',
+      label: '澳门特别行政区',
+      children: macauDistricts.map((district, index) => ({
+        value: `MO-${index + 1}`,
+        label: district,
+        leaf: true
+      })),
+      leaf: false
+    }
+  }
+
+  // 如果有州/省数据，使用库提供的数据
+  const districts = states.map((state) => {
+    const cityList = City.getCitiesOfState('MO', state.isoCode)
+    return {
+      value: state.isoCode,
+      label: state.name,
+      children:
+        cityList.length > 0
+          ? cityList.map((city) => ({
+              value: city.name,
+              label: city.name,
+              leaf: true
+            }))
+          : undefined,
+      leaf: cityList.length === 0
+    }
+  })
+
+  return {
+    value: 'MO',
+    label: '澳门特别行政区',
+    children: districts,
+    leaf: false
+  }
+}
+
+/**
  * 将中国的省市区数据转换为国家-省-市-区的格式
  */
 const getChinaRegionData = (): RegionOption => {
@@ -212,6 +362,16 @@ const getChinaRegionData = (): RegionOption => {
   const taiwanData = getTaiwanData()
   if (taiwanData) {
     provinces.push(taiwanData)
+  }
+  // 添加香港到省份列表
+  const hongKongData = getHongKongData()
+  if (hongKongData) {
+    provinces.push(hongKongData)
+  }
+  // 添加澳门到省份列表
+  const macauData = getMacauData()
+  if (macauData) {
+    provinces.push(macauData)
   }
   return {
     value: 'CN',
@@ -250,7 +410,7 @@ export const getAllCountries = (): RegionOption[] => {
  * 懒加载：根据国家代码获取省/州数据（第二级）
  */
 export const getStatesByCountry = (countryCode: string): RegionOption[] => {
-  // 中国使用 element-china-area-data 的数据（包含台湾）
+  // 中国使用 element-china-area-data 的数据（包含台湾、香港、澳门）
   if (countryCode === 'CN') {
     const chinaData = getChinaRegionData()
     return chinaData.children || []
@@ -304,6 +464,94 @@ export const getCitiesByState = (countryCode: string, stateCode: string): Region
       }))
     }
 
+    // 如果是香港
+    if (stateCode === 'HK') {
+      const states = State.getStatesOfCountry('HK')
+      if (states.length === 0) {
+        // 如果没有州/省数据，使用手动定义的香港区数据
+        const hongKongDistricts = [
+          'Central and Western District',
+          'Eastern',
+          'Islands District',
+          'Kowloon City',
+          'Kwai Tsing',
+          'Kwun Tong',
+          'North',
+          'Sai Kung District',
+          'Sha Tin',
+          'Sham Shui Po',
+          'Southern',
+          'Tsuen Wan District',
+          'Tuen Mun',
+          'Wan Chai',
+          'Wong Tai Sin',
+          'Yau Tsim Mong',
+          'Yuen Long District'
+        ]
+        return hongKongDistricts.map((district, index) => ({
+          value: `HK-${index + 1}`,
+          label: getHongKongDistrictName(district),
+          leaf: true
+        }))
+      }
+      // 返回香港的区数据，并翻译为中文
+      return states.map((s) => {
+        const cities = City.getCitiesOfState('HK', s.isoCode)
+        return {
+          value: s.isoCode,
+          label: getHongKongDistrictName(s.name),
+          children:
+            cities.length > 0
+              ? cities.map((c) => ({
+                  value: c.name,
+                  label: getHongKongDistrictName(c.name),
+                  leaf: true
+                }))
+              : undefined,
+          leaf: cities.length === 0
+        }
+      })
+    }
+
+    // 如果是澳门
+    if (stateCode === 'MO') {
+      const states = State.getStatesOfCountry('MO')
+      if (states.length === 0) {
+        // 如果没有州/省数据，使用手动定义的澳门区数据
+        const macauDistricts = [
+          '花地玛堂区',
+          '圣安多尼堂区',
+          '望德堂区',
+          '大堂区',
+          '风顺堂区',
+          '嘉模堂区',
+          '圣方济各堂区'
+        ]
+        return macauDistricts.map((district, index) => ({
+          value: `MO-${index + 1}`,
+          label: district,
+          leaf: true
+        }))
+      }
+      // 返回澳门的区数据
+      return states.map((s) => {
+        const cities = City.getCitiesOfState('MO', s.isoCode)
+        return {
+          value: s.isoCode,
+          label: s.name,
+          children:
+            cities.length > 0
+              ? cities.map((c) => ({
+                  value: c.name,
+                  label: c.name,
+                  leaf: true
+                }))
+              : undefined,
+          leaf: cities.length === 0
+        }
+      })
+    }
+
     const province = regionData.find((p) => p.value === stateCode)
     if (!province) return []
 
@@ -355,6 +603,11 @@ export const getDistrictsByCity = (
 ): RegionOption[] => {
   // 只有中国有第四级（区/县）
   if (countryCode === 'CN') {
+    // 如果是香港或澳门，它们已经是区级，不需要第四级
+    if (stateCode === 'HK' || stateCode === 'MO') {
+      return []
+    }
+
     const province = regionData.find((p) => p.value === stateCode)
     if (province && province.children) {
       const city = province.children.find((c) => c.value === cityCode)
